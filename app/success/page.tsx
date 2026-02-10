@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCartStorage } from '@/features/cart/use-cart-storage'
 import { Button } from '@/shared/ui/button'
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { clearCart } = useCartStorage()
@@ -48,6 +48,20 @@ export default function SuccessPage() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-12 text-center">
+          <p>Loading...</p>
+        </div>
+      }
+    >
+      <SuccessContent />
+    </Suspense>
   )
 }
 

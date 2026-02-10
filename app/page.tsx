@@ -3,6 +3,8 @@ import { Button } from '@/shared/ui/button'
 import { getFeaturedProducts } from '@/entities/product/api/get-featured-products'
 import { ProductGrid } from '@/widgets/product-grid'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   console.log('🏠 홈 페이지 렌더링 시작')
   

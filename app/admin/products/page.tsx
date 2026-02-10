@@ -3,6 +3,8 @@ import { getAllProductsAdmin } from '@/entities/product/api/get-all-products-adm
 import { Button } from '@/shared/ui/button'
 import { formatPrice } from '@/shared/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminProductsPage() {
   const products = await getAllProductsAdmin()
 
