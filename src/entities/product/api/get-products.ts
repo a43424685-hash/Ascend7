@@ -118,7 +118,7 @@ export async function getProducts(
     const processedProducts = data.map((product) => ({
       ...product,
       images: (product.images || []).sort(
-        (a, b) => a.sort_order - b.sort_order
+        (a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0)   
       ),
       variants: (product.variants || []).filter(
         (v: Variant) => v.is_active

@@ -57,7 +57,7 @@ export async function getCartItemsClient(
       // 이미지 URL 추출 (첫 번째 이미지)
       const images = (variant.product as any).images || []
       const sortedImages = images.sort(
-        (a: any, b: any) => a.sort_order - b.sort_order
+        (a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0)
       )
       const imageUrl = sortedImages[0]?.url || null
 

@@ -20,7 +20,7 @@ async function getProduct(id: string): Promise<ProductWithDetails | null> {
 
   return {
     ...data,
-    images: (data.images || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+    images: (data.images || []).sort((a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0)),
     variants: data.variants || [],
   } as ProductWithDetails
 }
