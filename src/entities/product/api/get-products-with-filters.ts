@@ -1,0 +1,101 @@
+import { getSupabaseClient } from '@/shared/api/supabaseClient'
+import type { ProductWithImages, Variant } from '@/shared/types/database'
+
+export interface ProductFilters {
+  category?: string
+  color?: string
+  size?: string
+  sortBy?: 'newest' | 'price-asc' | 'price-desc'
+}
+
+/**
+ * 필터링 및 정렬이 적용된 제품 조회
+ */
+export async function getProductsWithFilters(
+  filters: ProductFilters = {}
+): Promise<ProductWithImages[]> {
+  console.log('🔍 getProductsWithFilters 호출됨', filters)
+
+  try {
+    const supabase = await getSupabaseClient()
+
+    let query = supabase
+      .from('products')
+      .select('*, images:product_images(*), variants:variants(*)')
+      .eq('is_active', true)
+
+    // 카테고리 필터
+    if (filters.category) {
+      query = query.eq('category', filters.category)
+    }
+
+    // 정렬
+    if (filters.sortBy === 'newest') {
+      query = query.order('created_at', { ascending: false })
+    } else {
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      throw new Error(`제품 조회 실패: ${error.message}`)
+    }
+
+    if (!data) {
+      return []
+    }
+
+    // 클라이언트 사이드 필터링 (색상, 사이즈)
+    let filteredProducts = data.map((product) => ({
+      ...product,
+      images: (product.images || []).sort(
+        (a, b) => a.sort_order - b.sort_order
+      ),
+      variants: (product.variants || []).filter(
+        (v: Variant) => v.is_active
+      ),
+    })) as ProductWithImages[]
+
+    // 색상 필터
+    if (filters.color) {
+      filteredProducts = filteredProducts.filter((product) =>
+        product.variants?.some((v) => v.color === filters.color)
+      )
+    }
+
+    // 사이즈 필터
+    if (filters.size) {
+      filteredProducts = filteredProducts.filter((product) =>
+        product.variants?.some((v) => v.size === filters.size)
+      )
+    }
+
+    // 가격 정렬 (클라이언트 사이드)
+    if (filters.sortBy === 'price-asc' || filters.sortBy === 'price-desc') {
+      filteredProducts.sort((a, b) => {
+        const aPrices = a.variants?.map((v) => v.price) || []
+        const bPrices = b.variants?.map((v) => v.price) || []
+        const aMin = aPrices.length > 0 ? Math.min(...aPrices) : 0
+        const bMin = bPrices.length > 0 ? Math.min(...bPrices) : 0
+
+        if (filters.sortBy === 'price-asc') {
+          return aMin - bMin
+        } else {
+          return bMin - aMin
+        }
+      })
+    }
+
+    console.log('✅ 필터링된 제품 처리 완료:', {
+      총개수: filteredProducts.length,
+      필터: filters,
+    })
+
+    return filteredProducts
+  } catch (err) {
+    console.error('❌ 제품 조회 오류:', err)
+    throw err
+  }
+}
+
