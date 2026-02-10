@@ -48,10 +48,28 @@ export default async function AdminOrdersPage() {
     )
   }
 
+  const normalizedOrders = (orders ?? []).map((o: any) => ({
+    ...o,
+    order_items: (o.order_items ?? []).map((oi: any) => {
+      const variant = Array.isArray(oi.variant) ? oi.variant[0] : oi.variant;
+      const product = variant && Array.isArray(variant.product) ? variant.product[0] : variant?.product;
+
+      return {
+        ...oi,
+        variant: variant
+          ? {
+              ...variant,
+              product: product ?? null,
+            }
+          : null,
+      };
+    }),
+  }));
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-6">ORDERS</h1>
-      <OrdersList orders={orders || []} />
+      <OrdersList orders={normalizedOrders} />
     </div>
   )
 }
