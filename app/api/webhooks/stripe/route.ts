@@ -168,16 +168,41 @@ export async function POST(req: NextRequest) {
         sessionId: session.id,
       })
 
-      // 5. 주문 생성
+      // 5. 주문 생성 (+ 배송/고객 정보)
       console.log(`🔄 [WEBHOOK] Creating order`, { requestId, eventId: event.id })
+      
+      // Stripe에서 배송/고객 정보 추출
+      const shippingAddress = session.shipping_details?.address ? {
+        line1: session.shipping_details.address.line1,
+        line2: session.shipping_details.address.line2,
+        city: session.shipping_details.address.city,
+        state: session.shipping_details.address.state,
+        postal_code: session.shipping_details.address.postal_code,
+        country: session.shipping_details.address.country,
+      } : null
+      
+      const customerName = session.customer_details?.name || session.shipping_details?.name || null
+      const customerEmail = session.customer_details?.email || null
+      
+      console.log(`📮 [WEBHOOK] Shipping/Customer info`, {
+        requestId,
+        eventId: event.id,
+        hasShipping: !!shippingAddress,
+        customerEmail: customerEmail || 'none',
+        customerName: customerName || 'none',
+      })
       
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
           user_id: userId === 'guest' ? null : userId,
-          status: 'paid',
+          payment_status: 'paid',
+          fulfillment_status: 'unfulfilled',
           total,
           stripe_session_id: session.id,
+          shipping_address: shippingAddress,
+          customer_email: customerEmail,
+          customer_name: customerName,
         })
         .select()
         .single()
@@ -307,7 +332,10 @@ export async function POST(req: NextRequest) {
         
         await supabase
           .from('orders')
-          .update({ status: 'pending' })
+          .update({ 
+            payment_status: 'pending',
+            fulfillment_status: 'canceled'
+          })
           .eq('id', order.id)
 
         // 관리자에게 알림 (추후 이메일/슬랙 연동)

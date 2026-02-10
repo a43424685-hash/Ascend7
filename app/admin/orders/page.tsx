@@ -1,9 +1,17 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/shared/lib/supabase/server'
-import { OrdersList } from '@/widgets/admin/orders-list'
+import { checkAdminAuth } from '@/shared/lib/auth/admin'
+import { OrdersListEnhanced } from '@/widgets/admin/orders-list-enhanced'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminOrdersPage() {
+  // 관리자 권한 확인
+  const { isAdmin } = await checkAdminAuth()
+  if (!isAdmin) {
+    redirect('/')
+  }
+
   const supabase = await createClient()
 
   // 모든 주문 조회 (관리자는 모든 주문 볼 수 있음)
@@ -12,10 +20,17 @@ export default async function AdminOrdersPage() {
     .select(`
       id,
       user_id,
-      status,
+      payment_status,
+      fulfillment_status,
       total,
       stripe_session_id,
+      tracking_number,
+      carrier,
+      customer_email,
+      customer_name,
+      shipping_address,
       created_at,
+      updated_at,
       order_items (
         id,
         quantity,
@@ -68,8 +83,11 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">ORDERS</h1>
-      <OrdersList orders={normalizedOrders} />
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">📦 ORDERS</h1>
+        <p className="text-gray-600">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
+      </div>
+      <OrdersListEnhanced orders={normalizedOrders} />
     </div>
   )
 }
