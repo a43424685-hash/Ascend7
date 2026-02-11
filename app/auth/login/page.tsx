@@ -54,8 +54,11 @@ export default function LoginPage() {
 
       console.log('✅ [CLIENT] Login successful, redirecting to:', data.redirectTo)
       
-      // 로그인 성공 - hard refresh로 서버에서 쿠키 인식하도록
-      window.location.href = data.redirectTo || '/account'
+      // ⚠️ 중요: 쿠키가 브라우저에 저장될 시간을 주기 위해 짧은 지연 후 리다이렉트
+      // 즉시 리다이렉트하면 쿠키가 저장되기 전에 요청이 나가서 미들웨어에서 세션을 인식 못함
+      setTimeout(() => {
+        window.location.href = data.redirectTo || '/account'
+      }, 100) // 100ms 지연
     } catch (err: any) {
       console.error('❌ [CLIENT] Login error:', err)
       setError(err.message)
