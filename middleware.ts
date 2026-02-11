@@ -47,7 +47,23 @@ export async function middleware(request: NextRequest) {
   // 3. 세션 갱신 (getUser 호출 시 자동으로 쿠키 갱신)
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
+
+  // 디버그 로그 (프로덕션에서 세션 문제 추적용)
+  if (process.env.NODE_ENV === 'production') {
+    const cookieNames = request.cookies.getAll().map(c => c.name)
+    console.log('🔍 [MIDDLEWARE DEBUG]', {
+      pathname,
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      authError: authError?.message,
+      cookiesCount: cookieNames.length,
+      cookieNames: cookieNames,
+      timestamp: new Date().toISOString(),
+    })
+  }
 
   // 4. /admin/* 경로 보호 (admin role 필요)
   if (pathname.startsWith('/admin')) {
@@ -91,12 +107,22 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/account')) {
     // 인증되지 않은 경우 → 로그인 페이지
     if (!user) {
-      const redirectUrl = new URL('/auth/login', request.url)
-      redirectUrl.searchParams.set('redirect', pathname)
+      const cookieNames = request.cookies.getAll().map(c => c.name)
+      const supabaseCookies = cookieNames.filter(name => 
+        name.startsWith('sb-') || name.includes('supabase')
+      )
+      
       console.log('🔒 [MIDDLEWARE] Unauthenticated user accessing account', {
         pathname,
-        redirectTo: redirectUrl.toString(),
+        authError: authError?.message,
+        totalCookies: cookieNames.length,
+        supabaseCookies: supabaseCookies.length > 0 ? supabaseCookies : 'NONE',
+        allCookieNames: cookieNames,
+        redirectTo: '/auth/login',
       })
+      
+      const redirectUrl = new URL('/auth/login', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
 
