@@ -18,7 +18,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
   }
 
-  let redirectTo = '/account'
+  let redirectTo = '/'
 
   try {
     const supabase = await createClient()
@@ -49,14 +49,14 @@ export async function loginAction(prevState: any, formData: FormData) {
       email: data.user.email,
     })
 
-    // profiles에서 role 확인
+    // profiles에서 role 확인 (admin만 관리자 페이지로)
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', data.user.id)
       .single()
 
-    redirectTo = profile?.role === 'admin' ? '/admin/orders' : '/account'
+    redirectTo = profile?.role === 'admin' ? '/admin/orders' : '/'
 
     console.log('🔄 [LOGIN ACTION] Redirecting to:', redirectTo)
 
