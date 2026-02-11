@@ -69,15 +69,14 @@ export default function LoginPage() {
           .eq('id', data.user.id)
           .single()
 
-        // role에 따라 리다이렉트
+        // role에 따라 리다이렉트 (hard refresh로 서버 컴포넌트가 세션을 인식하도록)
         if (profile?.role === 'admin') {
           console.log('👑 Admin login, redirecting to /admin/orders')
-          router.push('/admin/orders')
+          window.location.href = '/admin/orders'
         } else {
           console.log('👤 Regular user login, redirecting to /')
-          router.push('/')
+          window.location.href = '/'
         }
-        router.refresh()
       }
     } catch (err: any) {
       console.error('Auth error:', err)

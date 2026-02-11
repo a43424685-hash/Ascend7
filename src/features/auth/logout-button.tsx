@@ -23,9 +23,8 @@ export function LogoutButton() {
         return
       }
 
-      // 로그아웃 성공 - 홈으로 리다이렉트
-      router.push('/')
-      router.refresh()
+      // 로그아웃 성공 - 홈으로 리다이렉트 (hard refresh로 서버 컴포넌트가 세션 제거를 인식)
+      window.location.href = '/'
     } catch (err) {
       console.error('Logout error:', err)
       alert('로그아웃 실패')
