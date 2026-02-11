@@ -19,6 +19,45 @@ export function createClient() {
     )
   }
 
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  return createBrowserClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      get(name: string) {
+        // 브라우저의 document.cookie에서 쿠키 읽기
+        const value = `; ${document.cookie}`
+        const parts = value.split(`; ${name}=`)
+        if (parts.length === 2) {
+          return parts.pop()?.split(';').shift()
+        }
+      },
+      set(name: string, value: string, options: any) {
+        // 브라우저의 document.cookie에 쿠키 쓰기
+        let cookieString = `${name}=${value}`
+        
+        if (options?.maxAge) {
+          cookieString += `; max-age=${options.maxAge}`
+        }
+        if (options?.path) {
+          cookieString += `; path=${options.path}`
+        } else {
+          cookieString += `; path=/`
+        }
+        if (options?.domain) {
+          cookieString += `; domain=${options.domain}`
+        }
+        if (options?.sameSite) {
+          cookieString += `; samesite=${options.sameSite}`
+        }
+        if (options?.secure) {
+          cookieString += `; secure`
+        }
+        
+        document.cookie = cookieString
+      },
+      remove(name: string, options: any) {
+        // 쿠키 삭제 (maxAge=0 설정)
+        this.set(name, '', { ...options, maxAge: 0 })
+      },
+    },
+  })
 }
 

@@ -52,15 +52,22 @@ export async function middleware(request: NextRequest) {
 
   // 디버그 로그 (프로덕션에서 세션 문제 추적용)
   if (process.env.NODE_ENV === 'production') {
-    const cookieNames = request.cookies.getAll().map(c => c.name)
+    const allCookies = request.cookies.getAll()
+    const cookieNames = allCookies.map(c => c.name)
+    const supabaseCookies = allCookies.filter(c => 
+      c.name.startsWith('sb-') || c.name.includes('supabase')
+    )
+    
     console.log('🔍 [MIDDLEWARE DEBUG]', {
       pathname,
       hasUser: !!user,
-      userId: user?.id,
+      userId: user?.id?.substring(0, 8) + '...',
       userEmail: user?.email,
       authError: authError?.message,
       cookiesCount: cookieNames.length,
-      cookieNames: cookieNames,
+      supabaseCookiesCount: supabaseCookies.length,
+      allCookieNames: cookieNames.length > 0 ? cookieNames : 'NO_COOKIES',
+      supabaseCookieNames: supabaseCookies.map(c => c.name),
       timestamp: new Date().toISOString(),
     })
   }

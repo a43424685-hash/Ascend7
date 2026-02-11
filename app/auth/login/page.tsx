@@ -62,7 +62,24 @@ export default function LoginPage() {
           throw new Error('로그인 실패: 사용자 정보를 찾을 수 없습니다.')
         }
 
-        // 로그인 성공 - profiles에서 role 확인
+        // 로그인 성공 - 세션 확인
+        console.log('✅ Login successful', {
+          userId: data.user.id,
+          email: data.user.email,
+          hasSession: !!data.session,
+          sessionToken: data.session?.access_token?.substring(0, 20) + '...',
+        })
+
+        // 쿠키 확인
+        const cookies = document.cookie.split(';').map(c => c.trim().split('=')[0])
+        const supabaseCookies = cookies.filter(name => name.startsWith('sb-'))
+        console.log('🍪 Cookies after login:', {
+          totalCookies: cookies.length,
+          supabaseCookies: supabaseCookies.length,
+          cookieNames: supabaseCookies,
+        })
+
+        // profiles에서 role 확인
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -70,13 +87,13 @@ export default function LoginPage() {
           .single()
 
         // role에 따라 리다이렉트 (hard refresh로 서버 컴포넌트가 세션을 인식하도록)
-        if (profile?.role === 'admin') {
-          console.log('👑 Admin login, redirecting to /admin/orders')
-          window.location.href = '/admin/orders'
-        } else {
-          console.log('👤 Regular user login, redirecting to /')
-          window.location.href = '/'
-        }
+        const redirectUrl = profile?.role === 'admin' ? '/admin/orders' : '/'
+        console.log(`🔄 Redirecting to ${redirectUrl}`)
+        
+        // 약간의 딜레이를 주어 쿠키가 완전히 설정되도록 함
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        window.location.href = redirectUrl
       }
     } catch (err: any) {
       console.error('Auth error:', err)
