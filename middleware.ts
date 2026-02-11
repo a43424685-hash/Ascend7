@@ -13,6 +13,13 @@ import { updateSession } from '@/shared/lib/supabase/middleware'
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // 0. /auth/* 및 /api/auth/* 경로는 무조건 bypass (로그인/회원가입 페이지 및 API)
+  // POST /api/auth/login Route Handler는 자체적으로 쿠키를 설정하므로 여기서 건드리지 않음
+  if (pathname.startsWith('/auth') || pathname.startsWith('/api/auth')) {
+    console.log('🚪 [MIDDLEWARE] Bypassing auth route:', pathname)
+    return NextResponse.next()
+  }
+
   // 1. Supabase 공식 패턴: updateSession으로 세션 갱신 및 쿠키 동기화
   const { supabaseResponse, supabase, user, error: authError } = await updateSession(request)
 
