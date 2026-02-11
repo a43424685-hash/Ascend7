@@ -33,7 +33,6 @@ export async function updateOrderFulfillment(
       .from('orders')
       .update({
         fulfillment_status: fulfillmentStatus,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
@@ -43,6 +42,7 @@ export async function updateOrderFulfillment(
 
     revalidatePath('/admin/orders')
     revalidatePath(`/admin/orders/${orderId}`)
+    revalidatePath('/account')
 
     return { success: true }
   } catch (error: any) {
@@ -66,7 +66,6 @@ export async function updateOrderPaymentStatus(
       .from('orders')
       .update({
         payment_status: paymentStatus,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
@@ -76,6 +75,7 @@ export async function updateOrderPaymentStatus(
 
     revalidatePath('/admin/orders')
     revalidatePath(`/admin/orders/${orderId}`)
+    revalidatePath('/account')
 
     return { success: true }
   } catch (error: any) {
@@ -102,7 +102,6 @@ export async function updateOrderTracking(
         tracking_number: trackingNumber,
         carrier: carrier || null,
         fulfillment_status: 'shipped',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
@@ -112,6 +111,7 @@ export async function updateOrderTracking(
 
     revalidatePath('/admin/orders')
     revalidatePath(`/admin/orders/${orderId}`)
+    revalidatePath('/account')
 
     return { success: true }
   } catch (error: any) {
@@ -151,7 +151,6 @@ export async function cancelOrder(orderId: string) {
       .from('orders')
       .update({
         fulfillment_status: 'canceled',
-        updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
@@ -161,6 +160,7 @@ export async function cancelOrder(orderId: string) {
 
     revalidatePath('/admin/orders')
     revalidatePath(`/admin/orders/${orderId}`)
+    revalidatePath('/account')
 
     return { success: true }
   } catch (error: any) {

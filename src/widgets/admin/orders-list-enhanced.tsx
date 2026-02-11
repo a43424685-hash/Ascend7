@@ -35,7 +35,7 @@ const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
 
 const FULFILLMENT_STATUS_LABELS: Record<FulfillmentStatus, string> = {
   unfulfilled: '미처리',
-  processing: '처리 중',
+  processing: '배송준비중',
   shipped: '배송 중',
   delivered: '배송 완료',
   canceled: '취소됨',
@@ -62,7 +62,6 @@ interface Order {
   customer_name: string | null
   shipping_address: any | null
   created_at: string
-  updated_at: string
   order_items: Array<{
     id: string
     quantity: number
@@ -390,7 +389,6 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     {/* 메타 정보 */}
                     <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-500">
                       <p>생성: {new Date(order.created_at).toLocaleString('ko-KR')}</p>
-                      <p>수정: {new Date(order.updated_at).toLocaleString('ko-KR')}</p>
                       {order.stripe_session_id && (
                         <p className="font-mono">Stripe: {order.stripe_session_id}</p>
                       )}
