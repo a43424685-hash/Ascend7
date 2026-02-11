@@ -19,6 +19,9 @@ export async function loginAction(prevState: any, formData: FormData) {
     }
   }
 
+  // try 블록에서는 실제 에러만 처리하고, redirect는 밖에서 실행
+  let redirectPath: string | null = null
+
   try {
     const supabase = await createClient()
 
@@ -56,19 +59,21 @@ export async function loginAction(prevState: any, formData: FormData) {
       .eq('id', data.user.id)
       .single()
 
-    // role에 따라 리다이렉트
-    if (profile?.role === 'admin') {
-      redirect('/admin/orders')
-    } else {
-      redirect('/account')
-    }
+    // role에 따라 리다이렉트 경로 설정 (try 밖에서 실행)
+    redirectPath = profile?.role === 'admin' ? '/admin/orders' : '/account'
   } catch (error: any) {
+    // 실제 에러만 처리
     console.error('❌ [LOGIN ACTION] Unexpected error', {
       error: error.message,
     })
     return {
       error: error.message || '로그인 중 오류가 발생했습니다.',
     }
+  }
+
+  // redirect는 try 밖에서 실행 (NEXT_REDIRECT 에러가 catch에 잡히지 않음)
+  if (redirectPath) {
+    redirect(redirectPath)
   }
 }
 
