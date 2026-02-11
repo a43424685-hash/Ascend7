@@ -48,7 +48,10 @@ export async function POST(request: NextRequest) {
       {
         cookies: {
           getAll() {
-            return request.cookies.getAll()
+            // ⚠️ 중요: 빈 배열 반환하여 Supabase가 항상 새 세션 생성하도록 강제
+            // 기존 쿠키가 있으면 Supabase가 새 쿠키를 생성하지 않는 문제 해결
+            console.log('🍪 [LOGIN ROUTE] getAll() called - returning empty array to force new session')
+            return []
           },
           setAll(cookiesToSet: CookieOptionsWithName[]) {
             // ⚠️ 이 함수가 호출되는지 확인하는 로그
