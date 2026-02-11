@@ -1,9 +1,9 @@
-import { createServerClient, type CookieOptionsWithName } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
  * Supabase SSR 공식 패턴: updateSession
- * 
+ *
  * Middleware에서 세션을 갱신하고 쿠키를 브라우저에 전달하는 함수
  * 모든 요청에 대해 세션을 자동으로 갱신하여 만료를 방지합니다
  */
@@ -20,17 +20,17 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet: CookieOptionsWithName[]) {
+        setAll(cookiesToSet) {
           // 1. request 쿠키 업데이트 (middleware 내부용)
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value)
           })
-          
+
           // 2. response 재생성 (업데이트된 request 반영)
           supabaseResponse = NextResponse.next({
             request,
           })
-          
+
           // 3. response 쿠키 설정 (브라우저로 전달)
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options)

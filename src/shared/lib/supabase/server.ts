@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { CookieOptionsWithName } from "@supabase/ssr";
 
 export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -66,20 +65,20 @@ export async function createClient() {
       getAll() {
         return cookieStore.getAll()
       },
-      setAll(cookiesToSet: CookieOptionsWithName[]) {
+      setAll(cookiesToSet) {
         // Server Action에서 호출 시 쿠키가 Response 헤더에 설정되도록
         // try/catch 제거 - 에러 발생 시 상위로 전파
         if (process.env.NODE_ENV === 'production') {
           console.log('🍪 [SERVER] setAll called, setting cookies:', {
             count: cookiesToSet.length,
-            names: cookiesToSet.map(c => c.name),
+            names: cookiesToSet.map((c: { name: string }) => c.name),
           })
         }
-        
-        cookiesToSet.forEach(({ name, value, options }) => {
+
+        cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options: any }) => {
           cookieStore.set(name, value, options)
         })
-        
+
         if (process.env.NODE_ENV === 'production') {
           console.log('✅ [SERVER] Cookies set successfully')
         }
