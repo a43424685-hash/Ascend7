@@ -2,101 +2,33 @@
 
 /**
  * 로그인 페이지
- * - 이메일/비밀번호 로그인
+ * - 이메일/비밀번호 로그인 (Server Action)
  * - 카카오 OAuth 로그인
- * - 회원가입
+ * - 회원가입 (Server Action)
  */
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useFormState } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/client'
 import { Button } from '@/shared/ui/button'
+import { loginAction, signUpAction } from './actions'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [isKakaoLoading, setIsKakaoLoading] = useState(false)
+  
+  // Server Action 상태 관리
+  const [loginState, loginFormAction] = useFormState(loginAction, undefined)
+  const [signUpState, signUpFormAction] = useFormState(signUpAction, undefined)
+  
+  // 현재 모드에 따른 상태 선택
+  const currentState = isSignUp ? signUpState : loginState
+  const currentAction = isSignUp ? signUpFormAction : loginFormAction
 
-  // 이메일/비밀번호 로그인
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      const supabase = createClient()
-
-      if (isSignUp) {
-        // 회원가입
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        })
-
-        if (error) throw error
-
-        if (data.user?.identities?.length === 0) {
-          setError('이미 가입된 이메일입니다.')
-        } else {
-          setMessage('✅ 회원가입 완료! 이메일을 확인해주세요.')
-        }
-      } else {
-        // 로그인
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) throw error
-
-        if (!data.user) {
-          throw new Error('로그인 실패: 사용자 정보를 찾을 수 없습니다.')
-        }
-
-        // 로그인 성공 - 세션 확인
-        console.log('✅ Login successful', {
-          userId: data.user.id,
-          email: data.user.email,
-          hasSession: !!data.session,
-        })
-
-        // profiles에서 role 확인
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single()
-
-        // 핵심: /auth/callback으로 보내서 서버에서 세션을 확정
-        // 서버 라우트에서 getUser()를 호출하여 서버 쿠키에 세션을 저장
-        const targetUrl = profile?.role === 'admin' ? '/admin/orders' : '/account'
-        const callbackUrl = `/auth/callback?redirect=${encodeURIComponent(targetUrl)}`
-        
-        console.log(`🔄 Redirecting to ${callbackUrl} (server session establishment)`)
-        
-        window.location.href = callbackUrl
-      }
-    } catch (err: any) {
-      console.error('Auth error:', err)
-      setError(err.message || '로그인 실패')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 카카오 OAuth 로그인
+  // 카카오 OAuth 로그인 (클라이언트 전용)
   const handleKakaoLogin = async () => {
-    setIsLoading(true)
-    setError(null)
+    setIsKakaoLoading(true)
 
     try {
       const supabase = createClient()
@@ -111,10 +43,9 @@ export default function LoginPage() {
       if (error) throw error
     } catch (err: any) {
       console.error('Kakao login error:', err)
-      setError(err.message || '카카오 로그인 실패')
-      setIsLoading(false)
+      setIsKakaoLoading(false)
     }
-    // 리다이렉트되므로 setIsLoading(false) 불필요
+    // OAuth 리다이렉트되므로 setIsKakaoLoading(false) 불필요
   }
 
   return (
@@ -134,19 +65,19 @@ export default function LoginPage() {
         </div>
 
         {/* 에러/성공 메시지 */}
-        {error && (
+        {currentState?.error && (
           <div className="bg-red-50 border-2 border-red-200 p-4 rounded">
-            <p className="text-red-800 text-sm font-semibold">{error}</p>
+            <p className="text-red-800 text-sm font-semibold">{currentState.error}</p>
           </div>
         )}
-        {message && (
+        {currentState && 'success' in currentState && currentState.success && (
           <div className="bg-green-50 border-2 border-green-200 p-4 rounded">
-            <p className="text-green-800 text-sm font-semibold">{message}</p>
+            <p className="text-green-800 text-sm font-semibold">✅ {currentState.message}</p>
           </div>
         )}
 
-        {/* 이메일/비밀번호 폼 */}
-        <form onSubmit={handleEmailLogin} className="mt-8 space-y-6">
+        {/* 이메일/비밀번호 폼 (Server Action) */}
+        <form action={currentAction} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -158,11 +89,8 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 placeholder="your@email.com"
-                disabled={isLoading}
               />
             </div>
             <div>
@@ -185,11 +113,8 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
                 placeholder="••••••••"
-                disabled={isLoading}
                 minLength={6}
               />
               {isSignUp && (
@@ -203,9 +128,8 @@ export default function LoginPage() {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={isLoading}
             >
-              {isLoading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
+              {isSignUp ? '회원가입' : '로그인'}
             </Button>
           </div>
         </form>
@@ -223,8 +147,9 @@ export default function LoginPage() {
         {/* 카카오 로그인 */}
         <div>
           <button
+            type="button"
             onClick={handleKakaoLogin}
-            disabled={isLoading}
+            disabled={isKakaoLoading}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 bg-[#FEE500] hover:bg-[#FFEB3B] text-gray-900 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg
@@ -241,13 +166,9 @@ export default function LoginPage() {
         {/* 회원가입/로그인 전환 */}
         <div className="text-center">
           <button
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setError(null)
-              setMessage(null)
-            }}
+            type="button"
+            onClick={() => setIsSignUp(!isSignUp)}
             className="text-sm text-gray-600 hover:text-black font-semibold"
-            disabled={isLoading}
           >
             {isSignUp ? '이미 계정이 있으신가요? 로그인' : '계정이 없으신가요? 회원가입'}
           </button>
