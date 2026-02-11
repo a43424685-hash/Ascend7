@@ -160,9 +160,19 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                비밀번호
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                  비밀번호
+                </label>
+                {!isSignUp && (
+                  <Link
+                    href="/auth/forgot"
+                    className="text-xs text-gray-600 hover:text-black font-semibold"
+                  >
+                    비밀번호를 잊으셨나요?
+                  </Link>
+                )}
+              </div>
               <input
                 id="password"
                 name="password"
