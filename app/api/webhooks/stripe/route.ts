@@ -4,13 +4,50 @@ import { createAdminClient } from '@/shared/lib/supabase/admin'
 import Stripe from 'stripe'
 
 /**
- * Stripe 웹훅 핸들러 (프로덕션 안정화 버전)
- * 
+ * Stripe 웹훅 핸들러 (프로덕션 안정화 버전 v2)
+ *
  * 핵심 안전장치:
- * 1. 멱등성: 동일 이벤트 중복 처리 방지
+ * 1. 멱등성: stripe_session_id 기준 업서트 (중복 실행 안전)
  * 2. 원자적 재고 차감: Race condition 방지
- * 3. 에러 처리: 재고 부족 시 주문 상태 업데이트
+ * 3. 실패 큐: 에러 발생 시 자동 재처리 대기열에 저장
+ * 4. 지수 백오프: 재시도 간격 점진적 증가
  */
+
+// 실패 큐에 저장하는 헬퍼 함수
+async function saveToFailureQueue(
+  supabase: ReturnType<typeof createAdminClient>,
+  eventId: string,
+  eventType: string,
+  payload: any,
+  errorMessage: string,
+  attempts: number = 0
+) {
+  // 지수 백오프: 1분, 2분, 4분, 8분, 16분
+  const delayMinutes = Math.pow(2, attempts)
+  const nextRetryAt = new Date(Date.now() + delayMinutes * 60 * 1000)
+
+  await supabase
+    .from('stripe_webhook_failures')
+    .upsert({
+      event_id: eventId,
+      event_type: eventType,
+      payload: payload,
+      error_message: errorMessage,
+      attempts: attempts + 1,
+      next_retry_at: nextRetryAt.toISOString(),
+      status: attempts + 1 >= 5 ? 'failed' : 'pending',
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'event_id',
+    })
+
+  console.log(`📥 [WEBHOOK] Saved to failure queue`, {
+    eventId,
+    attempts: attempts + 1,
+    nextRetryAt: nextRetryAt.toISOString(),
+    status: attempts + 1 >= 5 ? 'failed' : 'pending'
+  })
+}
 
 // ⚠️ 중요: Edge Runtime은 Stripe 서명 검증이 불안정할 수 있음
 export const runtime = 'nodejs'
@@ -168,9 +205,9 @@ export async function POST(req: NextRequest) {
         sessionId: session.id,
       })
 
-      // 5. 주문 생성 (+ 배송/고객 정보)
-      console.log(`🔄 [WEBHOOK] Creating order`, { requestId, eventId: event.id })
-      
+      // 5. 주문 생성 (멱등 업서트 - stripe_session_id 기준)
+      console.log(`🔄 [WEBHOOK] Creating/updating order (upsert)`, { requestId, eventId: event.id })
+
       // Stripe에서 배송/고객 정보 추출
       const shippingAddress = session.shipping_details?.address ? {
         line1: session.shipping_details.address.line1,
@@ -180,10 +217,10 @@ export async function POST(req: NextRequest) {
         postal_code: session.shipping_details.address.postal_code,
         country: session.shipping_details.address.country,
       } : null
-      
+
       const customerName = session.customer_details?.name || session.shipping_details?.name || null
       const customerEmail = session.customer_details?.email || null
-      
+
       console.log(`📮 [WEBHOOK] Shipping/Customer info`, {
         requestId,
         eventId: event.id,
@@ -191,72 +228,124 @@ export async function POST(req: NextRequest) {
         customerEmail: customerEmail || 'none',
         customerName: customerName || 'none',
       })
-      
-      const { data: order, error: orderError } = await supabase
+
+      // 먼저 기존 주문 확인 (stripe_session_id로)
+      const { data: existingOrder } = await supabase
         .from('orders')
-        .insert({
-          user_id: userId === 'guest' ? null : userId,
-          payment_status: 'paid',
-          fulfillment_status: 'unfulfilled',
-          total,
-          stripe_session_id: session.id,
-          shipping_address: shippingAddress,
-          customer_email: customerEmail,
-          customer_name: customerName,
-        })
-        .select()
+        .select('id, payment_status')
+        .eq('stripe_session_id', session.id)
         .single()
 
-      if (orderError || !order) {
-        console.error(`❌ [WEBHOOK] Order creation failed`, { 
-          requestId, 
+      let order: any
+
+      if (existingOrder) {
+        // 이미 주문 존재 - 업데이트만 (멱등성)
+        console.log(`♻️ [WEBHOOK] Order already exists, updating`, {
+          requestId,
           eventId: event.id,
-          error: orderError?.message,
-          code: orderError?.code
+          orderId: existingOrder.id
         })
-        throw new Error(`Failed to create order: ${orderError?.message}`)
+
+        const { data: updatedOrder, error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            shipping_address: shippingAddress,
+            customer_email: customerEmail,
+            customer_name: customerName,
+          })
+          .eq('id', existingOrder.id)
+          .select()
+          .single()
+
+        if (updateError) {
+          throw new Error(`Failed to update order: ${updateError.message}`)
+        }
+        order = updatedOrder
+      } else {
+        // 새 주문 생성
+        const { data: newOrder, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: userId === 'guest' ? null : userId,
+            payment_status: 'paid',
+            fulfillment_status: 'unfulfilled',
+            total,
+            stripe_session_id: session.id,
+            shipping_address: shippingAddress,
+            customer_email: customerEmail,
+            customer_name: customerName,
+          })
+          .select()
+          .single()
+
+        if (orderError || !newOrder) {
+          console.error(`❌ [WEBHOOK] Order creation failed`, {
+            requestId,
+            eventId: event.id,
+            error: orderError?.message,
+            code: orderError?.code
+          })
+          throw new Error(`Failed to create order: ${orderError?.message}`)
+        }
+        order = newOrder
       }
 
-      console.log(`✅ [WEBHOOK] Order created`, { 
-        requestId, 
-        eventId: event.id,
-        orderId: order.id 
-      })
-
-      // 6. 주문 아이템 생성
-      console.log(`🔄 [WEBHOOK] Creating order items`, { 
-        requestId, 
+      console.log(`✅ [WEBHOOK] Order ready`, {
+        requestId,
         eventId: event.id,
         orderId: order.id,
-        itemCount: cartItems.length
+        wasExisting: !!existingOrder
       })
 
-      const orderItems = cartItems.map((item) => ({
-        order_id: order.id,
-        variant_id: item.variant_id,
-        quantity: item.quantity,
-        price: item.price,
-      }))
-
-      const { error: itemsError } = await supabase
+      // 6. 주문 아이템 생성 (멱등 - 이미 있으면 스킵)
+      const { data: existingItems } = await supabase
         .from('order_items')
-        .insert(orderItems)
+        .select('id')
+        .eq('order_id', order.id)
 
-      if (itemsError) {
-        console.error(`❌ [WEBHOOK] Order items creation failed`, { 
-          requestId, 
+      if (existingItems && existingItems.length > 0) {
+        console.log(`♻️ [WEBHOOK] Order items already exist, skipping`, {
+          requestId,
           eventId: event.id,
           orderId: order.id,
-          error: itemsError.message
+          existingCount: existingItems.length
         })
-        throw new Error(`Failed to create order items: ${itemsError.message}`)
-      }
+      } else {
+        console.log(`🔄 [WEBHOOK] Creating order items`, {
+          requestId,
+          eventId: event.id,
+          orderId: order.id,
+          itemCount: cartItems.length
+        })
 
-      console.log(`✅ [WEBHOOK] Order items created`, { 
-        requestId, 
-        eventId: event.id,
-        orderId: order.id
-      })
+        const orderItems = cartItems.map((item) => ({
+          order_id: order.id,
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+          price: item.price,
+        }))
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems)
+
+        if (itemsError) {
+          console.error(`❌ [WEBHOOK] Order items creation failed`, {
+            requestId,
+            eventId: event.id,
+            orderId: order.id,
+            error: itemsError.message
+          })
+          throw new Error(`Failed to create order items: ${itemsError.message}`)
+        }
+
+        console.log(`✅ [WEBHOOK] Order items created`, {
+          requestId,
+          eventId: event.id,
+          orderId: order.id
+        })
+      }
 
       // 7. 원자적 재고 차감 (동시성 안전)
       console.log(`📦 [WEBHOOK] Starting stock decrement`, { 
@@ -347,8 +436,14 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // 9. 처리 완료 이벤트 기록 (멱등성 보장)
-      console.log(`💾 [WEBHOOK] Recording processed event`, { 
+      // 9. 실패 큐에서 제거 (성공했으므로)
+      await supabase
+        .from('stripe_webhook_failures')
+        .update({ status: 'succeeded', updated_at: new Date().toISOString() })
+        .eq('event_id', event.id)
+
+      // 10. 처리 완료 이벤트 기록 (멱등성 보장)
+      console.log(`💾 [WEBHOOK] Recording processed event`, {
         requestId,
         eventId: event.id,
         orderId: order.id
@@ -382,22 +477,49 @@ export async function POST(req: NextRequest) {
         requestId
       })
     } catch (error: any) {
-      console.error(`❌ [WEBHOOK] Processing failed`, { 
+      console.error(`❌ [WEBHOOK] Processing failed`, {
         requestId,
         eventId: event.id,
         error: error.message,
         stack: error.stack
       })
+
+      // 실패 큐에 저장 (자동 재처리 대기)
+      try {
+        const supabaseForQueue = createAdminClient()
+
+        // 기존 실패 기록 확인 (attempts 유지)
+        const { data: existingFailure } = await supabaseForQueue
+          .from('stripe_webhook_failures')
+          .select('attempts')
+          .eq('event_id', event.id)
+          .single()
+
+        await saveToFailureQueue(
+          supabaseForQueue,
+          event.id,
+          event.type,
+          { session: event.data.object, metadata: (event.data.object as any).metadata },
+          error.message,
+          existingFailure?.attempts || 0
+        )
+      } catch (queueError: any) {
+        console.error(`❌ [WEBHOOK] Failed to save to queue`, {
+          requestId,
+          eventId: event.id,
+          queueError: queueError.message
+        })
+      }
+
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      
-      return NextResponse.json(
-        { 
-          error: 'Webhook processing failed', 
-          message: error.message,
-          requestId
-        },
-        { status: 500 }
-      )
+
+      // Stripe에 200 반환 (재시도 방지 - 우리가 직접 재처리)
+      return NextResponse.json({
+        received: true,
+        queued: true,
+        error: error.message,
+        requestId
+      })
     }
 }
 

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/shared/lib/supabase/server'
 import { checkAdminAuth } from '@/shared/lib/auth/admin'
 import { OrdersListEnhanced } from '@/widgets/admin/orders-list-enhanced'
+import { WebhookFailureAlert } from '@/widgets/admin/webhook-failure-alert'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,6 +87,7 @@ export default async function AdminOrdersPage() {
         <h1 className="text-3xl font-bold mb-2">📦 ORDERS</h1>
         <p className="text-gray-600">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
       </div>
+      <WebhookFailureAlert />
       <OrdersListEnhanced orders={normalizedOrders} />
     </div>
   )
