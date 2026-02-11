@@ -54,11 +54,23 @@ export default function LoginPage() {
 
       console.log('✅ [CLIENT] Login successful, redirecting to:', data.redirectTo)
       
-      // ⚠️ 중요: 쿠키가 브라우저에 저장될 시간을 주기 위해 짧은 지연 후 리다이렉트
-      // 즉시 리다이렉트하면 쿠키가 저장되기 전에 요청이 나가서 미들웨어에서 세션을 인식 못함
-      setTimeout(() => {
+      // ⚠️ 핵심: 쿠키가 완전히 저장된 후 클라이언트에서 세션 확인 후 이동
+      // 이렇게 하면 미들웨어에서 확실히 세션을 인식할 수 있음
+      await new Promise(resolve => setTimeout(resolve, 300)) // 300ms 대기
+      
+      // 클라이언트에서 세션 확인
+      const supabase = createClient()
+      const { data: sessionData } = await supabase.auth.getSession()
+      
+      if (sessionData.session) {
+        console.log('✅ [CLIENT] Session confirmed, redirecting...')
         window.location.href = data.redirectTo || '/account'
-      }, 100) // 100ms 지연
+      } else {
+        console.error('⚠️ [CLIENT] Session not found after login, retrying...')
+        // 세션이 없으면 조금 더 기다린 후 재시도
+        await new Promise(resolve => setTimeout(resolve, 500))
+        window.location.href = data.redirectTo || '/account'
+      }
     } catch (err: any) {
       console.error('❌ [CLIENT] Login error:', err)
       setError(err.message)

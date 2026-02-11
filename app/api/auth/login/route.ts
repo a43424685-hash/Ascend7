@@ -140,10 +140,22 @@ export async function POST(request: NextRequest) {
     )
 
     // ⚠️ 핵심: pending cookies를 response에 설정
+    // SameSite와 Secure 설정을 명시적으로 지정하여 브라우저가 쿠키를 확실히 저장하도록 함
     console.log('🍪 [LOGIN ROUTE] Setting pending cookies to response...')
     Object.entries(cookieStore).forEach(([name, { value, options }]) => {
       console.log(`🍪 [LOGIN ROUTE] Setting cookie: ${name} (${value.length} chars)`)
-      response.cookies.set(name, value, options)
+      
+      // 프로덕션 환경에서는 Secure 필수, sameSite를 lax로 명시
+      const cookieOptions = {
+        ...options,
+        path: options.path || '/',
+        httpOnly: options.httpOnly ?? false,
+        secure: process.env.NODE_ENV === 'production', // 프로덕션에서만 secure
+        sameSite: (options.sameSite as 'lax' | 'strict' | 'none') || 'lax',
+      }
+      
+      response.cookies.set(name, value, cookieOptions)
+      console.log(`✅ [LOGIN ROUTE] Cookie set with options:`, cookieOptions)
     })
 
     // 최종 확인
