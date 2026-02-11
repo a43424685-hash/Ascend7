@@ -40,6 +40,31 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // 디버그: 쿠키 값 확인
+  if (process.env.NODE_ENV === 'production') {
+    const authCookie = request.cookies.get('sb-jxupcbjlznjipostbfiu-auth-token')
+    if (authCookie) {
+      try {
+        const decoded = decodeURIComponent(authCookie.value)
+        const parsed = JSON.parse(decoded)
+        console.log('🍪 [MIDDLEWARE] Auth cookie found and parsed:', {
+          hasAccessToken: !!parsed.access_token,
+          hasRefreshToken: !!parsed.refresh_token,
+          accessTokenPrefix: parsed.access_token?.substring(0, 20) + '...',
+          hasUser: !!parsed.user,
+          userEmail: parsed.user?.email,
+        })
+      } catch (err: any) {
+        console.error('❌ [MIDDLEWARE] Failed to parse auth cookie:', {
+          error: err.message,
+          cookieValue: authCookie.value.substring(0, 100) + '...',
+        })
+      }
+    } else {
+      console.log('⚠️ [MIDDLEWARE] No auth cookie found')
+    }
+  }
+
   // IMPORTANT: getUser()를 호출하여 세션을 갱신하고 쿠키를 업데이트
   // 이 호출이 없으면 setAll이 실행되지 않아 쿠키가 갱신되지 않음
   const {
