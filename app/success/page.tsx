@@ -3,13 +3,13 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useCartStorage } from '@/features/cart/use-cart-storage'
+import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { clearCart } = useCartStorage()
+  const { clearCart } = useCart()
   const [sessionId, setSessionId] = useState<string | null>(null)
 
   useEffect(() => {

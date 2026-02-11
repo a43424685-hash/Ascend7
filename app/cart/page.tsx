@@ -3,15 +3,14 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCartStorage } from '@/features/cart/use-cart-storage'
+import { useCart } from '@/features/cart/cart-context'
 import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
 import type { CartItemWithVariant } from '@/shared/types/cart'
 import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 
 export default function CartPage() {
-  const { cartItems, updateQuantity, removeItem, isLoaded, itemCount } =
-    useCartStorage()
+  const { cartItems, updateQuantity, removeItem, isLoaded } = useCart()
   const [cartItemsWithData, setCartItemsWithData] = useState<
     CartItemWithVariant[]
   >([])

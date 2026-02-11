@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { ProductWithDetails } from '@/shared/types/database'
 import { formatPrice } from '@/shared/lib/utils'
-import { useCartStorage } from '@/features/cart/use-cart-storage'
+import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
 
 interface ProductDetailsProps {
@@ -11,7 +11,7 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product }: ProductDetailsProps) {
-  const { addItem } = useCartStorage()
+  const { addItem } = useCart()
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)

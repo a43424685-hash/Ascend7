@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCartStorage } from '@/features/cart/use-cart-storage'
+import { useCart } from '@/features/cart/cart-context'
 import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
 import { createCheckoutSession } from '@/features/checkout/actions/create-checkout-session'
 import type { CartItemWithVariant } from '@/shared/types/cart'
@@ -11,7 +11,7 @@ import { Button } from '@/shared/ui/button'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cartItems, isLoaded } = useCartStorage()
+  const { cartItems, isLoaded } = useCart()
   const [cartItemsWithData, setCartItemsWithData] = useState<
     CartItemWithVariant[]
   >([])
