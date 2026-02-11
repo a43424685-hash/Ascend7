@@ -30,7 +30,6 @@ export default async function AdminOrdersPage() {
       customer_name,
       shipping_address,
       created_at,
-      updated_at,
       order_items (
         id,
         quantity,

@@ -29,10 +29,17 @@ export type Variant = {
 export type Order = {
   id: string
   user_id: string | null
-  status: string
+  payment_status: string
+  fulfillment_status: string
   total: number
   stripe_session_id: string | null
+  tracking_number: string | null
+  carrier: string | null
+  shipping_address: Record<string, any> | null
+  customer_email: string | null
+  customer_name: string | null
   created_at: string
+  updated_at?: string
 }
 
 export type OrderItem = {

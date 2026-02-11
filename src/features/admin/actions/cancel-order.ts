@@ -25,7 +25,8 @@ export async function cancelOrder(orderId: string, reason: string) {
     .from('orders')
     .select(`
       id,
-      status,
+      payment_status,
+      fulfillment_status,
       order_items (
         variant_id,
         quantity
@@ -39,7 +40,7 @@ export async function cancelOrder(orderId: string, reason: string) {
   }
 
   // 3. 이미 취소/환불된 주문은 처리 불가
-  if (order.status === 'canceled' || order.status === 'refunded') {
+  if (order.fulfillment_status === 'canceled' || order.payment_status === 'refunded') {
     throw new Error('이미 취소되거나 환불된 주문입니다.')
   }
 
@@ -62,7 +63,7 @@ export async function cancelOrder(orderId: string, reason: string) {
   // 5. 주문 상태 변경
   const { error: updateError } = await adminSupabase
     .from('orders')
-    .update({ status: 'canceled' })
+    .update({ fulfillment_status: 'canceled' })
     .eq('id', orderId)
 
   if (updateError) {
@@ -86,8 +87,6 @@ export async function cancelOrder(orderId: string, reason: string) {
   // 7. 캐시 무효화
   revalidatePath('/admin/orders')
   revalidatePath('/account')
-
-  console.log(`✅ Order ${orderId} canceled and stock restored`)
 
   return { success: true }
 }

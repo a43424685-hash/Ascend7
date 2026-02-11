@@ -14,8 +14,6 @@ export interface ProductFilters {
 export async function getProductsWithFilters(
   filters: ProductFilters = {}
 ): Promise<ProductWithImages[]> {
-  console.log('🔍 getProductsWithFilters 호출됨', filters)
-
   try {
     const supabase = await getSupabaseClient()
 
@@ -30,11 +28,7 @@ export async function getProductsWithFilters(
     }
 
     // 정렬
-    if (filters.sortBy === 'newest') {
-      query = query.order('created_at', { ascending: false })
-    } else {
-      query = query.order('created_at', { ascending: false })
-    }
+    query = query.order('created_at', { ascending: false })
 
     const { data, error } = await query
 
@@ -50,11 +44,9 @@ export async function getProductsWithFilters(
     let filteredProducts = data.map((product) => ({
       ...product,
       images: (product.images || []).sort(
-        (a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0) 
+        (a: any, b: any) => (a?.sort_order ?? 0) - (b?.sort_order ?? 0)
       ),
-      variants: (product.variants || []).filter(
-        (v: Variant) => v.is_active
-      ),
+      variants: (product.variants || []).filter((v: Variant) => v.is_active),
     })) as ProductWithImages[]
 
     // 색상 필터
@@ -87,15 +79,8 @@ export async function getProductsWithFilters(
       })
     }
 
-    console.log('✅ 필터링된 제품 처리 완료:', {
-      총개수: filteredProducts.length,
-      필터: filters,
-    })
-
     return filteredProducts
   } catch (err) {
-    console.error('❌ 제품 조회 오류:', err)
     throw err
   }
 }
-

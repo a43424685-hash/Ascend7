@@ -1,6 +1,6 @@
 'use client'
 
-import { createSupabaseBrowserClient } from '@/shared/api/supabase-browser'
+import { createClient } from '@/shared/lib/supabase/client'
 import type { CartStorageItem } from '@/shared/types/cart'
 import type { CartItemWithVariant } from '@/shared/types/cart'
 
@@ -16,7 +16,7 @@ export async function getCartItemsClient(
     return []
   }
 
-  const supabase = createSupabaseBrowserClient()
+  const supabase = createClient()
   const variantIds = cartStorageItems.map((item) => item.variant_id)
 
   // Variants와 관련된 Product, ProductImage 조회
