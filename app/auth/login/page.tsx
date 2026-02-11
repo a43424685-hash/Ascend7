@@ -12,71 +12,17 @@ import { useFormState } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/client'
 import { Button } from '@/shared/ui/button'
-import { signUpAction } from './actions'
+import { loginAction, signUpAction } from './actions'
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [isKakaoLoading, setIsKakaoLoading] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  
+  // 로그인 Server Action 상태 관리
+  const [loginState, loginFormAction] = useFormState(loginAction, undefined)
   
   // 회원가입 Server Action 상태 관리
   const [signUpState, signUpFormAction] = useFormState(signUpAction, undefined)
-
-  // 이메일/비밀번호 로그인 (Route Handler 호출)
-  const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    const formData = new FormData(e.currentTarget)
-    const email = formData.get('email') as string
-    const password = formData.get('password') as string
-
-    try {
-      console.log('🔐 [CLIENT] Sending login request to /api/auth/login')
-      
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include', // 쿠키 포함
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || '로그인에 실패했습니다.')
-      }
-
-      console.log('✅ [CLIENT] Login successful, redirecting to:', data.redirectTo)
-      
-      // ⚠️ 핵심: 쿠키가 완전히 저장된 후 클라이언트에서 세션 확인 후 이동
-      // 이렇게 하면 미들웨어에서 확실히 세션을 인식할 수 있음
-      await new Promise(resolve => setTimeout(resolve, 300)) // 300ms 대기
-      
-      // 클라이언트에서 세션 확인
-      const supabase = createClient()
-      const { data: sessionData } = await supabase.auth.getSession()
-      
-      if (sessionData.session) {
-        console.log('✅ [CLIENT] Session confirmed, redirecting...')
-        window.location.href = data.redirectTo || '/account'
-      } else {
-        console.error('⚠️ [CLIENT] Session not found after login, retrying...')
-        // 세션이 없으면 조금 더 기다린 후 재시도
-        await new Promise(resolve => setTimeout(resolve, 500))
-        window.location.href = data.redirectTo || '/account'
-      }
-    } catch (err: any) {
-      console.error('❌ [CLIENT] Login error:', err)
-      setError(err.message)
-      setIsLoading(false)
-    }
-  }
 
   // 카카오 OAuth 로그인 (클라이언트 전용)
   const handleKakaoLogin = async () => {
@@ -117,10 +63,10 @@ export default function LoginPage() {
         </div>
 
         {/* 에러/성공 메시지 */}
-        {(error || signUpState?.error) && (
+        {(loginState?.error || signUpState?.error) && (
           <div className="bg-red-50 border-2 border-red-200 p-4 rounded">
             <p className="text-red-800 text-sm font-semibold">
-              {isSignUp ? signUpState?.error : error}
+              {isSignUp ? signUpState?.error : loginState?.error}
             </p>
           </div>
         )}
@@ -132,8 +78,8 @@ export default function LoginPage() {
 
         {/* 이메일/비밀번호 폼 - 로그인과 회원가입 완전 분리 */}
         {!isSignUp ? (
-          // 로그인 폼 (fetch 방식, action prop 없음)
-          <form onSubmit={handleEmailLogin} className="mt-8 space-y-6">
+          // 로그인 폼 (Server Action 사용)
+          <form action={loginFormAction} className="mt-8 space-y-6">
             <div className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -145,7 +91,7 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  disabled={isLoading || isKakaoLoading}
+                  disabled={isKakaoLoading}
                   className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="your@email.com"
                 />
@@ -168,7 +114,7 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  disabled={isLoading || isKakaoLoading}
+                  disabled={isKakaoLoading}
                   className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="••••••••"
                   minLength={6}
@@ -181,9 +127,9 @@ export default function LoginPage() {
                 type="submit"
                 className="w-full"
                 size="lg"
-                disabled={isLoading || isKakaoLoading}
+                disabled={isKakaoLoading}
               >
-                {isLoading ? '처리 중...' : '로그인'}
+                로그인
               </Button>
             </div>
           </form>
