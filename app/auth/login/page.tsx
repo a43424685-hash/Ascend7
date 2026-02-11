@@ -7,22 +7,53 @@
  * - 회원가입 (Server Action)
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFormState } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/client'
 import { Button } from '@/shared/ui/button'
 import { loginAction, signUpAction } from './actions'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false)
   const [isKakaoLoading, setIsKakaoLoading] = useState(false)
-  
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
   // 로그인 Server Action 상태 관리
   const [loginState, loginFormAction] = useFormState(loginAction, undefined)
-  
+
   // 회원가입 Server Action 상태 관리
   const [signUpState, signUpFormAction] = useFormState(signUpAction, undefined)
+
+  // 이미 로그인된 사용자는 홈으로 리다이렉트
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        router.replace('/')
+      } else {
+        setIsCheckingAuth(false)
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  // 인증 체크 중일 때 로딩 표시
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
+          <p className="mt-4 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   // 카카오 OAuth 로그인 (클라이언트 전용)
   const handleKakaoLogin = async () => {
