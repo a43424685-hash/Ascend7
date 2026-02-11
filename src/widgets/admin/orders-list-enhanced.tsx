@@ -87,6 +87,28 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
     [orderId: string]: { number: string; carrier: string }
   }>({})
 
+  // 필터 & 검색 상태
+  const [searchQuery, setSearchQuery] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all')
+  const [fulfillmentFilter, setFulfillmentFilter] = useState<FulfillmentStatus | 'all'>('all')
+
+  // 필터링된 주문 목록
+  const filteredOrders = orders.filter((order) => {
+    // 검색 필터 (주문번호 또는 이메일)
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      const matchesId = order.id.toLowerCase().includes(query)
+      const matchesEmail = order.customer_email?.toLowerCase().includes(query)
+      const matchesName = order.customer_name?.toLowerCase().includes(query)
+      if (!matchesId && !matchesEmail && !matchesName) return false
+    }
+    // 결제 상태 필터
+    if (paymentFilter !== 'all' && order.payment_status !== paymentFilter) return false
+    // 배송 상태 필터
+    if (fulfillmentFilter !== 'all' && order.fulfillment_status !== fulfillmentFilter) return false
+    return true
+  })
+
   const handleFulfillmentChange = async (orderId: string, newStatus: FulfillmentStatus) => {
     if (!confirm(`배송 상태를 "${FULFILLMENT_STATUS_LABELS[newStatus]}"(으)로 변경하시겠습니까?`)) return
 
@@ -158,7 +180,78 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
 
   return (
     <div className="space-y-4">
-      {orders.map((order) => {
+      {/* 필터 & 검색 UI */}
+      <div className="bg-white border-2 border-gray-200 p-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* 검색 */}
+          <div className="flex-1 min-w-[200px]">
+            <input
+              type="text"
+              placeholder="주문번호, 이메일, 이름 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm"
+            />
+          </div>
+
+          {/* 결제 상태 필터 */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-600">결제:</label>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
+              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
+            >
+              <option value="all">전체</option>
+              {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 배송 상태 필터 */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-600">배송:</label>
+            <select
+              value={fulfillmentFilter}
+              onChange={(e) => setFulfillmentFilter(e.target.value as FulfillmentStatus | 'all')}
+              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
+            >
+              <option value="all">전체</option>
+              {Object.entries(FULFILLMENT_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 결과 카운트 */}
+          <div className="text-sm text-gray-500">
+            {filteredOrders.length === orders.length
+              ? `총 ${orders.length}건`
+              : `${filteredOrders.length} / ${orders.length}건`
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* 필터 결과 없음 */}
+      {filteredOrders.length === 0 && (
+        <div className="text-center py-8 border-2 border-dashed border-gray-300 bg-white">
+          <p className="text-gray-500">검색 결과가 없습니다.</p>
+          <button
+            onClick={() => {
+              setSearchQuery('')
+              setPaymentFilter('all')
+              setFulfillmentFilter('all')
+            }}
+            className="mt-2 text-sm text-black underline hover:no-underline"
+          >
+            필터 초기화
+          </button>
+        </div>
+      )}
+
+      {filteredOrders.map((order) => {
         const isExpanded = expandedOrder === order.id
         const isUpdating = updatingOrder === order.id
         const itemsCount = order.order_items.length
