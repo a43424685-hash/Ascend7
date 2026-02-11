@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { CartButton } from '@/features/cart/cart-button'
+import { AuthButton } from '@/features/auth/auth-button'
 
-export function Header() {
+export async function Header() {
   return (
     <header className="border-b border-black">
       <div className="container mx-auto px-4 py-4">
@@ -23,6 +24,7 @@ export function Header() {
               ACCOUNT
             </Link>
             <CartButton />
+            <AuthButton />
           </nav>
         </div>
       </div>
