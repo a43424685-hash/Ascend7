@@ -7,9 +7,17 @@ import { NextResponse, type NextRequest } from 'next/server'
  * 주요 기능:
  * 1. 모든 요청에서 세션 자동 갱신
  * 2. /admin/* 경로 보호 (admin role 확인)
- * 3. 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+ * 3. /account/* 경로 보호 (로그인 필요)
+ * 4. 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  // /auth/* 경로는 무조건 bypass (로그인/회원가입 페이지)
+  if (pathname.startsWith('/auth')) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -25,7 +33,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: CookieOptionsWithName[]) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
           response = NextResponse.next({
@@ -44,9 +52,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
-
-  // /admin/* 경로 보호
+  // /admin/* 경로 보호 (admin role 필요)
   if (pathname.startsWith('/admin')) {
     // 인증되지 않은 경우 → 로그인 페이지
     if (!user) {
@@ -84,6 +90,26 @@ export async function middleware(request: NextRequest) {
     })
   }
 
+  // /account/* 경로 보호 (로그인 필요)
+  if (pathname.startsWith('/account')) {
+    // 인증되지 않은 경우 → 로그인 페이지
+    if (!user) {
+      const redirectUrl = new URL('/auth/login', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      console.log('🔒 [MIDDLEWARE] Unauthenticated user accessing account', {
+        pathname,
+        redirectTo: redirectUrl.toString(),
+      })
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    console.log('✅ [MIDDLEWARE] Account access granted', {
+      userId: user.id,
+      email: user.email,
+      pathname,
+    })
+  }
+
   return response
 }
 
@@ -94,9 +120,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - /_next/* (Next.js internals)
+     * - 정적 파일 확장자 (svg, png, jpg, etc.)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 }
 
