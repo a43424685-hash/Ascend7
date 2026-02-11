@@ -109,50 +109,24 @@ export async function POST(request: NextRequest) {
       pendingCookiesAfterLogin: pendingCookies.length,
     })
 
-    // ⚠️ 중요: signInWithPassword의 세션 데이터를 직접 쿠키로 변환
-    // Supabase의 setAll()을 우회하고 수동으로 쿠키 생성
+    // ⚠️ 핵심: setSession()을 호출하여 Supabase가 쿠키를 올바른 형식으로 설정하도록 함
+    // 이렇게 하면 setAll()이 호출되어 pendingCookies에 쿠키가 추가됨
     if (data.session) {
-      const sessionData = {
+      console.log('🔐 [LOGIN ROUTE] Calling setSession() to trigger proper cookie format...')
+      
+      const { error: setSessionError } = await supabase.auth.setSession({
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
-        expires_in: data.session.expires_in,
-        expires_at: data.session.expires_at,
-        token_type: data.session.token_type,
-        user: data.session.user,
+      })
+
+      if (setSessionError) {
+        console.error('❌ [LOGIN ROUTE] setSession error:', setSessionError.message)
+      } else {
+        console.log('✅ [LOGIN ROUTE] setSession completed, pendingCookies:', {
+          count: pendingCookies.length,
+          names: pendingCookies.map(c => c.name),
+        })
       }
-
-      // Supabase 쿠키 형식: JSON 문자열 (response.cookies.set이 자동으로 인코딩)
-      const sessionString = JSON.stringify(sessionData)
-
-      // Supabase 쿠키 이름 형식 (프로젝트 ID 추출)
-      const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL!.split('//')[1].split('.')[0]
-      const cookieName = `sb-${projectId}-auth-token`
-      
-      console.log('🍪 [LOGIN ROUTE] Manually creating session cookie:', {
-        cookieName,
-        projectId,
-        hasAccessToken: !!data.session.access_token,
-        hasRefreshToken: !!data.session.refresh_token,
-        valueLength: sessionString.length,
-      })
-
-      // 수동으로 쿠키 추가
-      pendingCookies.push({
-        name: cookieName,
-        value: sessionString,
-        options: {
-          path: '/',
-          httpOnly: false, // Supabase client는 httpOnly: false 사용
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: data.session.expires_in || 3600,
-        },
-      })
-
-      console.log('✅ [LOGIN ROUTE] Session cookie added to pending:', {
-        pendingCookiesCount: pendingCookies.length,
-        cookieNames: pendingCookies.map(c => c.name),
-      })
     }
 
     // profiles에서 role 확인
