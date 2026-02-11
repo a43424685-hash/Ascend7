@@ -23,8 +23,10 @@ export async function loginAction(prevState: any, formData: FormData) {
   let redirectPath: string | null = null
 
   try {
+    console.log('🔐 [LOGIN ACTION] Creating server client...')
     const supabase = await createClient()
 
+    console.log('🔐 [LOGIN ACTION] Attempting signInWithPassword...', { email })
     // 서버에서 로그인 실행 - 서버 쿠키에 세션 저장
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -50,7 +52,17 @@ export async function loginAction(prevState: any, formData: FormData) {
     console.log('✅ [LOGIN ACTION] Login successful', {
       userId: data.user.id,
       email: data.user.email,
+      hasSession: !!data.session,
+      sessionId: data.session?.access_token?.substring(0, 20) + '...',
     })
+
+    // 세션이 제대로 생성되었는지 확인
+    if (!data.session) {
+      console.error('❌ [LOGIN ACTION] No session created!')
+      return {
+        error: '세션 생성 실패. 다시 시도해주세요.',
+      }
+    }
 
     // profiles에서 role 확인
     const { data: profile } = await supabase
@@ -61,6 +73,8 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     // role에 따라 리다이렉트 경로 설정 (try 밖에서 실행)
     redirectPath = profile?.role === 'admin' ? '/admin/orders' : '/account'
+    
+    console.log('🔄 [LOGIN ACTION] Redirecting to:', redirectPath)
   } catch (error: any) {
     // 실제 에러만 처리
     console.error('❌ [LOGIN ACTION] Unexpected error', {

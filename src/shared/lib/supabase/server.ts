@@ -60,35 +60,31 @@ export async function createClient() {
 
   const cookieStore = await cookies()
 
-  try {
-    return createServerClient(cleanUrl, supabaseAnonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: CookieOptionsWithName[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
+  // Supabase SSR 공식 패턴: Server Action에서 쿠키 설정이 제대로 작동하도록
+  return createServerClient(cleanUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
       },
-    })
-  } catch (err: any) {
-    throw new Error(
-      `❌ Supabase 클라이언트 생성 실패\n\n` +
-      `원인: ${err.message || String(err)}\n\n` +
-      `확인 사항:\n` +
-      `1. URL 형식: ${cleanUrl}\n` +
-      `2. Anon Key 길이: ${supabaseAnonKey.length}자\n` +
-      `3. .env.local 파일이 올바른지 확인\n` +
-      `4. 개발 서버 재시작`
-    )
-  }
+      setAll(cookiesToSet: CookieOptionsWithName[]) {
+        // Server Action에서 호출 시 쿠키가 Response 헤더에 설정되도록
+        // try/catch 제거 - 에러 발생 시 상위로 전파
+        if (process.env.NODE_ENV === 'production') {
+          console.log('🍪 [SERVER] setAll called, setting cookies:', {
+            count: cookiesToSet.length,
+            names: cookiesToSet.map(c => c.name),
+          })
+        }
+        
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options)
+        })
+        
+        if (process.env.NODE_ENV === 'production') {
+          console.log('✅ [SERVER] Cookies set successfully')
+        }
+      },
+    },
+  })
 }
 
