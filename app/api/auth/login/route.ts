@@ -109,6 +109,15 @@ export async function POST(request: NextRequest) {
       pendingCookiesAfterLogin: pendingCookies.length,
     })
 
+    // ⚠️ 중요: getSession()을 명시적으로 호출하여 쿠키 설정을 트리거
+    // signInWithPassword만으로는 setAll이 호출되지 않음!
+    console.log('🔐 [LOGIN ROUTE] Calling getSession() to trigger cookie setting...')
+    const { data: sessionData } = await supabase.auth.getSession()
+    console.log('🔐 [LOGIN ROUTE] getSession() completed:', {
+      hasSession: !!sessionData.session,
+      pendingCookiesAfterGetSession: pendingCookies.length,
+    })
+
     // profiles에서 role 확인
     const { data: profile } = await supabase
       .from('profiles')
