@@ -13,17 +13,12 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  // /auth/* 경로는 무조건 bypass (로그인/회원가입 페이지)
-  if (pathname.startsWith('/auth')) {
-    return NextResponse.next()
-  }
-
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  // 1. response 객체 생성 (나중에 쿠키를 설정할 것)
+  let supabaseResponse = NextResponse.next({
+    request,
   })
 
+  // 2. Supabase 클라이언트 생성 (쿠키 자동 동기화)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -33,26 +28,28 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: CookieOptionsWithName[]) {
-          cookiesToSet.forEach(({ name, value }) =>
+          // request 쿠키 설정 (middleware 내부용)
+          cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value)
-          )
-          response = NextResponse.next({
+          })
+          // response 쿠키 설정 (브라우저로 전달)
+          supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
 
-  // 세션 갱신 (자동)
+  // 3. 세션 갱신 (getUser 호출 시 자동으로 쿠키 갱신)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // /admin/* 경로 보호 (admin role 필요)
+  // 4. /admin/* 경로 보호 (admin role 필요)
   if (pathname.startsWith('/admin')) {
     // 인증되지 않은 경우 → 로그인 페이지
     if (!user) {
@@ -90,7 +87,7 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  // /account/* 경로 보호 (로그인 필요)
+  // 5. /account/* 경로 보호 (로그인 필요)
   if (pathname.startsWith('/account')) {
     // 인증되지 않은 경우 → 로그인 페이지
     if (!user) {
@@ -110,7 +107,8 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  return response
+  // 6. 쿠키가 포함된 response 반환 (세션 유지의 핵심!)
+  return supabaseResponse
 }
 
 export const config = {
