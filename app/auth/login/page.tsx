@@ -67,16 +67,6 @@ export default function LoginPage() {
           userId: data.user.id,
           email: data.user.email,
           hasSession: !!data.session,
-          sessionToken: data.session?.access_token?.substring(0, 20) + '...',
-        })
-
-        // 쿠키 확인
-        const cookies = document.cookie.split(';').map(c => c.trim().split('=')[0])
-        const supabaseCookies = cookies.filter(name => name.startsWith('sb-'))
-        console.log('🍪 Cookies after login:', {
-          totalCookies: cookies.length,
-          supabaseCookies: supabaseCookies.length,
-          cookieNames: supabaseCookies,
         })
 
         // profiles에서 role 확인
@@ -86,14 +76,14 @@ export default function LoginPage() {
           .eq('id', data.user.id)
           .single()
 
-        // role에 따라 리다이렉트 (hard refresh로 서버 컴포넌트가 세션을 인식하도록)
-        const redirectUrl = profile?.role === 'admin' ? '/admin/orders' : '/'
-        console.log(`🔄 Redirecting to ${redirectUrl}`)
+        // 핵심: /auth/callback으로 보내서 서버에서 세션을 확정
+        // 서버 라우트에서 getUser()를 호출하여 서버 쿠키에 세션을 저장
+        const targetUrl = profile?.role === 'admin' ? '/admin/orders' : '/account'
+        const callbackUrl = `/auth/callback?redirect=${encodeURIComponent(targetUrl)}`
         
-        // 약간의 딜레이를 주어 쿠키가 완전히 설정되도록 함
-        await new Promise(resolve => setTimeout(resolve, 100))
+        console.log(`🔄 Redirecting to ${callbackUrl} (server session establishment)`)
         
-        window.location.href = redirectUrl
+        window.location.href = callbackUrl
       }
     } catch (err: any) {
       console.error('Auth error:', err)
