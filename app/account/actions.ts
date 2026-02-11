@@ -4,7 +4,7 @@ import { createClient } from '@/shared/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export type ProfileData = {
-  name: string | null
+  display_name: string | null
   phone: string | null
   email: string
 }
@@ -20,11 +20,11 @@ export async function getProfile(): Promise<ProfileData | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, phone, email')
+    .select('display_name, phone, email')
     .eq('id', user.id)
     .single()
 
-  return profile || { name: null, phone: null, email: user.email || '' }
+  return profile || { display_name: null, phone: null, email: user.email || '' }
 }
 
 /**
@@ -34,7 +34,7 @@ export async function updateProfile(
   prevState: any,
   formData: FormData
 ): Promise<{ success?: boolean; error?: string }> {
-  const name = formData.get('name') as string
+  const displayName = formData.get('display_name') as string
   const phone = formData.get('phone') as string
 
   const supabase = await createClient()
@@ -47,7 +47,7 @@ export async function updateProfile(
   const { error } = await supabase
     .from('profiles')
     .update({
-      name: name || null,
+      display_name: displayName || null,
       phone: phone || null,
       updated_at: new Date().toISOString(),
     })

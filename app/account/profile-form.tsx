@@ -35,14 +35,14 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
       </div>
 
       <div>
-        <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-1">
-          이름
+        <label htmlFor="display_name" className="block text-sm font-semibold text-gray-700 mb-1">
+          이름 (Display Name)
         </label>
         <input
-          id="name"
-          name="name"
+          id="display_name"
+          name="display_name"
           type="text"
-          defaultValue={profile.name || ''}
+          defaultValue={profile.display_name || ''}
           placeholder="홍길동"
           className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
         />

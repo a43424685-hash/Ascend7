@@ -3,6 +3,7 @@ import { createClient } from '@/shared/lib/supabase/server'
 import { getOrders } from '@/entities/order/api/get-orders'
 import { formatPrice } from '@/shared/lib/utils'
 import { ProfileForm } from './profile-form'
+import { LogoutButton } from '@/features/auth/logout-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,12 +20,12 @@ export default async function AccountPage() {
   // 프로필 정보 조회
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, phone, email')
+    .select('display_name, phone, email')
     .eq('id', user.id)
     .single()
 
   const profileData = {
-    name: profile?.name || null,
+    display_name: profile?.display_name || null,
     phone: profile?.phone || null,
     email: profile?.email || user.email || '',
   }
@@ -34,10 +35,22 @@ export default async function AccountPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">MY ACCOUNT</h1>
+      {/* 헤더 + 로그아웃 */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">MY ACCOUNT</h1>
+        <div className="flex items-center gap-4">
+          {profileData.display_name && (
+            <span className="text-gray-600">
+              안녕하세요, <strong>{profileData.display_name}</strong>님
+            </span>
+          )}
+          <LogoutButton />
+        </div>
+      </div>
 
-      {/* 프로필 섹션 */}
+      {/* 프로필 & 주문 내역 */}
       <div className="grid md:grid-cols-2 gap-12">
+        {/* 프로필 섹션 */}
         <div>
           <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">PROFILE</h2>
           <ProfileForm profile={profileData} />
@@ -47,7 +60,12 @@ export default async function AccountPage() {
         <div>
           <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">ORDER HISTORY</h2>
           {orders.length === 0 ? (
-            <p className="text-gray-600">주문 내역이 없습니다.</p>
+            <div className="text-center py-12 border-2 border-dashed border-gray-300">
+              <p className="text-gray-500 mb-2">주문 내역이 없습니다.</p>
+              <a href="/shop" className="text-black underline hover:no-underline">
+                쇼핑하러 가기 →
+              </a>
+            </div>
           ) : (
             <div className="space-y-4">
               {orders.map((order) => (
