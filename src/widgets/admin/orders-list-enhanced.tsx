@@ -359,7 +359,7 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                           운송장 등록 (→ 배송 중)
                         </button>
                         <p className="text-xs text-gray-500 mt-1">
-                          * 운송장 등록 시 자동으로 "배송 중" 상태로 변경됩니다.
+                          * 운송장 등록 시 자동으로 &quot;배송 중&quot; 상태로 변경됩니다.
                         </p>
                       </div>
                     )}
