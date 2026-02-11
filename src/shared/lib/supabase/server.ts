@@ -4,7 +4,7 @@ import type { CookieOptionsWithName } from "@supabase/ssr";
 
 export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // 환경 변수 확인 및 상세한 에러 메시지
   if (!supabaseUrl) {
@@ -18,7 +18,7 @@ export async function createClient() {
     )
   }
 
-  if (!supabaseKey) {
+  if (!supabaseAnonKey) {
     throw new Error(
       '❌ NEXT_PUBLIC_SUPABASE_ANON_KEY가 설정되지 않았습니다.\n\n' +
       '📋 해결 방법:\n' +
@@ -61,7 +61,7 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   try {
-    return createServerClient(cleanUrl, supabaseKey, {
+    return createServerClient(cleanUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -85,7 +85,7 @@ export async function createClient() {
       `원인: ${err.message || String(err)}\n\n` +
       `확인 사항:\n` +
       `1. URL 형식: ${cleanUrl}\n` +
-      `2. Anon Key 길이: ${supabaseKey.length}자\n` +
+      `2. Anon Key 길이: ${supabaseAnonKey.length}자\n` +
       `3. .env.local 파일이 올바른지 확인\n` +
       `4. 개발 서버 재시작`
     )
