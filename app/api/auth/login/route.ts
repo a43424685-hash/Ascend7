@@ -109,14 +109,51 @@ export async function POST(request: NextRequest) {
       pendingCookiesAfterLogin: pendingCookies.length,
     })
 
-    // ⚠️ 중요: getSession()을 명시적으로 호출하여 쿠키 설정을 트리거
-    // signInWithPassword만으로는 setAll이 호출되지 않음!
-    console.log('🔐 [LOGIN ROUTE] Calling getSession() to trigger cookie setting...')
-    const { data: sessionData } = await supabase.auth.getSession()
-    console.log('🔐 [LOGIN ROUTE] getSession() completed:', {
-      hasSession: !!sessionData.session,
-      pendingCookiesAfterGetSession: pendingCookies.length,
-    })
+    // ⚠️ 중요: signInWithPassword의 세션 데이터를 직접 쿠키로 변환
+    // Supabase의 setAll()을 우회하고 수동으로 쿠키 생성
+    if (data.session) {
+      const sessionData = {
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_in: data.session.expires_in,
+        expires_at: data.session.expires_at,
+        token_type: data.session.token_type,
+        user: data.session.user,
+      }
+
+      // Supabase 쿠키 형식: JSON 문자열 (response.cookies.set이 자동으로 인코딩)
+      const sessionString = JSON.stringify(sessionData)
+
+      // Supabase 쿠키 이름 형식 (프로젝트 ID 추출)
+      const projectId = process.env.NEXT_PUBLIC_SUPABASE_URL!.split('//')[1].split('.')[0]
+      const cookieName = `sb-${projectId}-auth-token`
+      
+      console.log('🍪 [LOGIN ROUTE] Manually creating session cookie:', {
+        cookieName,
+        projectId,
+        hasAccessToken: !!data.session.access_token,
+        hasRefreshToken: !!data.session.refresh_token,
+        valueLength: sessionString.length,
+      })
+
+      // 수동으로 쿠키 추가
+      pendingCookies.push({
+        name: cookieName,
+        value: sessionString,
+        options: {
+          path: '/',
+          httpOnly: false, // Supabase client는 httpOnly: false 사용
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: data.session.expires_in || 3600,
+        },
+      })
+
+      console.log('✅ [LOGIN ROUTE] Session cookie added to pending:', {
+        pendingCookiesCount: pendingCookies.length,
+        cookieNames: pendingCookies.map(c => c.name),
+      })
+    }
 
     // profiles에서 role 확인
     const { data: profile } = await supabase
