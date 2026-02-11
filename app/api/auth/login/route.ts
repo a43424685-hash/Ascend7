@@ -1,5 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import type { CookieOptionsWithName } from '@supabase/ssr'
 
@@ -7,7 +6,7 @@ import type { CookieOptionsWithName } from '@supabase/ssr'
  * POST /api/auth/login
  * 
  * Route Handler로 로그인 처리
- * Server Action과 달리 NextResponse에 명시적으로 set-cookie를 설정할 수 있음
+ * 쿠키를 누적한 뒤 최종 응답 객체에 설정하여 반환
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,29 +21,26 @@ export async function POST(request: NextRequest) {
 
     console.log('🔐 [LOGIN ROUTE] Attempting login for:', email)
 
-    const cookieStore = await cookies()
-    
-    // NextResponse 생성 (쿠키를 담을 response 객체)
-    const response = NextResponse.json({ success: true })
+    // 쿠키를 누적할 배열
+    const pendingCookies: CookieOptionsWithName[] = []
 
-    // Supabase 클라이언트 생성 - response.cookies에 직접 설정
+    // Supabase 클라이언트 생성 - setAll에서 쿠키를 배열에 누적만 함
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            return request.cookies.getAll()
           },
           setAll(cookiesToSet: CookieOptionsWithName[]) {
-            // response.cookies에 직접 설정 - set-cookie 헤더에 포함됨
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
+            // 쿠키를 배열에 누적만 함 (아직 응답 객체에 설정하지 않음)
+            pendingCookies.push(...cookiesToSet)
             
-            console.log('🍪 [LOGIN ROUTE] Set cookies in response:', {
+            console.log('🍪 [LOGIN ROUTE] Accumulated cookies:', {
               count: cookiesToSet.length,
               names: cookiesToSet.map(c => c.name),
+              totalPending: pendingCookies.length,
             })
           },
         },
@@ -88,10 +84,10 @@ export async function POST(request: NextRequest) {
 
     const redirectTo = profile?.role === 'admin' ? '/admin/orders' : '/account'
 
-    console.log('🔄 [LOGIN ROUTE] Returning success with redirect:', redirectTo)
+    console.log('🔄 [LOGIN ROUTE] Preparing response with redirect:', redirectTo)
 
-    // 성공 응답 (쿠키는 이미 response.cookies.set으로 설정됨)
-    return NextResponse.json(
+    // 최종 응답 객체 생성
+    const response = NextResponse.json(
       {
         success: true,
         user: {
@@ -101,11 +97,21 @@ export async function POST(request: NextRequest) {
         },
         redirectTo,
       },
-      { 
-        status: 200,
-        headers: response.headers, // 쿠키 헤더 포함
-      }
+      { status: 200 }
     )
+
+    // 누적된 쿠키를 최종 응답 객체에 설정
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options)
+    })
+
+    console.log('✅ [LOGIN ROUTE] Response ready with cookies:', {
+      cookieCount: pendingCookies.length,
+      cookieNames: pendingCookies.map(c => c.name),
+    })
+
+    // 쿠키가 포함된 최종 응답 반환
+    return response
   } catch (error: any) {
     console.error('❌ [LOGIN ROUTE] Unexpected error:', error)
     return NextResponse.json(
