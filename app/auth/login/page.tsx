@@ -115,70 +115,113 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* 이메일/비밀번호 폼 */}
-        <form 
-          onSubmit={isSignUp ? undefined : handleEmailLogin}
-          action={isSignUp ? signUpFormAction : undefined}
-          className="mt-8 space-y-6"
-        >
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                이메일
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                disabled={isLoading || isKakaoLoading}
-                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="your@email.com"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
-                  비밀번호
+        {/* 이메일/비밀번호 폼 - 로그인과 회원가입 완전 분리 */}
+        {!isSignUp ? (
+          // 로그인 폼 (fetch 방식, action prop 없음)
+          <form onSubmit={handleEmailLogin} className="mt-8 space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  이메일
                 </label>
-                {!isSignUp && (
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  disabled={isLoading || isKakaoLoading}
+                  className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                    비밀번호
+                  </label>
                   <Link
                     href="/auth/forgot"
                     className="text-xs text-gray-600 hover:text-black font-semibold"
                   >
                     비밀번호를 잊으셨나요?
                   </Link>
-                )}
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  disabled={isLoading || isKakaoLoading}
+                  className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="••••••••"
+                  minLength={6}
+                />
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                disabled={isLoading || isKakaoLoading}
-                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="••••••••"
-                minLength={6}
-              />
-              {isSignUp && (
-                <p className="mt-1 text-xs text-gray-500">최소 6자 이상</p>
-              )}
             </div>
-          </div>
 
-          <div>
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isLoading || isKakaoLoading}
-            >
-              {isLoading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
-            </Button>
-          </div>
-        </form>
+            <div>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading || isKakaoLoading}
+              >
+                {isLoading ? '처리 중...' : '로그인'}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          // 회원가입 폼 (Server Action 방식)
+          <form action={signUpFormAction} className="mt-8 space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="signup-email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  이메일
+                </label>
+                <input
+                  id="signup-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  disabled={isKakaoLoading}
+                  className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="signup-password" className="block text-sm font-semibold text-gray-700 mb-2">
+                  비밀번호
+                </label>
+                <input
+                  id="signup-password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  disabled={isKakaoLoading}
+                  className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-black focus:border-black disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+                <p className="mt-1 text-xs text-gray-500">최소 6자 이상</p>
+              </div>
+            </div>
+
+            <div>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isKakaoLoading}
+              >
+                회원가입
+              </Button>
+            </div>
+          </form>
+        )}
 
         {/* 구분선 */}
         <div className="relative my-6">
