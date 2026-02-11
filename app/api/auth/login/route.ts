@@ -1,14 +1,10 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import type { CookieOptionsWithName } from '@supabase/ssr'
 
 /**
  * POST /api/auth/login
  * 
- * Supabase SSR 공식 패턴으로 로그인 처리:
- * 1. Response 객체를 먼저 생성
- * 2. createServerClient의 setAll에서 response에 직접 쿠키 설정
- * 3. setSession()으로 Supabase가 쿠키를 올바른 형식으로 저장하도록 함
+ * Supabase SSR 공식 패턴: get/set/remove 메서드 사용
  */
 export async function POST(request: NextRequest) {
   try {
@@ -23,29 +19,38 @@ export async function POST(request: NextRequest) {
 
     console.log('🔐 [LOGIN ROUTE] Attempting login for:', email)
 
-    // ⚠️ 핵심: Response 객체를 먼저 생성 (Supabase SSR 공식 패턴)
-    let response = NextResponse.json({ success: true })
+    // 쿠키 저장소 (pending cookies)
+    const cookieStore: Record<string, { value: string; options: CookieOptions }> = {}
 
-    // Supabase 클라이언트 생성 - response 객체에 직접 쿠키 설정
+    // Supabase 클라이언트 생성 - get/set/remove 패턴
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() {
-            // request의 쿠키를 읽음
-            return request.cookies.getAll()
+          get(name: string) {
+            // 먼저 pending에서 확인, 없으면 request에서
+            const pending = cookieStore[name]
+            if (pending) {
+              console.log('🍪 [LOGIN ROUTE] get() from pending:', name)
+              return pending.value
+            }
+            const value = request.cookies.get(name)?.value
+            console.log('🍪 [LOGIN ROUTE] get() from request:', { name, hasValue: !!value })
+            return value
           },
-          setAll(cookiesToSet: CookieOptionsWithName[]) {
-            console.log('🍪 [LOGIN ROUTE] setAll CALLED!', {
-              count: cookiesToSet.length,
-              names: cookiesToSet.map(c => c.name),
+          set(name: string, value: string, options: CookieOptions) {
+            console.log('🍪 [LOGIN ROUTE] set() CALLED!', { 
+              name, 
+              valueLength: value.length,
+              options: { path: options.path, httpOnly: options.httpOnly, sameSite: options.sameSite }
             })
-            
-            // ⚠️ 핵심: response 객체에 직접 쿠키 설정
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
+            // pending 저장소에 누적
+            cookieStore[name] = { value, options }
+          },
+          remove(name: string, options: CookieOptions) {
+            console.log('🍪 [LOGIN ROUTE] remove() called:', name)
+            cookieStore[name] = { value: '', options: { ...options, maxAge: 0 } }
           },
         },
       }
@@ -87,8 +92,8 @@ export async function POST(request: NextRequest) {
       hasSession: !!data.session,
     })
 
-    // ⚠️ 핵심: setSession()을 호출하여 Supabase가 쿠키를 response에 설정하도록 함
-    console.log('🔐 [LOGIN ROUTE] Calling setSession() to set cookies in response...')
+    // ⚠️ 핵심: setSession()을 호출하여 Supabase가 set() 메서드를 통해 쿠키를 저장하도록 함
+    console.log('🔐 [LOGIN ROUTE] Calling setSession() to trigger cookie storage...')
     
     const { error: setSessionError } = await supabase.auth.setSession({
       access_token: data.session.access_token,
@@ -103,7 +108,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ [LOGIN ROUTE] setSession completed successfully')
+    console.log('✅ [LOGIN ROUTE] setSession completed')
+    console.log('🍪 [LOGIN ROUTE] Pending cookies in store:', {
+      count: Object.keys(cookieStore).length,
+      names: Object.keys(cookieStore),
+    })
 
     // profiles에서 role 확인
     const { data: profile } = await supabase
@@ -114,11 +123,10 @@ export async function POST(request: NextRequest) {
 
     const redirectTo = profile?.role === 'admin' ? '/admin/orders' : '/account'
 
-    console.log('🔄 [LOGIN ROUTE] Preparing final response with redirect:', redirectTo)
+    console.log('🔄 [LOGIN ROUTE] Creating final response with redirect:', redirectTo)
 
-    // ⚠️ 핵심: response 객체 업데이트 (쿠키는 이미 setAll에서 response에 설정됨)
-    // Headers를 복사하여 새 response 생성
-    response = NextResponse.json(
+    // 최종 응답 생성
+    const response = NextResponse.json(
       {
         success: true,
         user: {
@@ -128,21 +136,25 @@ export async function POST(request: NextRequest) {
         },
         redirectTo,
       },
-      { 
-        status: 200,
-        headers: response.headers, // 기존 헤더(쿠키 포함) 유지
-      }
+      { status: 200 }
     )
 
-    // 설정된 쿠키 확인
-    const responseCookies = response.cookies.getAll()
-    console.log('✅ [LOGIN ROUTE] Final response cookies:', {
-      count: responseCookies.length,
-      names: responseCookies.map(c => c.name),
+    // ⚠️ 핵심: pending cookies를 response에 설정
+    console.log('🍪 [LOGIN ROUTE] Setting pending cookies to response...')
+    Object.entries(cookieStore).forEach(([name, { value, options }]) => {
+      console.log(`🍪 [LOGIN ROUTE] Setting cookie: ${name} (${value.length} chars)`)
+      response.cookies.set(name, value, options)
     })
 
-    if (responseCookies.length === 0) {
-      console.error('⚠️ [LOGIN ROUTE] WARNING: No cookies in response! Check if setAll was called.')
+    // 최종 확인
+    const finalCookies = response.cookies.getAll()
+    console.log('✅ [LOGIN ROUTE] Final response cookies:', {
+      count: finalCookies.length,
+      names: finalCookies.map(c => c.name),
+    })
+
+    if (finalCookies.length === 0) {
+      console.error('⚠️ [LOGIN ROUTE] WARNING: No cookies in final response!')
     }
 
     return response
