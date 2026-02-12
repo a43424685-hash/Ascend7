@@ -7,6 +7,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
 import { requireAdmin } from '@/shared/lib/auth/admin'
+import { sendShippingNotification, type EmailOrderData } from '@/shared/lib/email'
+import { formatPrice } from '@/shared/lib/utils'
 
 export type FulfillmentStatus =
   | 'unfulfilled'
@@ -107,6 +109,45 @@ export async function updateOrderTracking(
 
     if (error) {
       return { success: false, error: error.message }
+    }
+
+    // 배송 시작 이메일 발송
+    try {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('order_number, customer_email, customer_name, total')
+        .eq('id', orderId)
+        .single()
+
+      if (order?.customer_email) {
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('quantity, price, variant:variants(color, size, product:products(name))')
+          .eq('order_id', orderId)
+
+        const emailData: EmailOrderData = {
+          orderNumber: order.order_number || orderId.slice(0, 8),
+          customerName: order.customer_name || '고객',
+          customerEmail: order.customer_email,
+          total: formatPrice(order.total),
+          trackingNumber,
+          carrier: carrier || undefined,
+          items: (items || []).map((item: any) => {
+            const v = Array.isArray(item.variant) ? item.variant[0] : item.variant
+            const p = v && (Array.isArray(v.product) ? v.product[0] : v.product)
+            return {
+              name: p?.name || '상품',
+              option: v ? `${v.color} / ${v.size}` : '-',
+              quantity: item.quantity,
+              price: formatPrice(item.price * item.quantity),
+            }
+          }),
+        }
+
+        await sendShippingNotification(emailData)
+      }
+    } catch (emailErr: any) {
+      console.error('⚠️ [EMAIL] Shipping notification failed (non-blocking):', emailErr.message)
     }
 
     revalidatePath('/admin/orders')

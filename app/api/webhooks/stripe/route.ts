@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/shared/lib/stripe'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
+import { sendOrderConfirmation, type EmailOrderData } from '@/shared/lib/email'
+import { formatPrice } from '@/shared/lib/utils'
 import Stripe from 'stripe'
 
 /**
@@ -539,13 +541,45 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // 9. 실패 큐에서 제거 (성공했으므로)
+      // 9. 주문 완료 이메일 발송
+      if (customerEmail && !hasStockError) {
+        try {
+          // 상품 정보 조회 (이메일용)
+          const { data: emailItems } = await supabase
+            .from('order_items')
+            .select('quantity, price, variant:variants(color, size, product:products(name))')
+            .eq('order_id', order.id)
+
+          const emailData: EmailOrderData = {
+            orderNumber: order.order_number || order.id.slice(0, 8),
+            customerName: customerName || '고객',
+            customerEmail,
+            total: formatPrice(total),
+            items: (emailItems || []).map((item: any) => {
+              const v = Array.isArray(item.variant) ? item.variant[0] : item.variant
+              const p = v && (Array.isArray(v.product) ? v.product[0] : v.product)
+              return {
+                name: p?.name || '상품',
+                option: v ? `${v.color} / ${v.size}` : '-',
+                quantity: item.quantity,
+                price: formatPrice(item.price * item.quantity),
+              }
+            }),
+          }
+
+          await sendOrderConfirmation(emailData)
+        } catch (emailErr: any) {
+          console.error('⚠️ [WEBHOOK] Email send failed (non-blocking):', emailErr.message)
+        }
+      }
+
+      // 10. 실패 큐에서 제거 (성공했으므로)
       await supabase
         .from('stripe_webhook_failures')
         .update({ status: 'succeeded', updated_at: new Date().toISOString() })
         .eq('event_id', event.id)
 
-      // 10. 처리 완료 이벤트 기록 (멱등성 보장)
+      // 11. 처리 완료 이벤트 기록 (멱등성 보장)
       console.log(`💾 [WEBHOOK] Recording processed event`, {
         requestId,
         eventId: event.id,

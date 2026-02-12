@@ -12,10 +12,54 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
 import { requireAdmin } from '@/shared/lib/auth/admin'
 import { stripe } from '@/shared/lib/stripe'
+import {
+  sendReturnRequestConfirmation,
+  sendRefundConfirmation,
+  type EmailOrderData,
+} from '@/shared/lib/email'
+import { formatPrice } from '@/shared/lib/utils'
 
 export type ReturnStatus = 'none' | 'requested' | 'received' | 'approved' | 'rejected' | 'refunded'
 
 export type FulfillmentStatus = 'unfulfilled' | 'processing' | 'shipped' | 'delivered' | 'canceled'
+
+// 이메일용 주문 데이터 조회 헬퍼
+async function fetchEmailOrderData(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orderId: string,
+  extra?: Partial<EmailOrderData>
+): Promise<EmailOrderData | null> {
+  const { data: order } = await supabase
+    .from('orders')
+    .select('order_number, customer_email, customer_name, total')
+    .eq('id', orderId)
+    .single()
+
+  if (!order?.customer_email) return null
+
+  const { data: items } = await supabase
+    .from('order_items')
+    .select('quantity, price, variant:variants(color, size, product:products(name))')
+    .eq('order_id', orderId)
+
+  return {
+    orderNumber: order.order_number || orderId.slice(0, 8),
+    customerName: order.customer_name || '고객',
+    customerEmail: order.customer_email,
+    total: formatPrice(order.total),
+    items: (items || []).map((item: any) => {
+      const v = Array.isArray(item.variant) ? item.variant[0] : item.variant
+      const p = v && (Array.isArray(v.product) ? v.product[0] : v.product)
+      return {
+        name: p?.name || '상품',
+        option: v ? `${v.color} / ${v.size}` : '-',
+        quantity: item.quantity,
+        price: formatPrice(item.price * item.quantity),
+      }
+    }),
+    ...extra,
+  }
+}
 
 // 상태 전이 검증 (코드 레벨)
 function isValidReturnTransition(
@@ -104,6 +148,14 @@ export async function requestReturn(orderId: string, reason: string) {
 
     if (error) {
       return { success: false, error: error.message }
+    }
+
+    // 반품 접수 이메일 발송
+    try {
+      const emailData = await fetchEmailOrderData(supabase, orderId, { returnReason: reason })
+      if (emailData) await sendReturnRequestConfirmation(emailData)
+    } catch (emailErr: any) {
+      console.error('⚠️ [EMAIL] Return request email failed (non-blocking):', emailErr.message)
     }
 
     revalidatePath('/admin/orders')
@@ -349,6 +401,16 @@ export async function processRefund(orderId: string, amount?: number) {
         success: false,
         error: `Stripe 환불은 완료되었으나 DB 업데이트 실패. Refund ID: ${refund.id}`
       }
+    }
+
+    // 환불 완료 이메일 발송
+    try {
+      const emailData = await fetchEmailOrderData(supabase, orderId, {
+        refundAmount: formatPrice(refundAmount),
+      })
+      if (emailData) await sendRefundConfirmation(emailData)
+    } catch (emailErr: any) {
+      console.error('⚠️ [EMAIL] Refund email failed (non-blocking):', emailErr.message)
     }
 
     // 재고 복구 (배송 전 취소의 경우)
