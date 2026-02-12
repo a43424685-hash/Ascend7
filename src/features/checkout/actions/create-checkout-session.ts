@@ -5,6 +5,19 @@ import { getSupabaseClient } from '@/shared/api/supabaseClient'
 import type { CartItemWithVariant } from '@/shared/types/cart'
 import type { ShippingInfo } from './get-default-shipping'
 
+function getBaseUrl(): string {
+  // 1) 명시적 환경변수 우선
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
+  }
+  // 2) Vercel 자동 URL (preview/production)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  // 3) 로컬 개발 fallback
+  return 'http://localhost:3000'
+}
+
 export async function createCheckoutSession(
   cartItems: CartItemWithVariant[],
   shippingInfo?: ShippingInfo
@@ -48,12 +61,14 @@ export async function createCheckoutSession(
     0
   )
 
+  const baseUrl = getBaseUrl()
+
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: lineItems,
     mode: 'payment',
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/cancel`,
     metadata: {
       user_id: user?.id || 'guest',
       cart_items: JSON.stringify(
