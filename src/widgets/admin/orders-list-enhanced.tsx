@@ -87,6 +87,7 @@ interface Order {
   carrier: string | null
   customer_email: string | null
   customer_name: string | null
+  customer_phone: string | null
   shipping_address: any | null
   created_at: string
   // 반품/환불 관련
@@ -540,6 +541,7 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     <h3 className="font-bold mb-3 text-lg">👤 고객 정보</h3>
                     <div className="bg-white p-3 border border-gray-200 text-sm space-y-1">
                       <p><strong>이름:</strong> {order.customer_name || '정보 없음'}</p>
+                      <p><strong>연락처:</strong> {order.customer_phone || order.shipping_address?.phone || '정보 없음'}</p>
                       <p><strong>이메일:</strong> {order.customer_email || '정보 없음'}</p>
                       <p className="text-gray-500">
                         <strong>User ID:</strong> {order.user_id || '게스트'}
@@ -550,13 +552,33 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     {order.shipping_address && (
                       <>
                         <h3 className="font-bold mb-3 mt-6 text-lg">🏠 배송지</h3>
-                        <div className="bg-white p-3 border border-gray-200 text-sm">
-                          <p>{order.shipping_address.line1}</p>
-                          {order.shipping_address.line2 && <p>{order.shipping_address.line2}</p>}
-                          <p>
-                            {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
-                          </p>
-                          <p className="text-gray-600">{order.shipping_address.country}</p>
+                        <div className="bg-white p-3 border border-gray-200 text-sm space-y-1">
+                          {order.shipping_address.name && (
+                            <p><strong>수령인:</strong> {order.shipping_address.name}</p>
+                          )}
+                          {(order.shipping_address.phone || order.customer_phone) && (
+                            <p><strong>연락처:</strong> {order.shipping_address.phone || order.customer_phone}</p>
+                          )}
+                          {order.shipping_address.address ? (
+                            <>
+                              <p>
+                                <strong>주소:</strong>{' '}
+                                ({order.shipping_address.postal_code || ''}) {order.shipping_address.address}
+                                {order.shipping_address.address_detail && `, ${order.shipping_address.address_detail}`}
+                              </p>
+                            </>
+                          ) : order.shipping_address.line1 ? (
+                            <p>
+                              <strong>주소:</strong>{' '}
+                              {order.shipping_address.line1}
+                              {order.shipping_address.line2 && `, ${order.shipping_address.line2}`}
+                              {order.shipping_address.city && `, ${order.shipping_address.city}`}
+                              {' '}{order.shipping_address.postal_code}
+                            </p>
+                          ) : null}
+                          {order.shipping_address.memo && (
+                            <p className="text-gray-600"><strong>배송메모:</strong> {order.shipping_address.memo}</p>
+                          )}
                         </div>
                       </>
                     )}

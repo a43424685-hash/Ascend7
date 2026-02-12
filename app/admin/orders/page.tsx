@@ -29,6 +29,7 @@ export default async function AdminOrdersPage() {
       carrier,
       customer_email,
       customer_name,
+      customer_phone,
       shipping_address,
       created_at,
       return_status,
