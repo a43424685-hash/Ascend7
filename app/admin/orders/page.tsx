@@ -20,6 +20,7 @@ export default async function AdminOrdersPage() {
     .from('orders')
     .select(`
       id,
+      order_number,
       user_id,
       payment_status,
       fulfillment_status,

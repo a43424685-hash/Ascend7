@@ -78,6 +78,7 @@ const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
 
 interface Order {
   id: string
+  order_number: string | null
   user_id: string | null
   payment_status: PaymentStatus
   fulfillment_status: FulfillmentStatus
@@ -139,9 +140,10 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const matchesId = order.id.toLowerCase().includes(query)
+      const matchesOrderNumber = order.order_number?.toLowerCase().includes(query)
       const matchesEmail = order.customer_email?.toLowerCase().includes(query)
       const matchesName = order.customer_name?.toLowerCase().includes(query)
-      if (!matchesId && !matchesEmail && !matchesName) return false
+      if (!matchesId && !matchesOrderNumber && !matchesEmail && !matchesName) return false
     }
     // 결제 상태 필터
     if (paymentFilter !== 'all' && order.payment_status !== paymentFilter) return false
@@ -445,7 +447,7 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
               <div className="flex items-center gap-4 flex-1">
                 {/* 주문번호 */}
                 <span className="font-mono text-sm text-gray-600 font-semibold">
-                  #{order.id.slice(0, 8)}
+                  {order.order_number || `#${order.id.slice(0, 8)}`}
                 </span>
 
                 {/* 결제 상태 */}
@@ -873,6 +875,10 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
 
                     {/* 메타 정보 */}
                     <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-500">
+                      {order.order_number && (
+                        <p><strong>주문번호:</strong> <span className="font-mono">{order.order_number}</span></p>
+                      )}
+                      <p><strong>주문 ID:</strong> <span className="font-mono">{order.id}</span></p>
                       <p>생성: {new Date(order.created_at).toLocaleString('ko-KR')}</p>
                       {order.stripe_session_id && (
                         <p className="font-mono">Stripe: {order.stripe_session_id}</p>
