@@ -125,47 +125,130 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // 지원하는 이벤트 타입
+  const SUPPORTED_EVENTS = ['checkout.session.completed', 'charge.refunded']
+
   // 이벤트 타입 로깅
-  if (event.type !== 'checkout.session.completed') {
-    console.log(`⏭️ [WEBHOOK] Ignoring event`, { 
-      requestId, 
-      eventType: event.type, 
-      eventId: event.id 
+  if (!SUPPORTED_EVENTS.includes(event.type)) {
+    console.log(`⏭️ [WEBHOOK] Ignoring event`, {
+      requestId,
+      eventType: event.type,
+      eventId: event.id
     })
     return NextResponse.json({ received: true, ignored: true })
   }
 
-  // checkout.session.completed 처리
-  console.log(`📦 [WEBHOOK] Processing checkout.session.completed`, { 
-    requestId, 
-    eventId: event.id 
+  const supabase = createAdminClient()
+
+  // 멱등성 체크: 이미 처리한 이벤트인지 확인
+  console.log(`🔍 [WEBHOOK] Checking idempotency`, { requestId, eventId: event.id })
+
+  const { data: existingEvent } = await supabase
+    .from('processed_stripe_events')
+    .select('id')
+    .eq('event_id', event.id)
+    .single()
+
+  if (existingEvent) {
+    console.log(`⏭️ [WEBHOOK] Event already processed (idempotent)`, {
+      requestId,
+      eventId: event.id,
+      existingEventId: existingEvent.id
+    })
+    return NextResponse.json({ received: true, alreadyProcessed: true })
+  }
+
+  // ========================================
+  // charge.refunded 처리 (환불 동기화)
+  // ========================================
+  if (event.type === 'charge.refunded') {
+    console.log(`💰 [WEBHOOK] Processing charge.refunded`, { requestId, eventId: event.id })
+
+    const charge = event.data.object as Stripe.Charge
+
+    try {
+      // payment_intent로 주문 찾기
+      const paymentIntentId = charge.payment_intent as string
+
+      if (!paymentIntentId) {
+        console.log(`⏭️ [WEBHOOK] No payment_intent in charge, skipping`)
+        return NextResponse.json({ received: true, skipped: true })
+      }
+
+      // payment_intent로 checkout session 찾기
+      const sessions = await stripe.checkout.sessions.list({
+        payment_intent: paymentIntentId,
+        limit: 1,
+      })
+
+      if (sessions.data.length === 0) {
+        console.log(`⏭️ [WEBHOOK] No session found for payment_intent: ${paymentIntentId}`)
+        return NextResponse.json({ received: true, skipped: true })
+      }
+
+      const sessionId = sessions.data[0].id
+
+      // 주문 찾기
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('id, payment_status, return_status')
+        .eq('stripe_session_id', sessionId)
+        .single()
+
+      if (orderError || !order) {
+        console.log(`⏭️ [WEBHOOK] Order not found for session: ${sessionId}`)
+        return NextResponse.json({ received: true, skipped: true })
+      }
+
+      // 이미 환불 처리됨
+      if (order.payment_status === 'refunded') {
+        console.log(`⏭️ [WEBHOOK] Order already refunded: ${order.id}`)
+      } else {
+        // 주문 상태 업데이트
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'refunded',
+            return_status: 'refunded',
+            stripe_refund_id: charge.refunds?.data[0]?.id || null,
+            refund_amount: charge.amount_refunded,
+            refunded_at: new Date().toISOString(),
+          })
+          .eq('id', order.id)
+
+        if (updateError) {
+          console.error(`❌ [WEBHOOK] Failed to update order: ${updateError.message}`)
+          throw new Error(updateError.message)
+        }
+
+        console.log(`✅ [WEBHOOK] Order refund synced: ${order.id}`)
+      }
+
+      // 처리 완료 기록
+      await supabase.from('processed_stripe_events').insert({
+        event_id: event.id,
+        event_type: event.type,
+        metadata: { order_id: order.id, charge_id: charge.id },
+      })
+
+      return NextResponse.json({ received: true, orderId: order.id })
+    } catch (error: any) {
+      console.error(`❌ [WEBHOOK] Refund processing failed:`, error.message)
+      return NextResponse.json({ received: true, error: error.message })
+    }
+  }
+
+  // ========================================
+  // checkout.session.completed 처리 (주문 생성)
+  // ========================================
+  console.log(`📦 [WEBHOOK] Processing checkout.session.completed`, {
+    requestId,
+    eventId: event.id
   })
 
   const session = event.data.object as Stripe.Checkout.Session
 
   try {
-    const supabase = createAdminClient()
-
-    // 2. 멱등성 체크: 이미 처리한 이벤트인지 확인
-    console.log(`🔍 [WEBHOOK] Checking idempotency`, { requestId, eventId: event.id })
-    
-    const { data: existingEvent } = await supabase
-      .from('processed_stripe_events')
-      .select('id')
-      .eq('event_id', event.id)
-      .single()
-
-    if (existingEvent) {
-      console.log(`⏭️ [WEBHOOK] Event already processed (idempotent)`, { 
-        requestId, 
-        eventId: event.id,
-        existingEventId: existingEvent.id
-      })
-      return NextResponse.json({ received: true, alreadyProcessed: true })
-    }
-
-    console.log(`✅ [WEBHOOK] Idempotency check passed`, { requestId, eventId: event.id })
-
       // 3. 카트 아이템 파싱
       const cartItems: Array<{
         variant_id: string

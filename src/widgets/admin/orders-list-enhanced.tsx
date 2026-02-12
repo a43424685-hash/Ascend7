@@ -16,6 +16,15 @@ import {
   cancelOrder,
   type FulfillmentStatus,
 } from '@/features/admin/actions/update-order-fulfillment'
+import {
+  requestReturn,
+  markReturnReceived,
+  approveReturn,
+  rejectReturn,
+  processRefund,
+  cancelReturnRequest,
+  type ReturnStatus,
+} from '@/features/admin/actions/return-management'
 
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
 
@@ -49,6 +58,24 @@ const FULFILLMENT_STATUS_COLORS: Record<FulfillmentStatus, string> = {
   canceled: 'bg-red-100 text-red-800 border-red-300',
 }
 
+const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
+  none: '-',
+  requested: '반품요청',
+  received: '반품도착',
+  approved: '검수통과',
+  rejected: '검수실패',
+  refunded: '환불완료',
+}
+
+const RETURN_STATUS_COLORS: Record<ReturnStatus, string> = {
+  none: 'bg-gray-50 text-gray-400 border-gray-200',
+  requested: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  received: 'bg-blue-100 text-blue-800 border-blue-300',
+  approved: 'bg-green-100 text-green-800 border-green-300',
+  rejected: 'bg-red-100 text-red-800 border-red-300',
+  refunded: 'bg-purple-100 text-purple-800 border-purple-300',
+}
+
 interface Order {
   id: string
   user_id: string | null
@@ -62,6 +89,15 @@ interface Order {
   customer_name: string | null
   shipping_address: any | null
   created_at: string
+  // 반품/환불 관련
+  return_status: ReturnStatus
+  return_reason: string | null
+  return_inspection_notes: string | null
+  return_rejection_reason: string | null
+  return_requested_at: string | null
+  refunded_at: string | null
+  stripe_refund_id: string | null
+  refund_amount: number | null
   order_items: Array<{
     id: string
     quantity: number
@@ -86,11 +122,15 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
   const [trackingFormData, setTrackingFormData] = useState<{
     [orderId: string]: { number: string; carrier: string }
   }>({})
+  const [returnFormData, setReturnFormData] = useState<{
+    [orderId: string]: { reason: string; rejectionReason: string; inspectionNotes: string }
+  }>({})
 
   // 필터 & 검색 상태
   const [searchQuery, setSearchQuery] = useState('')
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all')
   const [fulfillmentFilter, setFulfillmentFilter] = useState<FulfillmentStatus | 'all'>('all')
+  const [returnFilter, setReturnFilter] = useState<ReturnStatus | 'all' | 'active'>('all')
 
   // 필터링된 주문 목록
   const filteredOrders = orders.filter((order) => {
@@ -106,6 +146,12 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
     if (paymentFilter !== 'all' && order.payment_status !== paymentFilter) return false
     // 배송 상태 필터
     if (fulfillmentFilter !== 'all' && order.fulfillment_status !== fulfillmentFilter) return false
+    // 반품 상태 필터
+    if (returnFilter === 'active') {
+      if (!['requested', 'received', 'approved'].includes(order.return_status || 'none')) return false
+    } else if (returnFilter !== 'all' && order.return_status !== returnFilter) {
+      return false
+    }
     return true
   })
 
@@ -170,6 +216,121 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
     }
   }
 
+  // 반품 관련 핸들러
+  const handleRequestReturn = async (orderId: string) => {
+    const reason = returnFormData[orderId]?.reason
+    if (!reason) {
+      alert('반품 사유를 입력해주세요.')
+      return
+    }
+    setUpdatingOrder(orderId)
+    try {
+      const result = await requestReturn(orderId, reason)
+      if (result.success) {
+        alert('반품 요청이 접수되었습니다.')
+        setReturnFormData((prev) => ({ ...prev, [orderId]: { reason: '', rejectionReason: '', inspectionNotes: '' } }))
+      } else {
+        alert(`실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleMarkReceived = async (orderId: string) => {
+    if (!confirm('반품 물품이 도착했음을 확인하시겠습니까?')) return
+    setUpdatingOrder(orderId)
+    try {
+      const result = await markReturnReceived(orderId)
+      if (result.success) {
+        alert('반품 도착이 확인되었습니다. 검수를 진행해주세요.')
+      } else {
+        alert(`실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleApproveReturn = async (orderId: string) => {
+    const notes = returnFormData[orderId]?.inspectionNotes
+    if (!confirm('검수 통과 처리하시겠습니까? 이후 환불이 가능해집니다.')) return
+    setUpdatingOrder(orderId)
+    try {
+      const result = await approveReturn(orderId, notes)
+      if (result.success) {
+        alert('검수 통과! 이제 환불을 실행할 수 있습니다.')
+      } else {
+        alert(`실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleRejectReturn = async (orderId: string) => {
+    const reason = returnFormData[orderId]?.rejectionReason
+    if (!reason) {
+      alert('거부 사유를 입력해주세요.')
+      return
+    }
+    if (!confirm('검수 실패 처리하시겠습니까? 환불이 불가능해집니다.')) return
+    setUpdatingOrder(orderId)
+    try {
+      const result = await rejectReturn(orderId, reason)
+      if (result.success) {
+        alert('검수 실패 처리되었습니다.')
+        setReturnFormData((prev) => ({ ...prev, [orderId]: { reason: '', rejectionReason: '', inspectionNotes: '' } }))
+      } else {
+        alert(`실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleProcessRefund = async (orderId: string, total: number) => {
+    if (!confirm(`${formatPrice(total)} 환불을 실행하시겠습니까?\nStripe에서 실제 환불이 진행됩니다.`)) return
+    setUpdatingOrder(orderId)
+    try {
+      const result = await processRefund(orderId)
+      if (result.success) {
+        alert(`환불 완료! Refund ID: ${result.refundId}`)
+      } else {
+        alert(`환불 실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`환불 실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleCancelReturnRequest = async (orderId: string) => {
+    if (!confirm('반품 요청을 취소하시겠습니까?')) return
+    setUpdatingOrder(orderId)
+    try {
+      const result = await cancelReturnRequest(orderId)
+      if (result.success) {
+        alert('반품 요청이 취소되었습니다.')
+      } else {
+        alert(`실패: ${result.error}`)
+      }
+    } catch (error: any) {
+      alert(`실패: ${error.message}`)
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
   if (orders.length === 0) {
     return (
       <div className="text-center py-12 border-2 border-gray-200 bg-white">
@@ -219,6 +380,22 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
             >
               <option value="all">전체</option>
               {Object.entries(FULFILLMENT_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 반품 상태 필터 */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-600">반품:</label>
+            <select
+              value={returnFilter}
+              onChange={(e) => setReturnFilter(e.target.value as ReturnStatus | 'all' | 'active')}
+              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
+            >
+              <option value="all">전체</option>
+              <option value="active">🔴 처리필요</option>
+              {Object.entries(RETURN_STATUS_LABELS).filter(([k]) => k !== 'none').map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
@@ -279,6 +456,13 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                 <span className={`px-2 py-1 text-xs font-semibold rounded border ${FULFILLMENT_STATUS_COLORS[order.fulfillment_status]}`}>
                   📦 {FULFILLMENT_STATUS_LABELS[order.fulfillment_status]}
                 </span>
+
+                {/* 반품 상태 (none이 아닐 때만 표시) */}
+                {order.return_status && order.return_status !== 'none' && (
+                  <span className={`px-2 py-1 text-xs font-semibold rounded border ${RETURN_STATUS_COLORS[order.return_status]}`}>
+                    🔄 {RETURN_STATUS_LABELS[order.return_status]}
+                  </span>
+                )}
 
                 {/* 고객 이메일 */}
                 {order.customer_email && (
@@ -453,6 +637,192 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                         <p className="text-xs text-gray-500 mt-1">
                           * 운송장 등록 시 자동으로 &quot;배송 중&quot; 상태로 변경됩니다.
                         </p>
+                      </div>
+                    )}
+
+                    {/* 반품/환불 관리 */}
+                    {order.payment_status === 'paid' && order.fulfillment_status !== 'canceled' && (
+                      <>
+                        <h3 className="font-bold mb-3 text-lg">🔄 반품/환불 관리</h3>
+                        <div className="bg-white border border-gray-200 p-3 mb-6">
+                          {/* 현재 반품 상태 표시 */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-sm font-semibold">반품 상태:</span>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded border ${RETURN_STATUS_COLORS[order.return_status || 'none']}`}>
+                              {RETURN_STATUS_LABELS[order.return_status || 'none']}
+                            </span>
+                          </div>
+
+                          {/* 반품 사유/거부 사유 표시 */}
+                          {order.return_reason && (
+                            <p className="text-sm text-gray-600 mb-2">
+                              <strong>반품 사유:</strong> {order.return_reason}
+                            </p>
+                          )}
+                          {order.return_rejection_reason && (
+                            <p className="text-sm text-red-600 mb-2">
+                              <strong>거부 사유:</strong> {order.return_rejection_reason}
+                            </p>
+                          )}
+                          {order.stripe_refund_id && (
+                            <p className="text-sm text-purple-600 mb-2 font-mono">
+                              <strong>Refund ID:</strong> {order.stripe_refund_id}
+                            </p>
+                          )}
+
+                          {/* 배송 전: 즉시 환불 가능 */}
+                          {['unfulfilled', 'processing'].includes(order.fulfillment_status) && (
+                            <div className="border-t border-gray-200 pt-3 mt-3">
+                              <p className="text-xs text-blue-600 mb-2">📌 배송 전 - 즉시 환불 가능</p>
+                              {(order.return_status === 'none' || order.return_status === 'requested') && (
+                                <button
+                                  onClick={() => handleProcessRefund(order.id, order.total)}
+                                  disabled={isUpdating}
+                                  className="w-full px-4 py-2 bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-sm"
+                                >
+                                  💰 즉시 환불 ({formatPrice(order.total)})
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* 배송 후: 단계별 반품 프로세스 */}
+                          {['shipped', 'delivered'].includes(order.fulfillment_status) && (
+                            <div className="border-t border-gray-200 pt-3 mt-3 space-y-3">
+                              <p className="text-xs text-orange-600 mb-2">📌 배송 후 - 반품 접수 → 도착 → 검수 → 환불</p>
+
+                              {/* none: 반품 요청 접수 */}
+                              {order.return_status === 'none' && (
+                                <div>
+                                  <input
+                                    type="text"
+                                    placeholder="반품 사유 입력"
+                                    value={returnFormData[order.id]?.reason || ''}
+                                    onChange={(e) =>
+                                      setReturnFormData((prev) => ({
+                                        ...prev,
+                                        [order.id]: { ...prev[order.id], reason: e.target.value, rejectionReason: '', inspectionNotes: '' },
+                                      }))
+                                    }
+                                    className="w-full p-2 border border-gray-300 mb-2 text-sm"
+                                    disabled={isUpdating}
+                                  />
+                                  <button
+                                    onClick={() => handleRequestReturn(order.id)}
+                                    disabled={isUpdating || !returnFormData[order.id]?.reason}
+                                    className="w-full px-4 py-2 bg-yellow-500 text-white font-semibold hover:bg-yellow-600 disabled:opacity-50 text-sm"
+                                  >
+                                    📥 반품 요청 접수
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* requested: 도착 확인 또는 취소 */}
+                              {order.return_status === 'requested' && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleMarkReceived(order.id)}
+                                    disabled={isUpdating}
+                                    className="flex-1 px-4 py-2 bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-50 text-sm"
+                                  >
+                                    📦 반품 도착 확인
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelReturnRequest(order.id)}
+                                    disabled={isUpdating}
+                                    className="px-4 py-2 border border-gray-400 text-gray-600 font-semibold hover:bg-gray-100 disabled:opacity-50 text-sm"
+                                  >
+                                    취소
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* received: 검수 (승인/거부) */}
+                              {order.return_status === 'received' && (
+                                <div className="space-y-2">
+                                  <input
+                                    type="text"
+                                    placeholder="검수 메모 (선택)"
+                                    value={returnFormData[order.id]?.inspectionNotes || ''}
+                                    onChange={(e) =>
+                                      setReturnFormData((prev) => ({
+                                        ...prev,
+                                        [order.id]: { ...prev[order.id], inspectionNotes: e.target.value },
+                                      }))
+                                    }
+                                    className="w-full p-2 border border-gray-300 text-sm"
+                                    disabled={isUpdating}
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => handleApproveReturn(order.id)}
+                                      disabled={isUpdating}
+                                      className="flex-1 px-4 py-2 bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-50 text-sm"
+                                    >
+                                      ✅ 검수 통과
+                                    </button>
+                                    <div className="flex-1">
+                                      <input
+                                        type="text"
+                                        placeholder="거부 사유"
+                                        value={returnFormData[order.id]?.rejectionReason || ''}
+                                        onChange={(e) =>
+                                          setReturnFormData((prev) => ({
+                                            ...prev,
+                                            [order.id]: { ...prev[order.id], rejectionReason: e.target.value },
+                                          }))
+                                        }
+                                        className="w-full p-2 border border-gray-300 text-sm mb-1"
+                                        disabled={isUpdating}
+                                      />
+                                      <button
+                                        onClick={() => handleRejectReturn(order.id)}
+                                        disabled={isUpdating || !returnFormData[order.id]?.rejectionReason}
+                                        className="w-full px-4 py-2 bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50 text-sm"
+                                      >
+                                        ❌ 검수 실패
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* approved: 환불 실행 */}
+                              {order.return_status === 'approved' && (
+                                <button
+                                  onClick={() => handleProcessRefund(order.id, order.total)}
+                                  disabled={isUpdating}
+                                  className="w-full px-4 py-2 bg-purple-600 text-white font-semibold hover:bg-purple-700 disabled:opacity-50 text-sm"
+                                >
+                                  💰 환불 실행 ({formatPrice(order.total)})
+                                </button>
+                              )}
+
+                              {/* rejected: 정보 표시만 */}
+                              {order.return_status === 'rejected' && (
+                                <p className="text-sm text-red-600">검수 실패로 환불이 거부되었습니다.</p>
+                              )}
+
+                              {/* refunded: 완료 표시 */}
+                              {order.return_status === 'refunded' && (
+                                <p className="text-sm text-purple-600">✅ 환불이 완료되었습니다.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* 환불 완료된 주문 표시 */}
+                    {order.payment_status === 'refunded' && (
+                      <div className="bg-purple-50 border-2 border-purple-300 p-3 mb-6">
+                        <p className="text-sm font-semibold text-purple-900">💰 환불 완료</p>
+                        {order.refunded_at && (
+                          <p className="text-xs text-purple-700">환불일: {new Date(order.refunded_at).toLocaleString('ko-KR')}</p>
+                        )}
+                        {order.stripe_refund_id && (
+                          <p className="text-xs text-purple-700 font-mono">Refund ID: {order.stripe_refund_id}</p>
+                        )}
                       </div>
                     )}
 
