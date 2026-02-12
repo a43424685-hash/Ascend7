@@ -3,6 +3,7 @@ export type Product = {
   slug: string
   name: string
   description: string | null
+  detail_content: string | null
   category: string
   is_active: boolean
   created_at: string

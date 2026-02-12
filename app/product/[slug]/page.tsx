@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getProductBySlug } from '@/entities/product/api/get-product-by-slug'
 import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
+import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 
 export default async function ProductPage({
   params,
@@ -20,6 +21,8 @@ export default async function ProductPage({
         <ProductGallery images={product.images} productName={product.name} />
         <ProductDetails product={product} />
       </div>
+
+      <ProductDetailTabs product={product} />
     </div>
   )
 }

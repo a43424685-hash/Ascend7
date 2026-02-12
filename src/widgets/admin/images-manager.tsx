@@ -22,15 +22,13 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 파일 크기 확인 (5MB 제한)
     if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB')
+      setError('파일 크기는 5MB 이하여야 합니다')
       return
     }
 
-    // 파일 타입 확인
     if (!file.type.startsWith('image/')) {
-      setError('File must be an image')
+      setError('이미지 파일만 업로드 가능합니다')
       return
     }
 
@@ -45,18 +43,17 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
 
       await uploadProductImage(formData)
       router.refresh()
-      
-      // Reset file input
+
       e.target.value = ''
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload image')
+      setError(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다')
     } finally {
       setUploading(false)
     }
   }
 
   const handleDelete = async (imageId: string) => {
-    if (!confirm('Delete this image?')) return
+    if (!confirm('이 이미지를 삭제하시겠습니까?')) return
 
     setDeleting(imageId)
     setError(null)
@@ -65,7 +62,7 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
       await deleteProductImage(imageId, productId)
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete image')
+      setError(err instanceof Error ? err.message : '이미지 삭제에 실패했습니다')
     } finally {
       setDeleting(null)
     }
@@ -79,7 +76,6 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
         </div>
       )}
 
-      {/* Upload Button */}
       <div>
         <label className="inline-block">
           <input
@@ -99,15 +95,14 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
               ;(e.currentTarget.previousElementSibling as HTMLInputElement)?.click()
             }}
           >
-            {uploading ? 'Uploading...' : '+ Upload Image'}
+            {uploading ? '업로드 중...' : '+ 이미지 업로드'}
           </Button>
         </label>
         <p className="text-xs text-gray-600 mt-1">
-          Max size: 5MB. Formats: JPG, PNG, WebP
+          최대 5MB. 형식: JPG, PNG, WebP
         </p>
       </div>
 
-      {/* Images Grid */}
       {images.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {images.map((image, index) => (
@@ -117,7 +112,7 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
             >
               <Image
                 src={image.url}
-                alt={`Product image ${index + 1}`}
+                alt={`상품 이미지 ${index + 1}`}
                 fill
                 className="object-cover"
               />
@@ -129,20 +124,19 @@ export function ImagesManager({ productId, images }: ImagesManagerProps) {
                 disabled={deleting === image.id}
                 className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
               >
-                {deleting === image.id ? 'Deleting...' : 'Delete'}
+                {deleting === image.id ? '삭제 중...' : '삭제'}
               </button>
             </div>
           ))}
         </div>
       ) : (
         <div className="text-center py-12 border-2 border-dashed border-gray-300">
-          <p className="text-gray-600 mb-2">No images uploaded yet</p>
+          <p className="text-gray-600 mb-2">업로드된 이미지가 없습니다</p>
           <p className="text-sm text-gray-500">
-            Upload images to display on the product page
+            상품 페이지에 표시할 이미지를 업로드하세요
           </p>
         </div>
       )}
     </div>
   )
 }
-

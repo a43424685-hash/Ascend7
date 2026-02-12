@@ -11,17 +11,17 @@ export default async function AdminProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Products</h1>
+        <h1 className="text-3xl font-bold">상품 관리</h1>
         <Link href="/admin/products/new">
-          <Button>+ New Product</Button>
+          <Button>+ 새 상품</Button>
         </Link>
       </div>
 
       {products.length === 0 ? (
         <div className="text-center py-12 bg-white border-2 border-gray-200">
-          <p className="text-gray-600 mb-4">No products yet</p>
+          <p className="text-gray-600 mb-4">등록된 상품이 없습니다</p>
           <Link href="/admin/products/new">
-            <Button>Create First Product</Button>
+            <Button>첫 상품 등록하기</Button>
           </Link>
         </div>
       ) : (
@@ -29,11 +29,11 @@ export default async function AdminProductsPage() {
           <table className="w-full">
             <thead className="border-b border-gray-200 bg-gray-50">
               <tr>
-                <th className="text-left p-4 font-semibold">Product</th>
-                <th className="text-left p-4 font-semibold">Category</th>
-                <th className="text-left p-4 font-semibold">Variants</th>
-                <th className="text-left p-4 font-semibold">Status</th>
-                <th className="text-right p-4 font-semibold">Actions</th>
+                <th className="text-left p-4 font-semibold">상품</th>
+                <th className="text-left p-4 font-semibold">카테고리</th>
+                <th className="text-left p-4 font-semibold">옵션</th>
+                <th className="text-left p-4 font-semibold">상태</th>
+                <th className="text-right p-4 font-semibold">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -62,10 +62,10 @@ export default async function AdminProductsPage() {
                     <td className="p-4 capitalize">{product.category}</td>
                     <td className="p-4">
                       <div className="text-sm">
-                        {product.variants.length} variants
+                        {product.variants.length}개 옵션
                       </div>
                       <div className="text-sm text-gray-600">
-                        Stock: {totalStock}
+                        재고: {totalStock}
                       </div>
                     </td>
                     <td className="p-4">
@@ -76,7 +76,7 @@ export default async function AdminProductsPage() {
                             : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {product.is_active ? 'Active' : 'Inactive'}
+                        {product.is_active ? '활성' : '비활성'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -84,7 +84,7 @@ export default async function AdminProductsPage() {
                         href={`/admin/products/${product.id}`}
                         className="text-sm font-medium hover:underline"
                       >
-                        Edit
+                        수정
                       </Link>
                     </td>
                   </tr>
@@ -97,4 +97,3 @@ export default async function AdminProductsPage() {
     </div>
   )
 }
-

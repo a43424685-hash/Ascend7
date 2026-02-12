@@ -22,7 +22,8 @@ CREATE POLICY "users_update_own_profile" ON profiles
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
--- 재고 복구 함수 (환불 시 사용)
+-- 재고 복구 함수 (환불 시 사용) - 기존 함수 드롭 후 재생성
+DROP FUNCTION IF EXISTS atomic_restore_stock(UUID, INT);
 CREATE OR REPLACE FUNCTION atomic_restore_stock(p_variant_id UUID, p_quantity INT)
 RETURNS TABLE(success BOOLEAN, new_stock INT, error_message TEXT)
 LANGUAGE plpgsql

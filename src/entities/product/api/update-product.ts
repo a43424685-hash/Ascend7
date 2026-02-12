@@ -8,6 +8,7 @@ export type UpdateProductInput = {
   name?: string
   slug?: string
   description?: string
+  detail_content?: string
   category?: string
   is_active?: boolean
 }

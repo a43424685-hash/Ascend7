@@ -38,7 +38,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       setSuccess(true)
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update product')
+      setError(err instanceof Error ? err.message : '상품 수정에 실패했습니다')
     } finally {
       setLoading(false)
     }
@@ -54,13 +54,13 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
 
       {success && (
         <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm">
-          Product updated successfully!
+          상품이 수정되었습니다.
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold mb-1">Name *</label>
+          <label className="block text-sm font-semibold mb-1">상품명 *</label>
           <input
             type="text"
             required
@@ -73,7 +73,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1">Slug *</label>
+          <label className="block text-sm font-semibold mb-1">슬러그 *</label>
           <input
             type="text"
             required
@@ -87,7 +87,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-semibold mb-1">Description</label>
+        <label className="block text-sm font-semibold mb-1">간단 설명</label>
         <textarea
           value={formData.description}
           onChange={(e) =>
@@ -100,7 +100,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold mb-1">Category *</label>
+          <label className="block text-sm font-semibold mb-1">카테고리 *</label>
           <select
             required
             value={formData.category}
@@ -109,9 +109,9 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
             }
             className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
           >
-            <option value="top">Top</option>
-            <option value="bottom">Bottom</option>
-            <option value="accessories">Accessories</option>
+            <option value="top">상의</option>
+            <option value="bottom">하의</option>
+            <option value="accessories">액세서리</option>
           </select>
         </div>
 
@@ -126,24 +126,23 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
             className="w-4 h-4"
           />
           <label htmlFor="is_active" className="text-sm font-semibold">
-            Active (visible to customers)
+            활성 (고객에게 노출)
           </label>
         </div>
       </div>
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? '저장 중...' : '변경사항 저장'}
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push('/admin/products')}
         >
-          Back to List
+          목록으로
         </Button>
       </div>
     </form>
   )
 }
-

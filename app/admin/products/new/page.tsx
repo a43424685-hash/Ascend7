@@ -27,13 +27,12 @@ export default function NewProductPage() {
       const product = await createProduct(formData)
       router.push(`/admin/products/${product.id}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create product')
+      setError(err instanceof Error ? err.message : '상품 생성에 실패했습니다')
     } finally {
       setLoading(false)
     }
   }
 
-  // Auto-generate slug from name
   const handleNameChange = (name: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -44,7 +43,7 @@ export default function NewProductPage() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-3xl font-bold mb-8">New Product</h1>
+      <h1 className="text-3xl font-bold mb-8">새 상품 등록</h1>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700">
@@ -53,10 +52,9 @@ export default function NewProductPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Name */}
         <div>
           <label className="block text-sm font-semibold mb-2">
-            Product Name *
+            상품명 *
           </label>
           <input
             type="text"
@@ -64,13 +62,12 @@ export default function NewProductPage() {
             value={formData.name}
             onChange={(e) => handleNameChange(e.target.value)}
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-            placeholder="e.g. Training Gloves"
+            placeholder="예: Training Gloves"
           />
         </div>
 
-        {/* Slug */}
         <div>
-          <label className="block text-sm font-semibold mb-2">Slug *</label>
+          <label className="block text-sm font-semibold mb-2">슬러그 *</label>
           <input
             type="text"
             required
@@ -79,17 +76,16 @@ export default function NewProductPage() {
               setFormData((prev) => ({ ...prev, slug: e.target.value }))
             }
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-            placeholder="e.g. training-gloves"
+            placeholder="예: training-gloves"
           />
           <p className="text-sm text-gray-600 mt-1">
-            Used in URL: /product/{formData.slug || 'slug'}
+            URL에 사용됩니다: /product/{formData.slug || 'slug'}
           </p>
         </div>
 
-        {/* Description */}
         <div>
           <label className="block text-sm font-semibold mb-2">
-            Description
+            간단 설명
           </label>
           <textarea
             value={formData.description}
@@ -98,13 +94,12 @@ export default function NewProductPage() {
             }
             rows={4}
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-            placeholder="Product description..."
+            placeholder="상품에 대한 간단한 설명..."
           />
         </div>
 
-        {/* Category */}
         <div>
-          <label className="block text-sm font-semibold mb-2">Category *</label>
+          <label className="block text-sm font-semibold mb-2">카테고리 *</label>
           <select
             required
             value={formData.category}
@@ -113,13 +108,12 @@ export default function NewProductPage() {
             }
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
           >
-            <option value="top">Top</option>
-            <option value="bottom">Bottom</option>
-            <option value="accessories">Accessories</option>
+            <option value="top">상의</option>
+            <option value="bottom">하의</option>
+            <option value="accessories">액세서리</option>
           </select>
         </div>
 
-        {/* Active */}
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -131,14 +125,13 @@ export default function NewProductPage() {
             className="w-5 h-5"
           />
           <label htmlFor="is_active" className="text-sm font-semibold">
-            Active (visible to customers)
+            활성 (고객에게 노출)
           </label>
         </div>
 
-        {/* Actions */}
         <div className="flex gap-4 pt-4">
           <Button type="submit" disabled={loading} className="flex-1">
-            {loading ? 'Creating...' : 'Create Product'}
+            {loading ? '생성 중...' : '상품 등록'}
           </Button>
           <Button
             type="button"
@@ -146,20 +139,19 @@ export default function NewProductPage() {
             onClick={() => router.back()}
             disabled={loading}
           >
-            Cancel
+            취소
           </Button>
         </div>
       </form>
 
       <div className="mt-8 p-4 bg-blue-50 border border-blue-200 text-sm">
-        <p className="font-semibold text-blue-900 mb-2">Next Steps:</p>
+        <p className="font-semibold text-blue-900 mb-2">다음 단계:</p>
         <ol className="list-decimal list-inside space-y-1 text-blue-800">
-          <li>Create the product</li>
-          <li>Upload product images</li>
-          <li>Add variants (color/size combinations with price & stock)</li>
+          <li>상품을 등록합니다</li>
+          <li>상품 이미지를 업로드합니다</li>
+          <li>옵션(색상/사이즈)을 추가합니다</li>
         </ol>
       </div>
     </div>
   )
 }
-

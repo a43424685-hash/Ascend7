@@ -41,7 +41,7 @@ export default async function AdminPage() {
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8">관리자 대시보드</h1>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -98,11 +98,11 @@ export default async function AdminPage() {
           href="/admin/products"
           className="block p-6 bg-white border-2 border-gray-200 hover:border-black transition-colors"
         >
-          <h2 className="text-xl font-bold mb-2">Products</h2>
+          <h2 className="text-xl font-bold mb-2">상품 관리</h2>
           <p className="text-gray-600 mb-4">
-            Manage products, variants, and inventory
+            상품, 옵션, 재고를 관리합니다
           </p>
-          <Button variant="outline">Manage Products →</Button>
+          <Button variant="outline">상품 관리 →</Button>
         </Link>
 
         {/* Orders Card */}
@@ -110,15 +110,15 @@ export default async function AdminPage() {
           href="/admin/orders"
           className="block p-6 bg-white border-2 border-gray-200 hover:border-black transition-colors"
         >
-          <h2 className="text-xl font-bold mb-2">Orders</h2>
-          <p className="text-gray-600 mb-4">View and manage customer orders</p>
-          <Button variant="outline">View Orders →</Button>
+          <h2 className="text-xl font-bold mb-2">주문 관리</h2>
+          <p className="text-gray-600 mb-4">고객 주문을 확인하고 관리합니다</p>
+          <Button variant="outline">주문 관리 →</Button>
         </Link>
       </div>
 
       <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200">
         <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> This is an MVP admin interface. All security is enforced at the database level via Row Level Security (RLS).
+          <strong>참고:</strong> MVP 관리자 인터페이스입니다. 보안은 데이터베이스 수준의 RLS(Row Level Security)로 적용됩니다.
         </p>
       </div>
     </div>

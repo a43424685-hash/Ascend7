@@ -20,13 +20,13 @@ export default function AdminLayout({
                   href="/admin/products"
                   className="text-sm font-medium hover:underline"
                 >
-                  Products
+                  상품
                 </Link>
                 <Link
                   href="/admin/orders"
                   className="text-sm font-medium hover:underline"
                 >
-                  Orders
+                  주문
                 </Link>
               </nav>
             </div>
@@ -34,7 +34,7 @@ export default function AdminLayout({
               href="/"
               className="text-sm text-gray-600 hover:underline"
             >
-              ← Back to Store
+              ← 스토어로
             </Link>
           </div>
         </div>

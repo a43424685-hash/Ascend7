@@ -17,8 +17,10 @@ interface VariantsManagerProps {
 export function VariantsManager({ productId, variants }: VariantsManagerProps) {
   const router = useRouter()
   const [isAdding, setIsAdding] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [stockLoading, setStockLoading] = useState<string | null>(null)
+  const [editingStockId, setEditingStockId] = useState<string | null>(null)
+  const [editingStockValue, setEditingStockValue] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
 
   const [newVariant, setNewVariant] = useState({
@@ -51,23 +53,64 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
       })
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create variant')
+      setError(err instanceof Error ? err.message : '옵션 생성에 실패했습니다')
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this variant?')) return
+    if (!confirm('이 옵션을 삭제하시겠습니까?')) return
 
     setLoading(true)
     try {
       await deleteVariant(id, productId)
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete variant')
+      setError(err instanceof Error ? err.message : '옵션 삭제에 실패했습니다')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleStockChange = async (variant: Variant, delta: number) => {
+    const newStock = Math.max(0, variant.stock + delta)
+    if (newStock === variant.stock) return
+
+    setStockLoading(variant.id)
+    try {
+      await updateVariant({
+        id: variant.id,
+        product_id: productId,
+        stock: newStock,
+      })
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '재고 변경에 실패했습니다')
+    } finally {
+      setStockLoading(null)
+    }
+  }
+
+  const handleStockDirectEdit = async (variant: Variant) => {
+    if (editingStockValue === variant.stock) {
+      setEditingStockId(null)
+      return
+    }
+    const newStock = Math.max(0, editingStockValue)
+    setStockLoading(variant.id)
+    try {
+      await updateVariant({
+        id: variant.id,
+        product_id: productId,
+        stock: newStock,
+      })
+      setEditingStockId(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '재고 변경에 실패했습니다')
+    } finally {
+      setStockLoading(null)
     }
   }
 
@@ -86,12 +129,12 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left p-3 font-semibold">SKU</th>
-                <th className="text-left p-3 font-semibold">Color</th>
-                <th className="text-left p-3 font-semibold">Size</th>
-                <th className="text-left p-3 font-semibold">Price</th>
-                <th className="text-left p-3 font-semibold">Stock</th>
-                <th className="text-left p-3 font-semibold">Status</th>
-                <th className="text-right p-3 font-semibold">Actions</th>
+                <th className="text-left p-3 font-semibold">색상</th>
+                <th className="text-left p-3 font-semibold">사이즈</th>
+                <th className="text-left p-3 font-semibold">가격</th>
+                <th className="text-left p-3 font-semibold">재고</th>
+                <th className="text-left p-3 font-semibold">상태</th>
+                <th className="text-right p-3 font-semibold">관리</th>
               </tr>
             </thead>
             <tbody>
@@ -101,7 +144,50 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   <td className="p-3">{variant.color}</td>
                   <td className="p-3">{variant.size}</td>
                   <td className="p-3">{formatPrice(variant.price)}</td>
-                  <td className="p-3">{variant.stock}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleStockChange(variant, -1)}
+                        disabled={stockLoading === variant.id || variant.stock <= 0}
+                        className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        -
+                      </button>
+                      {editingStockId === variant.id ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingStockValue}
+                          onChange={(e) => setEditingStockValue(parseInt(e.target.value) || 0)}
+                          onBlur={() => handleStockDirectEdit(variant)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleStockDirectEdit(variant)
+                            if (e.key === 'Escape') setEditingStockId(null)
+                          }}
+                          autoFocus
+                          className="w-14 h-7 text-center border border-blue-400 text-sm outline-none"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingStockId(variant.id)
+                            setEditingStockValue(variant.stock)
+                          }}
+                          className="w-14 h-7 text-center border border-gray-200 text-sm hover:border-blue-400 hover:bg-blue-50 cursor-text"
+                          title="클릭하여 직접 입력"
+                        >
+                          {stockLoading === variant.id ? '...' : variant.stock}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleStockChange(variant, 1)}
+                        disabled={stockLoading === variant.id}
+                        className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </td>
                   <td className="p-3">
                     <span
                       className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
@@ -110,7 +196,7 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {variant.is_active ? 'Active' : 'Inactive'}
+                      {variant.is_active ? '활성' : '비활성'}
                     </span>
                   </td>
                   <td className="p-3 text-right">
@@ -119,7 +205,7 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                       disabled={loading}
                       className="text-red-600 hover:underline text-sm disabled:opacity-50"
                     >
-                      Delete
+                      삭제
                     </button>
                   </td>
                 </tr>
@@ -132,8 +218,8 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
       {/* Add New Variant Form */}
       {isAdding ? (
         <form onSubmit={handleCreate} className="border border-gray-300 p-4 space-y-3">
-          <h3 className="font-semibold mb-2">Add New Variant</h3>
-          
+          <h3 className="font-semibold mb-2">새 옵션 추가</h3>
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">SKU *</label>
@@ -145,12 +231,12 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   setNewVariant((prev) => ({ ...prev, sku: e.target.value }))
                 }
                 className="w-full px-2 py-1 border border-gray-300 text-sm"
-                placeholder="e.g. TG-BLK-M"
+                placeholder="예: TG-BLK-M"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Color *</label>
+              <label className="block text-sm font-medium mb-1">색상 *</label>
               <input
                 type="text"
                 required
@@ -159,12 +245,12 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   setNewVariant((prev) => ({ ...prev, color: e.target.value }))
                 }
                 className="w-full px-2 py-1 border border-gray-300 text-sm"
-                placeholder="e.g. Black"
+                placeholder="예: Black"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Size *</label>
+              <label className="block text-sm font-medium mb-1">사이즈 *</label>
               <input
                 type="text"
                 required
@@ -173,12 +259,12 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   setNewVariant((prev) => ({ ...prev, size: e.target.value }))
                 }
                 className="w-full px-2 py-1 border border-gray-300 text-sm"
-                placeholder="e.g. M"
+                placeholder="예: M"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Price (₩) *</label>
+              <label className="block text-sm font-medium mb-1">가격 (₩) *</label>
               <input
                 type="number"
                 required
@@ -195,7 +281,7 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Stock *</label>
+              <label className="block text-sm font-medium mb-1">재고 *</label>
               <input
                 type="number"
                 required
@@ -224,14 +310,14 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   }
                   className="w-4 h-4"
                 />
-                <span className="text-sm font-medium">Active</span>
+                <span className="text-sm font-medium">활성</span>
               </label>
             </div>
           </div>
 
           <div className="flex gap-2">
             <Button type="submit" disabled={loading} size="sm">
-              {loading ? 'Adding...' : 'Add Variant'}
+              {loading ? '추가 중...' : '옵션 추가'}
             </Button>
             <Button
               type="button"
@@ -240,23 +326,21 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
               onClick={() => setIsAdding(false)}
               disabled={loading}
             >
-              Cancel
+              취소
             </Button>
           </div>
         </form>
       ) : (
         <Button onClick={() => setIsAdding(true)} variant="outline" size="sm">
-          + Add Variant
+          + 옵션 추가
         </Button>
       )}
 
       {variants.length === 0 && !isAdding && (
         <p className="text-sm text-gray-600 py-4">
-          No variants yet. Add at least one variant to make this product available for
-          purchase.
+          옵션이 없습니다. 상품을 판매하려면 최소 하나의 옵션을 추가하세요.
         </p>
       )}
     </div>
   )
 }
-
