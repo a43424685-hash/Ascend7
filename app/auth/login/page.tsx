@@ -255,6 +255,16 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {/* 비회원 주문조회 */}
+        <div className="text-center border-t border-gray-200 pt-6">
+          <p className="text-sm text-gray-500 mb-2">로그인 없이 주문을 확인하고 싶으신가요?</p>
+          <Link href="/guest/orders">
+            <Button variant="outline" size="sm" className="w-full">
+              비회원 주문 조회
+            </Button>
+          </Link>
+        </div>
+
         {/* 홈으로 */}
         <div className="text-center">
           <Link
