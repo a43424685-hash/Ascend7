@@ -62,6 +62,72 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
         />
       </div>
 
+      {/* 기본 배송지 섹션 */}
+      <div className="pt-6 mt-6 border-t-2 border-gray-200">
+        <h3 className="text-lg font-bold mb-4">기본 배송지</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          체크아웃 시 자동으로 입력됩니다.
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="default_postal_code" className="block text-sm font-semibold text-gray-700 mb-1">
+              우편번호
+            </label>
+            <input
+              id="default_postal_code"
+              name="default_postal_code"
+              type="text"
+              defaultValue={profile.default_postal_code || ''}
+              placeholder="12345"
+              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="default_address" className="block text-sm font-semibold text-gray-700 mb-1">
+              주소
+            </label>
+            <input
+              id="default_address"
+              name="default_address"
+              type="text"
+              defaultValue={profile.default_address || ''}
+              placeholder="서울시 강남구 테헤란로 123"
+              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="default_address_detail" className="block text-sm font-semibold text-gray-700 mb-1">
+              상세 주소
+            </label>
+            <input
+              id="default_address_detail"
+              name="default_address_detail"
+              type="text"
+              defaultValue={profile.default_address_detail || ''}
+              placeholder="101동 1234호"
+              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="default_memo" className="block text-sm font-semibold text-gray-700 mb-1">
+              기본 배송 메모
+            </label>
+            <input
+              id="default_memo"
+              name="default_memo"
+              type="text"
+              defaultValue={profile.default_memo || ''}
+              placeholder="부재시 문 앞에 놓아주세요"
+              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+            />
+          </div>
+        </div>
+      </div>
+
       <Button type="submit" className="w-full">
         프로필 저장
       </Button>

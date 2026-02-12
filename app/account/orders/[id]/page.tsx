@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/server'
 import { getOrderById } from '@/entities/order/api/get-order-by-id'
 import { formatPrice } from '@/shared/lib/utils'
+import { RefundRequestForm } from './refund-request-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,19 +183,42 @@ export default async function OrderDetailPage({
               <div>
                 <p className="text-gray-500">배송지:</p>
                 <p className="ml-2">
-                  {order.shipping_address.line1}
-                  {order.shipping_address.line2 &&
-                    `, ${order.shipping_address.line2}`}
-                  <br />
-                  {order.shipping_address.city} {order.shipping_address.state}{' '}
-                  {order.shipping_address.postal_code}
-                  <br />
-                  {order.shipping_address.country}
+                  {typeof order.shipping_address === 'object' && 'address' in order.shipping_address ? (
+                    <>
+                      [{order.shipping_address.postal_code}] {order.shipping_address.address}
+                      {order.shipping_address.address_detail && `, ${order.shipping_address.address_detail}`}
+                      <br />
+                      {order.shipping_address.name} / {order.shipping_address.phone}
+                      {order.shipping_address.memo && (
+                        <><br /><span className="text-gray-400">메모: {order.shipping_address.memo}</span></>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {order.shipping_address.line1}
+                      {order.shipping_address.line2 && `, ${order.shipping_address.line2}`}
+                      <br />
+                      {order.shipping_address.city} {order.shipping_address.state}{' '}
+                      {order.shipping_address.postal_code}
+                      <br />
+                      {order.shipping_address.country}
+                    </>
+                  )}
                 </p>
               </div>
             )}
           </div>
         </div>
+
+        {/* 환불/반품 요청 섹션 */}
+        <RefundRequestForm
+          orderId={order.id}
+          fulfillmentStatus={order.fulfillment_status}
+          returnStatus={order.return_status}
+          paymentStatus={order.payment_status}
+          returnReason={order.return_reason}
+          returnRejectionReason={order.return_rejection_reason}
+        />
       </div>
     </div>
   )

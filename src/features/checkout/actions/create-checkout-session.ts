@@ -3,9 +3,11 @@
 import { stripe } from '@/shared/lib/stripe'
 import { getSupabaseClient } from '@/shared/api/supabaseClient'
 import type { CartItemWithVariant } from '@/shared/types/cart'
+import type { ShippingInfo } from './get-default-shipping'
 
 export async function createCheckoutSession(
-  cartItems: CartItemWithVariant[]
+  cartItems: CartItemWithVariant[],
+  shippingInfo?: ShippingInfo
 ) {
   if (cartItems.length === 0) {
     throw new Error('Cart is empty')
@@ -61,6 +63,13 @@ export async function createCheckoutSession(
           price: item.variant.price,
         }))
       ),
+      // 배송 정보
+      shipping_name: shippingInfo?.name || '',
+      shipping_phone: shippingInfo?.phone || '',
+      shipping_address: shippingInfo?.address || '',
+      shipping_address_detail: shippingInfo?.addressDetail || '',
+      shipping_postal_code: shippingInfo?.postalCode || '',
+      shipping_memo: shippingInfo?.memo || '',
     },
   })
 

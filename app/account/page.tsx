@@ -4,6 +4,7 @@ import { createClient } from '@/shared/lib/supabase/server'
 import { getOrders } from '@/entities/order/api/get-orders'
 import { formatPrice } from '@/shared/lib/utils'
 import { ProfileForm } from './profile-form'
+import { PasswordForm } from './password-form'
 import { LogoutButton } from '@/features/auth/logout-button'
 
 export const dynamic = 'force-dynamic'
@@ -34,10 +35,10 @@ export default async function AccountPage() {
     redirect('/')
   }
 
-  // 프로필 정보 조회
+  // 프로필 정보 조회 (기본 배송지 포함)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, phone, email')
+    .select('display_name, phone, email, default_address, default_address_detail, default_postal_code, default_memo')
     .eq('id', user.id)
     .single()
 
@@ -45,6 +46,10 @@ export default async function AccountPage() {
     display_name: profile?.display_name || null,
     phone: profile?.phone || null,
     email: profile?.email || user.email || '',
+    default_address: profile?.default_address || null,
+    default_address_detail: profile?.default_address_detail || null,
+    default_postal_code: profile?.default_postal_code || null,
+    default_memo: profile?.default_memo || null,
   }
 
   // 주문 내역 조회
@@ -67,12 +72,21 @@ export default async function AccountPage() {
 
       {/* 프로필 & 주문 내역 */}
       <div className="grid md:grid-cols-2 gap-12">
-        {/* 프로필 섹션 */}
-        <div>
-          <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
-            PROFILE
-          </h2>
-          <ProfileForm profile={profileData} />
+        {/* 프로필 & 비밀번호 섹션 */}
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
+              PROFILE
+            </h2>
+            <ProfileForm profile={profileData} />
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
+              CHANGE PASSWORD
+            </h2>
+            <PasswordForm />
+          </div>
         </div>
 
         {/* 주문 내역 섹션 */}

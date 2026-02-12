@@ -291,18 +291,27 @@ export async function POST(req: NextRequest) {
       // 5. 주문 생성 (멱등 업서트 - stripe_session_id 기준)
       console.log(`🔄 [WEBHOOK] Creating/updating order (upsert)`, { requestId, eventId: event.id })
 
-      // Stripe에서 배송/고객 정보 추출
-      const shippingAddress = session.shipping_details?.address ? {
+      // metadata에서 배송 정보 추출 (커스텀 폼에서 입력받은 정보)
+      const shippingAddress = session.metadata?.shipping_address ? {
+        name: session.metadata.shipping_name || '',
+        phone: session.metadata.shipping_phone || '',
+        address: session.metadata.shipping_address,
+        address_detail: session.metadata.shipping_address_detail || '',
+        postal_code: session.metadata.shipping_postal_code || '',
+        memo: session.metadata.shipping_memo || '',
+      } : (session.shipping_details?.address ? {
+        // fallback: Stripe 기본 배송 정보
         line1: session.shipping_details.address.line1,
         line2: session.shipping_details.address.line2,
         city: session.shipping_details.address.city,
         state: session.shipping_details.address.state,
         postal_code: session.shipping_details.address.postal_code,
         country: session.shipping_details.address.country,
-      } : null
+      } : null)
 
-      const customerName = session.customer_details?.name || session.shipping_details?.name || null
+      const customerName = session.metadata?.shipping_name || session.customer_details?.name || session.shipping_details?.name || null
       const customerEmail = session.customer_details?.email || null
+      const customerPhone = session.metadata?.shipping_phone || null
 
       console.log(`📮 [WEBHOOK] Shipping/Customer info`, {
         requestId,
@@ -336,6 +345,7 @@ export async function POST(req: NextRequest) {
             shipping_address: shippingAddress,
             customer_email: customerEmail,
             customer_name: customerName,
+            customer_phone: customerPhone,
           })
           .eq('id', existingOrder.id)
           .select()
@@ -358,6 +368,7 @@ export async function POST(req: NextRequest) {
             shipping_address: shippingAddress,
             customer_email: customerEmail,
             customer_name: customerName,
+            customer_phone: customerPhone,
           })
           .select()
           .single()
