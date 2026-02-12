@@ -17,7 +17,6 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Supabase에서 variant 정보 조회
   useEffect(() => {
     if (!isLoaded) return
 
@@ -40,14 +39,13 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, JSON.stringify(cartItems)])
 
-  // 합계 계산
   const subtotal = cartItemsWithData.reduce(
     (sum, item) => sum + item.variant.price * item.quantity,
     0
   )
+  const shippingFee = subtotal >= 50000 ? 0 : 3000
 
   const handleQuantityChange = (variantId: string, newQuantity: number) => {
-    // 재고 확인
     const item = cartItemsWithData.find((i) => i.variant_id === variantId)
     if (item && newQuantity > item.variant.stock) {
       alert(`재고가 부족합니다. (최대 ${item.variant.stock}개)`)
@@ -59,7 +57,11 @@ export default function CartPage() {
   if (!isLoaded || isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <p>장바구니를 불러오는 중...</p>
+        <div className="animate-pulse space-y-4 max-w-3xl mx-auto">
+          <div className="h-8 bg-gray-200 rounded w-32 mx-auto" />
+          <div className="h-24 bg-gray-100 rounded" />
+          <div className="h-24 bg-gray-100 rounded" />
+        </div>
       </div>
     )
   }
@@ -67,7 +69,7 @@ export default function CartPage() {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">CART</h1>
+        <h1 className="text-3xl font-bold mb-4">장바구니</h1>
         <div className="bg-red-50 border-2 border-red-200 p-6">
           <p className="text-red-800 font-semibold mb-2">오류 발생</p>
           <p className="text-red-600 text-sm">{error}</p>
@@ -79,10 +81,10 @@ export default function CartPage() {
   if (cartItemsWithData.length === 0) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
-        <h1 className="text-3xl font-bold mb-4">CART</h1>
+        <h1 className="text-3xl font-bold mb-4">장바구니</h1>
         <p className="text-gray-600 mb-8">장바구니가 비어있습니다.</p>
         <Link href="/shop">
-          <Button>SHOP NOW</Button>
+          <Button>쇼핑하러 가기</Button>
         </Link>
       </div>
     )
@@ -90,7 +92,7 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">CART</h1>
+      <h1 className="text-3xl font-bold mb-8">장바구니</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {cartItemsWithData.map((item) => {
@@ -164,7 +166,7 @@ export default function CartPage() {
                       onClick={() => removeItem(item.variant_id)}
                       className="text-sm text-gray-600 hover:underline"
                     >
-                      Remove
+                      삭제
                     </button>
                   </div>
                 </div>
@@ -179,31 +181,42 @@ export default function CartPage() {
         </div>
         <div className="lg:col-span-1">
           <div className="border-2 border-black p-6 sticky top-4">
-            <h2 className="text-xl font-bold mb-4">ORDER SUMMARY</h2>
+            <h2 className="text-xl font-bold mb-4">주문 요약</h2>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
+                <span>상품 금액</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
+                <span>배송비</span>
+                <span>
+                  {shippingFee === 0 ? (
+                    <span className="text-green-600 font-medium">무료</span>
+                  ) : (
+                    formatPrice(shippingFee)
+                  )}
+                </span>
               </div>
+              {shippingFee > 0 && (
+                <p className="text-xs text-gray-400">
+                  {formatPrice(50000 - subtotal)} 더 구매 시 무료배송
+                </p>
+              )}
             </div>
             <div className="border-t border-black pt-4 mb-4">
               <div className="flex justify-between font-bold">
-                <span>Total</span>
-                <span>{formatPrice(subtotal)}</span>
+                <span>합계</span>
+                <span>{formatPrice(subtotal + shippingFee)}</span>
               </div>
             </div>
             <Link href="/checkout" className="block">
               <Button className="w-full" size="lg">
-                CHECKOUT
+                주문하기
               </Button>
             </Link>
             <Link href="/shop" className="block mt-4">
               <Button variant="outline" className="w-full">
-                CONTINUE SHOPPING
+                쇼핑 계속하기
               </Button>
             </Link>
           </div>

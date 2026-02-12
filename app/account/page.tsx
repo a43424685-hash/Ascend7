@@ -59,7 +59,7 @@ export default async function AccountPage() {
     <div className="container mx-auto px-4 py-12">
       {/* 헤더 + 로그아웃 */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">MY ACCOUNT</h1>
+        <h1 className="text-3xl font-bold">내 계정</h1>
         <div className="flex items-center gap-4">
           {profileData.display_name && (
             <span className="text-gray-600">
@@ -76,14 +76,14 @@ export default async function AccountPage() {
         <div className="space-y-8">
           <div>
             <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
-              PROFILE
+              프로필
             </h2>
             <ProfileForm profile={profileData} />
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
-              CHANGE PASSWORD
+              비밀번호 변경
             </h2>
             <PasswordForm />
           </div>
@@ -92,7 +92,7 @@ export default async function AccountPage() {
         {/* 주문 내역 섹션 */}
         <div>
           <h2 className="text-xl font-bold mb-6 pb-2 border-b-2 border-black">
-            ORDER HISTORY
+            주문 내역
           </h2>
           {orders.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-gray-300">
@@ -115,7 +115,7 @@ export default async function AccountPage() {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <p className="font-semibold">
-                        Order #{order.id.slice(0, 8)}
+                        주문 #{order.id.slice(0, 8)}
                       </p>
                       <p className="text-sm text-gray-600">
                         {new Date(order.created_at).toLocaleDateString('ko-KR')}

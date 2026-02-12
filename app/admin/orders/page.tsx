@@ -62,7 +62,7 @@ export default async function AdminOrdersPage() {
     console.error('Failed to fetch orders:', error)
     return (
       <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">ORDERS</h1>
+        <h1 className="text-2xl font-bold mb-4">주문 관리</h1>
         <div className="bg-red-50 border-2 border-red-200 p-6">
           <p className="text-red-800 font-semibold mb-2">오류 발생</p>
           <p className="text-red-600 text-sm">{error.message}</p>
@@ -92,7 +92,7 @@ export default async function AdminOrdersPage() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">📦 ORDERS</h1>
+        <h1 className="text-3xl font-bold mb-2">주문 관리</h1>
         <p className="text-gray-600">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
       </div>
       <WebhookFailureAlert />
