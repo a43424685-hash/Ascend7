@@ -542,6 +542,10 @@ export async function POST(req: NextRequest) {
       }
 
       // 9. 주문 완료 이메일 발송
+      console.log(`📧 [WEBHOOK] Email check:`, {
+        RESEND_API_KEY_EXISTS: !!process.env.RESEND_API_KEY,
+        FROM_EMAIL: process.env.FROM_EMAIL || 'ASCEND7 <onboarding@resend.dev> (default)',
+      })
       if (customerEmail && !hasStockError) {
         try {
           // 상품 정보 조회 (이메일용)
@@ -567,7 +571,8 @@ export async function POST(req: NextRequest) {
             }),
           }
 
-          await sendOrderConfirmation(emailData)
+          const emailResult = await sendOrderConfirmation(emailData)
+          console.log(`📧 [WEBHOOK] sendOrderConfirmation result:`, emailResult)
         } catch (emailErr: any) {
           console.error('⚠️ [WEBHOOK] Email send failed (non-blocking):', emailErr.message)
         }
