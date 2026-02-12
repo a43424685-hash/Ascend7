@@ -1,16 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/features/cart/cart-context'
 import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
 import { createCheckoutSession } from '@/features/checkout/actions/create-checkout-session'
-import { getDefaultShippingInfo, saveDefaultShippingInfo, type ShippingInfo } from '@/features/checkout/actions/get-default-shipping'
+import {
+  getDefaultShippingInfo,
+  saveDefaultShippingInfo,
+  type ShippingInfo,
+  type CheckoutAuthStatus,
+} from '@/features/checkout/actions/get-default-shipping'
 import type { CartItemWithVariant } from '@/shared/types/cart'
 import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
+import { AddressSearch } from '@/shared/ui/address-search'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -20,7 +26,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saveAsDefault, setSaveAsDefault] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
+  const [authStatus, setAuthStatus] = useState<CheckoutAuthStatus | null>(null)
 
   // 배송 정보 폼 상태
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -44,7 +50,6 @@ export default function CheckoutPage() {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        // 장바구니 데이터 로드
         const items = await getCartItemsClient(cartItems)
         setCartItemsWithData(items)
 
@@ -53,16 +58,15 @@ export default function CheckoutPage() {
           return
         }
 
-        // 기본 배송지 로드 (로그인 시)
-        const defaultInfo = await getDefaultShippingInfo()
-        if (defaultInfo) {
-          setIsLoggedIn(true)
-          setShippingInfo(prev => ({
+        // 기본 배송지 로드
+        const result = await getDefaultShippingInfo()
+        setAuthStatus(result.status)
+
+        if (result.shippingInfo) {
+          setShippingInfo((prev) => ({
             ...prev,
-            ...defaultInfo,
+            ...result.shippingInfo,
           }))
-        } else {
-          setIsLoggedIn(false)
         }
       } catch (err: any) {
         setError(err.message || '장바구니를 불러올 수 없습니다.')
@@ -105,11 +109,27 @@ export default function CheckoutPage() {
     if (field === 'phone') {
       value = formatPhoneNumber(value)
     }
-    setShippingInfo(prev => ({ ...prev, [field]: value }))
+    setShippingInfo((prev) => ({ ...prev, [field]: value }))
     if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: undefined }))
+      setFormErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
+
+  const handleAddressComplete = useCallback(
+    (result: { postalCode: string; address: string }) => {
+      setShippingInfo((prev) => ({
+        ...prev,
+        postalCode: result.postalCode,
+        address: result.address,
+      }))
+      setFormErrors((prev) => ({
+        ...prev,
+        postalCode: undefined,
+        address: undefined,
+      }))
+    },
+    []
+  )
 
   const handleCheckout = async () => {
     if (cartItemsWithData.length === 0) return
@@ -119,8 +139,7 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      // 기본 배송지로 저장
-      if (saveAsDefault && isLoggedIn) {
+      if (saveAsDefault && authStatus !== 'guest') {
         await saveDefaultShippingInfo(shippingInfo)
       }
 
@@ -167,14 +186,36 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* 왼쪽: 배송 정보 */}
         <div className="lg:col-span-3 space-y-6">
-          {/* 비로그인 안내 */}
-          {isLoggedIn === false && (
+          {/* 배너: 3분기 조건 */}
+          {authStatus === 'guest' && (
             <div className="bg-blue-50 border border-blue-200 p-4">
-              <p className="text-sm text-blue-800">
-                <Link href={`/auth/login?redirect=/checkout`} className="font-semibold underline">
+              <p className="text-sm text-blue-800 font-medium">
+                비회원 주문이 가능합니다. 결제 후 주문번호로 배송조회가 가능해요.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                <Link href="/auth/login?redirect=/checkout" className="underline font-semibold">
                   로그인
                 </Link>
-                하시면 기본 배송지가 자동으로 입력됩니다.
+                하시면 기본 배송지 자동입력, 주문관리가 더 편리합니다.
+              </p>
+            </div>
+          )}
+
+          {authStatus === 'logged_in_with_address' && (
+            <div className="bg-green-50 border border-green-200 p-3">
+              <p className="text-sm text-green-800">
+                기본 배송지가 자동으로 입력되었습니다.
+              </p>
+            </div>
+          )}
+
+          {authStatus === 'logged_in_no_address' && (
+            <div className="bg-yellow-50 border border-yellow-200 p-4">
+              <p className="text-sm text-yellow-800">
+                기본 배송지를 등록하면 다음 주문부터 자동으로 입력됩니다.{' '}
+                <Link href="/account" className="underline font-semibold">
+                  내 계정에서 등록하기
+                </Link>
               </p>
             </div>
           )}
@@ -211,18 +252,21 @@ export default function CheckoutPage() {
                 {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
               </div>
 
+              {/* 우편번호 + 주소검색 */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   우편번호 <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={shippingInfo.postalCode}
-                  onChange={(e) => handleInputChange('postalCode', e.target.value.replace(/\D/g, '').slice(0, 5))}
-                  maxLength={5}
-                  className={`w-full px-3 py-2.5 border-2 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'} focus:border-black outline-none`}
-                  placeholder="12345"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shippingInfo.postalCode}
+                    readOnly
+                    className={`flex-1 px-3 py-2.5 border-2 ${formErrors.postalCode ? 'border-red-500' : 'border-gray-300'} bg-gray-50 outline-none`}
+                    placeholder="주소 검색을 눌러주세요"
+                  />
+                  <AddressSearch onComplete={handleAddressComplete} />
+                </div>
                 {formErrors.postalCode && <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>}
               </div>
 
@@ -233,9 +277,9 @@ export default function CheckoutPage() {
                 <input
                   type="text"
                   value={shippingInfo.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className={`w-full px-3 py-2.5 border-2 ${formErrors.address ? 'border-red-500' : 'border-gray-300'} focus:border-black outline-none`}
-                  placeholder="도로명 주소"
+                  readOnly
+                  className={`w-full px-3 py-2.5 border-2 ${formErrors.address ? 'border-red-500' : 'border-gray-300'} bg-gray-50 outline-none`}
+                  placeholder="주소 검색 버튼을 눌러주세요"
                 />
                 {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
               </div>
@@ -275,8 +319,8 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* 기본 배송지로 저장 */}
-              {isLoggedIn && (
+              {/* 기본 배송지로 저장 (로그인 사용자만) */}
+              {authStatus !== 'guest' && authStatus !== null && (
                 <label className="flex items-center gap-2 pt-2 cursor-pointer">
                   <input
                     type="checkbox"

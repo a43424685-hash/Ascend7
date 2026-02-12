@@ -1,11 +1,25 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import { useFormState } from 'react-dom'
 import { Button } from '@/shared/ui/button'
+import { AddressSearch } from '@/shared/ui/address-search'
 import { updateProfile, type ProfileData } from './actions'
 
 export function ProfileForm({ profile }: { profile: ProfileData }) {
   const [state, formAction] = useFormState(updateProfile, undefined)
+
+  // 주소 필드만 controlled state (주소검색 연동)
+  const [postalCode, setPostalCode] = useState(profile.default_postal_code || '')
+  const [address, setAddress] = useState(profile.default_address || '')
+
+  const handleAddressComplete = useCallback(
+    (result: { postalCode: string; address: string }) => {
+      setPostalCode(result.postalCode)
+      setAddress(result.address)
+    },
+    []
+  )
 
   return (
     <form action={formAction} className="space-y-4">
@@ -36,7 +50,7 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
 
       <div>
         <label htmlFor="display_name" className="block text-sm font-semibold text-gray-700 mb-1">
-          이름 (Display Name)
+          이름
         </label>
         <input
           id="display_name"
@@ -74,14 +88,18 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
             <label htmlFor="default_postal_code" className="block text-sm font-semibold text-gray-700 mb-1">
               우편번호
             </label>
-            <input
-              id="default_postal_code"
-              name="default_postal_code"
-              type="text"
-              defaultValue={profile.default_postal_code || ''}
-              placeholder="12345"
-              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
-            />
+            <div className="flex gap-2">
+              <input
+                id="default_postal_code"
+                name="default_postal_code"
+                type="text"
+                value={postalCode}
+                readOnly
+                className="flex-1 px-4 py-3 border-2 border-gray-300 bg-gray-50"
+                placeholder="주소 검색을 눌러주세요"
+              />
+              <AddressSearch onComplete={handleAddressComplete} />
+            </div>
           </div>
 
           <div>
@@ -92,9 +110,10 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
               id="default_address"
               name="default_address"
               type="text"
-              defaultValue={profile.default_address || ''}
-              placeholder="서울시 강남구 테헤란로 123"
-              className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+              value={address}
+              readOnly
+              className="w-full px-4 py-3 border-2 border-gray-300 bg-gray-50"
+              placeholder="주소 검색 버튼을 눌러주세요"
             />
           </div>
 

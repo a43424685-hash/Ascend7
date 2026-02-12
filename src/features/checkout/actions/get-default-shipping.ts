@@ -11,11 +11,18 @@ export interface ShippingInfo {
   memo: string
 }
 
-export async function getDefaultShippingInfo(): Promise<ShippingInfo | null> {
+export type CheckoutAuthStatus = 'guest' | 'logged_in_no_address' | 'logged_in_with_address'
+
+export interface ShippingCheckResult {
+  status: CheckoutAuthStatus
+  shippingInfo: ShippingInfo | null
+}
+
+export async function getDefaultShippingInfo(): Promise<ShippingCheckResult> {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) return { status: 'guest', shippingInfo: null }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -23,19 +30,24 @@ export async function getDefaultShippingInfo(): Promise<ShippingInfo | null> {
     .eq('id', user.id)
     .single()
 
-  if (!profile) return null
+  if (!profile) return { status: 'logged_in_no_address', shippingInfo: null }
 
-  // 기본 배송지가 설정되어 있는 경우에만 반환
-  if (!profile.default_address && !profile.name) return null
-
-  return {
-    name: profile.name || '',
-    phone: profile.phone || '',
-    address: profile.default_address || '',
-    addressDetail: profile.default_address_detail || '',
-    postalCode: profile.default_postal_code || '',
-    memo: profile.default_memo || '',
+  // 기본 배송지가 설정되어 있는 경우
+  if (profile.default_address || profile.name) {
+    return {
+      status: 'logged_in_with_address',
+      shippingInfo: {
+        name: profile.name || '',
+        phone: profile.phone || '',
+        address: profile.default_address || '',
+        addressDetail: profile.default_address_detail || '',
+        postalCode: profile.default_postal_code || '',
+        memo: profile.default_memo || '',
+      },
+    }
   }
+
+  return { status: 'logged_in_no_address', shippingInfo: null }
 }
 
 export async function saveDefaultShippingInfo(info: ShippingInfo): Promise<{ success: boolean; error?: string }> {

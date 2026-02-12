@@ -29,6 +29,7 @@ export type Variant = {
 
 export type Order = {
   id: string
+  order_number: string | null
   user_id: string | null
   payment_status: string
   fulfillment_status: string

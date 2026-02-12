@@ -356,11 +356,20 @@ export async function POST(req: NextRequest) {
         }
         order = updatedOrder
       } else {
+        // 주문번호 생성 (A7-YYMMDD-XXXX)
+        const now = new Date()
+        const yy = String(now.getFullYear()).slice(2)
+        const mm = String(now.getMonth() + 1).padStart(2, '0')
+        const dd = String(now.getDate()).padStart(2, '0')
+        const rand = Math.random().toString(36).substring(2, 6).toUpperCase()
+        const orderNumber = `A7-${yy}${mm}${dd}-${rand}`
+
         // 새 주문 생성
         const { data: newOrder, error: orderError } = await supabase
           .from('orders')
           .insert({
             user_id: userId === 'guest' ? null : userId,
+            order_number: orderNumber,
             payment_status: 'paid',
             fulfillment_status: 'unfulfilled',
             total,
