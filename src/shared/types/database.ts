@@ -38,8 +38,18 @@ export type Order = {
   shipping_address: Record<string, any> | null
   customer_email: string | null
   customer_name: string | null
+  customer_phone: string | null
   created_at: string
   updated_at?: string
+  // 반품/환불 관련
+  return_status: string | null
+  return_reason: string | null
+  return_requested_at: string | null
+  return_rejection_reason: string | null
+  return_inspection_notes: string | null
+  stripe_refund_id: string | null
+  refund_amount: number | null
+  refunded_at: string | null
 }
 
 export type OrderItem = {
