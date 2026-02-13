@@ -46,14 +46,26 @@ export function HeroSlider({ banners }: HeroSliderProps) {
           className="absolute inset-0 transition-opacity duration-700 ease-in-out"
           style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
         >
+          {/* 데스크탑 이미지 */}
           <Image
             src={banner.image_url}
             alt={banner.title || ''}
             fill
-            className="object-cover"
+            className={`object-cover ${banner.image_mobile_url ? 'hidden sm:block' : ''}`}
             sizes="100vw"
             priority={i === 0}
           />
+          {/* 모바일 이미지 (있으면) */}
+          {banner.image_mobile_url && (
+            <Image
+              src={banner.image_mobile_url}
+              alt={banner.title || ''}
+              fill
+              className="object-cover sm:hidden"
+              sizes="100vw"
+              priority={i === 0}
+            />
+          )}
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/40" />
 
@@ -69,14 +81,32 @@ export function HeroSlider({ banners }: HeroSliderProps) {
                 {banner.subtitle}
               </p>
             )}
-            {banner.link_url && banner.link_text && (
+
+            {/* CTA 버튼 (cta_buttons 배열 사용, 없으면 기존 link_url/link_text 폴백) */}
+            {banner.cta_buttons && banner.cta_buttons.length > 0 ? (
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                {banner.cta_buttons.map((cta, idx) => (
+                  <Link
+                    key={idx}
+                    href={cta.url}
+                    className={
+                      cta.style === 'outline'
+                        ? 'px-8 sm:px-10 py-3 sm:py-4 border border-white text-white text-xs sm:text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-all duration-300'
+                        : 'px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300'
+                    }
+                  >
+                    {cta.text}
+                  </Link>
+                ))}
+              </div>
+            ) : banner.link_url && banner.link_text ? (
               <Link
                 href={banner.link_url}
                 className="px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
               >
                 {banner.link_text}
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       ))}

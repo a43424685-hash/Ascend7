@@ -3,6 +3,7 @@ import './globals.css'
 import { Header } from '@/widgets/header'
 import { Footer } from '@/widgets/footer'
 import { FloatingKakaoButton } from '@/widgets/kakao/floating-kakao-button'
+import { AnnouncementBarServer } from '@/widgets/announcement-bar/announcement-bar-server'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <Providers>
+          <AnnouncementBarServer />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
