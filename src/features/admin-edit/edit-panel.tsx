@@ -4,10 +4,10 @@ import { useEditMode } from './edit-mode-provider'
 import { BrandValuesEditor } from './editors/brand-values-editor'
 import { PhilosophyEditor } from './editors/philosophy-editor'
 import { BottomCtaEditor } from './editors/bottom-cta-editor'
-import { BannerQuickEditor } from './editors/banner-quick-editor'
+import { HeroBannerEditor } from './editors/hero-banner-editor'
 
 const SECTION_EDITORS: Record<string, { label: string; Component: React.ComponentType }> = {
-  'hero-banner': { label: '히어로 배너', Component: BannerQuickEditor },
+  'hero-banner': { label: '히어로 배너', Component: HeroBannerEditor },
   'brand-values': { label: '브랜드 가치', Component: BrandValuesEditor },
   'philosophy': { label: '브랜드 철학', Component: PhilosophyEditor },
   'bottom-cta': { label: '하단 CTA', Component: BottomCtaEditor },

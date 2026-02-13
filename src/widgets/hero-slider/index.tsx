@@ -4,9 +4,21 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { HeroBanner } from '@/entities/banner/api/get-banners'
+import type { TextStyle } from '@/entities/cms/types/home-sections'
 
 interface HeroSliderProps {
   banners: HeroBanner[]
+}
+
+function toCSS(s?: TextStyle): React.CSSProperties {
+  if (!s) return {}
+  const css: React.CSSProperties = {}
+  if (s.fontSize) css.fontSize = s.fontSize
+  if (s.fontWeight) css.fontWeight = s.fontWeight
+  if (s.color) css.color = s.color
+  if (s.textAlign) css.textAlign = s.textAlign
+  if (s.letterSpacing) css.letterSpacing = s.letterSpacing
+  return css
 }
 
 export function HeroSlider({ banners }: HeroSliderProps) {
@@ -40,76 +52,112 @@ export function HeroSlider({ banners }: HeroSliderProps) {
 
   return (
     <div className="relative w-full h-[85vh] lg:h-[90vh] overflow-hidden bg-black">
-      {banners.map((banner, i) => (
-        <div
-          key={banner.id}
-          className="absolute inset-0 transition-opacity duration-700 ease-in-out"
-          style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
-        >
-          {/* 데스크탑 이미지 */}
-          <Image
-            src={banner.image_url}
-            alt={banner.title || ''}
-            fill
-            className={`object-cover ${banner.image_mobile_url ? 'hidden sm:block' : ''}`}
-            sizes="100vw"
-            priority={i === 0}
-          />
-          {/* 모바일 이미지 (있으면) */}
-          {banner.image_mobile_url && (
+      {banners.map((banner, i) => {
+        const ts = banner.text_style || {}
+        const pos = ts.contentPosition || { x: 50, y: 50 }
+        const overlayOpacity = ts.overlayOpacity ?? 40
+        const hasCustomPos = pos.x !== 50 || pos.y !== 50
+
+        return (
+          <div
+            key={banner.id}
+            className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+            style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
+          >
+            {/* 데스크탑 이미지 */}
             <Image
-              src={banner.image_mobile_url}
+              src={banner.image_url}
               alt={banner.title || ''}
               fill
-              className="object-cover sm:hidden"
+              className={`object-cover ${banner.image_mobile_url ? 'hidden sm:block' : ''}`}
               sizes="100vw"
               priority={i === 0}
             />
-          )}
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/40" />
-
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 z-10">
-            {banner.title && (
-              <h2 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight leading-tight mb-3 sm:mb-4 drop-shadow-lg">
-                {banner.title}
-              </h2>
+            {/* 모바일 이미지 (있으면) */}
+            {banner.image_mobile_url && (
+              <Image
+                src={banner.image_mobile_url}
+                alt={banner.title || ''}
+                fill
+                className="object-cover sm:hidden"
+                sizes="100vw"
+                priority={i === 0}
+              />
             )}
-            {banner.subtitle && (
-              <p className="text-sm sm:text-base lg:text-lg text-gray-200 max-w-lg mx-auto mb-6 sm:mb-8 drop-shadow">
-                {banner.subtitle}
-              </p>
-            )}
+            {/* Overlay */}
+            <div
+              className="absolute inset-0"
+              style={{ backgroundColor: `rgba(0,0,0,${overlayOpacity / 100})` }}
+            />
 
-            {/* CTA 버튼 (cta_buttons 배열 사용, 없으면 기존 link_url/link_text 폴백) */}
-            {banner.cta_buttons && banner.cta_buttons.length > 0 ? (
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                {banner.cta_buttons.map((cta, idx) => (
-                  <Link
-                    key={idx}
-                    href={cta.url}
-                    className={
-                      cta.style === 'outline'
-                        ? 'px-8 sm:px-10 py-3 sm:py-4 border border-white text-white text-xs sm:text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-all duration-300'
-                        : 'px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300'
-                    }
-                  >
-                    {cta.text}
-                  </Link>
-                ))}
-              </div>
-            ) : banner.link_url && banner.link_text ? (
-              <Link
-                href={banner.link_url}
-                className="px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
-              >
-                {banner.link_text}
-              </Link>
-            ) : null}
+            {/* Content - 커스텀 위치 또는 기본 중앙 */}
+            <div
+              className={`absolute z-10 px-4 text-white ${
+                hasCustomPos
+                  ? 'max-w-2xl'
+                  : 'inset-0 flex flex-col items-center justify-center text-center'
+              }`}
+              style={hasCustomPos ? {
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
+                transform: 'translate(-50%, -50%)',
+                textAlign: (ts.titleStyle?.textAlign || 'center') as React.CSSProperties['textAlign'],
+              } : undefined}
+            >
+              {banner.title && (
+                <h2
+                  className={`tracking-tight leading-tight mb-3 sm:mb-4 drop-shadow-lg ${
+                    !ts.titleStyle?.fontSize ? 'text-3xl sm:text-5xl lg:text-7xl' : ''
+                  } ${
+                    !ts.titleStyle?.fontWeight ? 'font-black' : ''
+                  }`}
+                  style={toCSS(ts.titleStyle)}
+                >
+                  {banner.title}
+                </h2>
+              )}
+              {banner.subtitle && (
+                <p
+                  className={`max-w-lg mb-6 sm:mb-8 drop-shadow ${
+                    !ts.subtitleStyle?.fontSize ? 'text-sm sm:text-base lg:text-lg' : ''
+                  } ${
+                    !ts.subtitleStyle?.color ? 'text-gray-200' : ''
+                  }`}
+                  style={hasCustomPos ? { margin: '0 auto', ...toCSS(ts.subtitleStyle) } : toCSS(ts.subtitleStyle)}
+                >
+                  {banner.subtitle}
+                </p>
+              )}
+
+              {/* CTA 버튼 */}
+              {banner.cta_buttons && banner.cta_buttons.length > 0 ? (
+                <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 ${!hasCustomPos ? '' : 'justify-center'}`}>
+                  {banner.cta_buttons.map((cta, idx) => (
+                    <Link
+                      key={idx}
+                      href={cta.url}
+                      className={
+                        cta.style === 'outline'
+                          ? 'px-8 sm:px-10 py-3 sm:py-4 border border-white text-white text-xs sm:text-sm font-bold tracking-wider hover:bg-white hover:text-black transition-all duration-300'
+                          : 'px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300'
+                      }
+                    >
+                      {cta.text}
+                    </Link>
+                  ))}
+                </div>
+              ) : banner.link_url && banner.link_text ? (
+                <Link
+                  href={banner.link_url}
+                  className="px-8 sm:px-10 py-3 sm:py-4 bg-white text-black text-xs sm:text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
+                >
+                  {banner.link_text}
+                </Link>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
 
       {/* Navigation Arrows */}
       {total > 1 && (

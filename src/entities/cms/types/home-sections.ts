@@ -1,5 +1,38 @@
+// ─── Text Style (공통) ───
+
+export type TextStyle = {
+  fontSize?: string
+  fontWeight?: string
+  color?: string
+  textAlign?: 'left' | 'center' | 'right'
+  letterSpacing?: string
+}
+
+// ─── Hero Banner Text Style ───
+
+export type HeroBannerTextStyle = {
+  titleStyle?: TextStyle
+  subtitleStyle?: TextStyle
+  contentPosition?: { x: number; y: number }
+  overlayOpacity?: number
+}
+
+// ─── Section Types ───
+
 export type BrandValue = { num: string; title: string; desc: string }
+
+export type BrandValuesSection = {
+  items: BrandValue[]
+  bgImage?: string
+  styles?: {
+    num?: TextStyle
+    title?: TextStyle
+    desc?: TextStyle
+  }
+}
+
 export type PhilosophyStat = { num: string; label: string }
+
 export type PhilosophyData = {
   subheading: string
   heading: string
@@ -8,22 +41,39 @@ export type PhilosophyData = {
   buttonText: string
   buttonUrl: string
   stats: PhilosophyStat[]
+  bgImage?: string
+  styles?: {
+    subheading?: TextStyle
+    heading?: TextStyle
+    description?: TextStyle
+  }
 }
+
 export type BottomCtaData = {
   subheading: string
   heading: string
   description: string
   buttonText: string
   buttonUrl: string
+  bgImage?: string
+  styles?: {
+    subheading?: TextStyle
+    heading?: TextStyle
+    description?: TextStyle
+  }
 }
 
+// ─── Defaults ───
+
 export const HOME_DEFAULTS = {
-  brand_values: [
-    { num: '01', title: 'PERFORMANCE', desc: '고성능 원단' },
-    { num: '02', title: 'DURABILITY', desc: '뛰어난 내구성' },
-    { num: '03', title: 'COMFORT', desc: '극한의 편안함' },
-    { num: '04', title: 'STYLE', desc: '프리미엄 디자인' },
-  ] as BrandValue[],
+  brand_values: {
+    items: [
+      { num: '01', title: 'PERFORMANCE', desc: '고성능 원단' },
+      { num: '02', title: 'DURABILITY', desc: '뛰어난 내구성' },
+      { num: '03', title: 'COMFORT', desc: '극한의 편안함' },
+      { num: '04', title: 'STYLE', desc: '프리미엄 디자인' },
+    ],
+  } as BrandValuesSection,
   philosophy: {
     subheading: 'Our Philosophy',
     heading: 'PUSH YOUR',

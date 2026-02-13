@@ -96,8 +96,10 @@ export async function updateBanner(id: string, data: {
   title_en?: string
   subtitle?: string
   subtitle_en?: string
+  image_url?: string
   image_mobile_url?: string | null
   cta_buttons?: Array<{ text: string; url: string; style: string }>
+  text_style?: Record<string, unknown>
   link_url?: string
   link_text?: string
   is_active?: boolean

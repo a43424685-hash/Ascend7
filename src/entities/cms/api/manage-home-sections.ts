@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import type { BrandValue, PhilosophyData, BottomCtaData } from '@/entities/cms/types/home-sections'
+import type { BrandValuesSection, PhilosophyData, BottomCtaData } from '@/entities/cms/types/home-sections'
 
 type ActionResult = { success: true } | { success: false; error: string }
 
@@ -26,8 +26,8 @@ async function upsertSetting(key: string, value: unknown): Promise<ActionResult>
   }
 }
 
-export async function updateBrandValues(values: BrandValue[]): Promise<ActionResult> {
-  return upsertSetting('home_brand_values', values)
+export async function updateBrandValues(data: BrandValuesSection): Promise<ActionResult> {
+  return upsertSetting('home_brand_values', data)
 }
 
 export async function updatePhilosophy(data: PhilosophyData): Promise<ActionResult> {

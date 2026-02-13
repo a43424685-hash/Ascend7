@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getFeaturedProducts } from '@/entities/product/api/get-featured-products'
 import { getActiveBanners } from '@/entities/banner/api/get-banners'
 import { getHomeSections } from '@/entities/cms/api/get-home-sections'
@@ -6,8 +7,20 @@ import { ProductGrid } from '@/widgets/product-grid'
 import { HeroSlider } from '@/widgets/hero-slider'
 import { ScrollAnimate } from '@/shared/ui/scroll-animate'
 import { EditableSection } from '@/features/admin-edit/editable-section'
+import type { TextStyle } from '@/entities/cms/types/home-sections'
 
 export const dynamic = 'force-dynamic'
+
+function toCSS(s?: TextStyle): React.CSSProperties {
+  if (!s) return {}
+  const css: React.CSSProperties = {}
+  if (s.fontSize) css.fontSize = s.fontSize
+  if (s.fontWeight) css.fontWeight = s.fontWeight
+  if (s.color) css.color = s.color
+  if (s.textAlign) css.textAlign = s.textAlign
+  if (s.letterSpacing) css.letterSpacing = s.letterSpacing
+  return css
+}
 
 export default async function HomePage() {
   let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = []
@@ -85,15 +98,33 @@ export default async function HomePage() {
 
       {/* ─── Brand Values ─── */}
       <EditableSection sectionId="brand-values" label="브랜드 가치">
-        <section className="border-b border-gray-200">
-          <div className="container mx-auto px-4">
+        <section className="border-b border-gray-200 relative overflow-hidden">
+          {brandValues.bgImage && (
+            <Image src={brandValues.bgImage} alt="" fill className="object-cover opacity-10" sizes="100vw" />
+          )}
+          <div className="container mx-auto px-4 relative">
             <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-gray-200">
-              {brandValues.map((v, i) => (
+              {brandValues.items.map((v, i) => (
                 <ScrollAnimate key={v.num} delay={i * 100}>
                   <div className="py-8 lg:py-12 px-4 lg:px-8 text-center">
-                    <span className="text-[10px] text-gray-400 tracking-widest">{v.num}</span>
-                    <h3 className="text-xs sm:text-sm font-bold tracking-wider mt-2">{v.title}</h3>
-                    <p className="text-[11px] sm:text-xs text-gray-500 mt-1">{v.desc}</p>
+                    <span
+                      className={`tracking-widest ${!brandValues.styles?.num?.fontSize ? 'text-[10px]' : ''} ${!brandValues.styles?.num?.color ? 'text-gray-400' : ''}`}
+                      style={toCSS(brandValues.styles?.num)}
+                    >
+                      {v.num}
+                    </span>
+                    <h3
+                      className={`tracking-wider mt-2 ${!brandValues.styles?.title?.fontSize ? 'text-xs sm:text-sm' : ''} ${!brandValues.styles?.title?.fontWeight ? 'font-bold' : ''}`}
+                      style={toCSS(brandValues.styles?.title)}
+                    >
+                      {v.title}
+                    </h3>
+                    <p
+                      className={`mt-1 ${!brandValues.styles?.desc?.fontSize ? 'text-[11px] sm:text-xs' : ''} ${!brandValues.styles?.desc?.color ? 'text-gray-500' : ''}`}
+                      style={toCSS(brandValues.styles?.desc)}
+                    >
+                      {v.desc}
+                    </p>
                   </div>
                 </ScrollAnimate>
               ))}
@@ -127,16 +158,30 @@ export default async function HomePage() {
 
       {/* ─── Split Banner (Philosophy) ─── */}
       <EditableSection sectionId="philosophy" label="브랜드 철학">
-        <section className="bg-black text-white">
-          <div className="container mx-auto px-4">
+        <section className="bg-black text-white relative overflow-hidden">
+          {philosophy.bgImage && (
+            <Image src={philosophy.bgImage} alt="" fill className="object-cover opacity-20" sizes="100vw" />
+          )}
+          <div className="container mx-auto px-4 relative">
             <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[50vh] lg:min-h-[60vh]">
               <ScrollAnimate className="flex flex-col justify-center py-16 lg:py-24 lg:pr-16">
-                <p className="text-[10px] tracking-[0.4em] text-gray-500 uppercase mb-4">{philosophy.subheading}</p>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+                <p
+                  className={`uppercase mb-4 ${!philosophy.styles?.subheading?.fontSize ? 'text-[10px]' : ''} ${!philosophy.styles?.subheading?.color ? 'text-gray-500' : ''}`}
+                  style={{ letterSpacing: '0.4em', ...toCSS(philosophy.styles?.subheading) }}
+                >
+                  {philosophy.subheading}
+                </p>
+                <h2
+                  className={`tracking-tight leading-tight ${!philosophy.styles?.heading?.fontSize ? 'text-3xl sm:text-4xl lg:text-5xl' : ''} ${!philosophy.styles?.heading?.fontWeight ? 'font-black' : ''}`}
+                  style={toCSS(philosophy.styles?.heading)}
+                >
                   {philosophy.heading}<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">{philosophy.headingHighlight}</span>
                 </h2>
-                <p className="mt-6 text-sm text-gray-400 leading-relaxed max-w-md whitespace-pre-line">
+                <p
+                  className={`mt-6 leading-relaxed max-w-md whitespace-pre-line ${!philosophy.styles?.description?.fontSize ? 'text-sm' : ''} ${!philosophy.styles?.description?.color ? 'text-gray-400' : ''}`}
+                  style={toCSS(philosophy.styles?.description)}
+                >
                   {philosophy.description}
                 </p>
                 <div className="mt-8">
@@ -165,22 +210,38 @@ export default async function HomePage() {
 
       {/* ─── Bottom CTA ─── */}
       <EditableSection sectionId="bottom-cta" label="하단 CTA">
-        <section className="container mx-auto px-4 py-20 lg:py-28 text-center">
-          <ScrollAnimate>
-            <p className="text-[10px] tracking-[0.4em] text-gray-400 uppercase mb-3">{bottomCta.subheading}</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-6">
-              {bottomCta.heading}
-            </h2>
-            <p className="text-sm text-gray-500 mb-8 max-w-md mx-auto">
-              {bottomCta.description}
-            </p>
-            <Link
-              href={bottomCta.buttonUrl}
-              className="inline-block px-12 py-4 bg-black text-white text-sm font-bold tracking-wider hover:bg-gray-900 transition-colors"
-            >
-              {bottomCta.buttonText}
-            </Link>
-          </ScrollAnimate>
+        <section className="relative overflow-hidden">
+          {bottomCta.bgImage && (
+            <Image src={bottomCta.bgImage} alt="" fill className="object-cover opacity-10" sizes="100vw" />
+          )}
+          <div className="container mx-auto px-4 py-20 lg:py-28 text-center relative">
+            <ScrollAnimate>
+              <p
+                className={`uppercase mb-3 ${!bottomCta.styles?.subheading?.fontSize ? 'text-[10px]' : ''} ${!bottomCta.styles?.subheading?.color ? 'text-gray-400' : ''}`}
+                style={{ letterSpacing: '0.4em', ...toCSS(bottomCta.styles?.subheading) }}
+              >
+                {bottomCta.subheading}
+              </p>
+              <h2
+                className={`tracking-tight mb-6 ${!bottomCta.styles?.heading?.fontSize ? 'text-3xl sm:text-4xl lg:text-5xl' : ''} ${!bottomCta.styles?.heading?.fontWeight ? 'font-black' : ''}`}
+                style={toCSS(bottomCta.styles?.heading)}
+              >
+                {bottomCta.heading}
+              </h2>
+              <p
+                className={`mb-8 max-w-md mx-auto ${!bottomCta.styles?.description?.fontSize ? 'text-sm' : ''} ${!bottomCta.styles?.description?.color ? 'text-gray-500' : ''}`}
+                style={toCSS(bottomCta.styles?.description)}
+              >
+                {bottomCta.description}
+              </p>
+              <Link
+                href={bottomCta.buttonUrl}
+                className="inline-block px-12 py-4 bg-black text-white text-sm font-bold tracking-wider hover:bg-gray-900 transition-colors"
+              >
+                {bottomCta.buttonText}
+              </Link>
+            </ScrollAnimate>
+          </div>
         </section>
       </EditableSection>
     </div>

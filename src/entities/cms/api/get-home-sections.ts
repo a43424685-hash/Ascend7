@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { HOME_DEFAULTS } from '@/entities/cms/types/home-sections'
-import type { BrandValue, PhilosophyData, BottomCtaData } from '@/entities/cms/types/home-sections'
+import type { BrandValue, BrandValuesSection, PhilosophyData, BottomCtaData } from '@/entities/cms/types/home-sections'
 
 export async function getHomeSections() {
   try {
@@ -18,8 +18,19 @@ export async function getHomeSections() {
       for (const row of data) settings[row.key] = row.value
     }
 
+    // brand_values: 하위호환 - 배열이면 { items: [...] } 로 래핑
+    const rawBV = settings.home_brand_values
+    let brandValues: BrandValuesSection
+    if (Array.isArray(rawBV)) {
+      brandValues = { items: rawBV as BrandValue[] }
+    } else if (rawBV && typeof rawBV === 'object' && 'items' in (rawBV as Record<string, unknown>)) {
+      brandValues = rawBV as BrandValuesSection
+    } else {
+      brandValues = HOME_DEFAULTS.brand_values
+    }
+
     return {
-      brandValues: (settings.home_brand_values || HOME_DEFAULTS.brand_values) as BrandValue[],
+      brandValues,
       philosophy: (settings.home_philosophy || HOME_DEFAULTS.philosophy) as PhilosophyData,
       bottomCta: (settings.home_bottom_cta || HOME_DEFAULTS.bottom_cta) as BottomCtaData,
     }
