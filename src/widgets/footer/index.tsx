@@ -46,28 +46,14 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 사업자 정보 */}
+        {/* 사업자 정보 + 저작권 */}
         <div className="border-t border-gray-800/60 py-6">
           <div className="text-[10px] text-gray-600 leading-relaxed space-y-0.5">
-            <p>상호: ASCEND7 | 대표: 홍길동 | 사업자등록번호: 000-00-00000</p>
-            <p>주소: 서울특별시 강남구 테헤란로 00길 00, 0층</p>
-            <p>통신판매업신고: 제0000-서울강남-00000호 | 개인정보관리책임자: 홍길동</p>
+            <p>상호: 보틀천 | 대표: 이병천 | 사업자등록번호: 369-17-02526</p>
+            <p>주소: 서울특별시 강북구 노해로34, 9층</p>
+            <p>통신판매업신고: 제2026-서울강북-0119호 | 개인정보관리책임자: 이병천</p>
             <p>고객센터: help@ascend7.kr | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
-          </div>
-        </div>
-
-        {/* 하단 저작권 + 법적 링크 */}
-        <div className="border-t border-gray-800/60 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-[10px] text-gray-600">
-            &copy; {new Date().getFullYear()} ASCEND7. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="/terms" className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
-              이용약관
-            </Link>
-            <Link href="/privacy" className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
-              개인정보처리방침
-            </Link>
+            <p className="pt-2">&copy; {new Date().getFullYear()} ASCEND7. All rights reserved.</p>
           </div>
         </div>
       </div>

@@ -34,6 +34,12 @@ export default function AdminLayout({
                 >
                   주문
                 </Link>
+                <Link
+                  href="/admin/banners"
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  배너
+                </Link>
               </nav>
             </div>
             <Link
@@ -51,6 +57,7 @@ export default function AdminLayout({
         <Link href="/admin" className="text-xs font-medium text-gray-600">대시보드</Link>
         <Link href="/admin/products" className="text-xs font-medium text-gray-600">상품</Link>
         <Link href="/admin/orders" className="text-xs font-medium text-gray-600">주문</Link>
+        <Link href="/admin/banners" className="text-xs font-medium text-gray-600">배너</Link>
       </div>
 
       {/* Main Content */}

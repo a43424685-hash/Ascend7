@@ -1,15 +1,21 @@
 import Link from 'next/link'
 import { getFeaturedProducts } from '@/entities/product/api/get-featured-products'
+import { getActiveBanners } from '@/entities/banner/api/get-banners'
 import { ProductGrid } from '@/widgets/product-grid'
+import { HeroSlider } from '@/widgets/hero-slider'
 import { ScrollAnimate } from '@/shared/ui/scroll-animate'
 
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   let featuredProducts: Awaited<ReturnType<typeof getFeaturedProducts>> = []
+  let banners: Awaited<ReturnType<typeof getActiveBanners>> = []
 
   try {
-    featuredProducts = await getFeaturedProducts(8)
+    ;[featuredProducts, banners] = await Promise.all([
+      getFeaturedProducts(8),
+      getActiveBanners(),
+    ])
   } catch {
     // silently fail
   }
@@ -17,53 +23,57 @@ export default async function HomePage() {
   return (
     <div>
       {/* ─── Hero Section ─── */}
-      <section className="relative bg-black text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+      {banners.length > 0 ? (
+        <HeroSlider banners={banners} />
+      ) : (
+        <section className="relative bg-black text-white overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-900 to-black" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
 
-        <div className="relative container mx-auto px-4">
-          <div className="flex flex-col items-center justify-center min-h-[85vh] lg:min-h-[90vh] text-center">
-            <p className="text-[10px] sm:text-xs tracking-[0.4em] uppercase text-gray-400 mb-4 sm:mb-6 animate-fade-in">
-              Premium Gymwear Since 2025
-            </p>
+          <div className="relative container mx-auto px-4">
+            <div className="flex flex-col items-center justify-center min-h-[85vh] lg:min-h-[90vh] text-center">
+              <p className="text-[10px] sm:text-xs tracking-[0.4em] uppercase text-gray-400 mb-4 sm:mb-6 animate-fade-in">
+                프리미엄 짐웨어 (2026)
+              </p>
 
-            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] animate-fade-in-up">
-              ASCEND
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                SEVEN
-              </span>
-            </h1>
+              <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] animate-fade-in-up">
+                ASCEND
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                  SEVEN
+                </span>
+              </h1>
 
-            <p className="mt-6 sm:mt-8 text-sm sm:text-base text-gray-400 max-w-md mx-auto leading-relaxed px-4 animate-fade-in">
-              한계를 넘어서는 퍼포먼스.<br className="sm:hidden" />
-              당신의 훈련을 위한 프리미엄 짐웨어.
-            </p>
+              <p className="mt-6 sm:mt-8 text-sm sm:text-base text-gray-400 max-w-md mx-auto leading-relaxed px-4 animate-fade-in">
+                Ascend every day. All seven.<br />
+                <span className="text-xs text-gray-500">일주일동안 멈추지 않고 성장하다</span>
+              </p>
 
-            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-in-up">
-              <Link
-                href="/shop"
-                className="px-10 py-4 bg-white text-black text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
-              >
-                SHOP NOW
-              </Link>
-              <Link
-                href="/shop?category=top"
-                className="px-10 py-4 border border-gray-600 text-white text-sm font-medium tracking-wider hover:border-white transition-all duration-300"
-              >
-                NEW ARRIVALS
-              </Link>
-            </div>
+              <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-in-up">
+                <Link
+                  href="/shop"
+                  className="px-10 py-4 bg-white text-black text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
+                >
+                  SHOP NOW
+                </Link>
+                <Link
+                  href="/shop?category=top"
+                  className="px-10 py-4 border border-gray-600 text-white text-sm font-medium tracking-wider hover:border-white transition-all duration-300"
+                >
+                  NEW ARRIVALS
+                </Link>
+              </div>
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ─── Brand Values ─── */}
       <section className="border-b border-gray-200">
