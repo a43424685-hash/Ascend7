@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { Header } from '@/widgets/header'
 import { Footer } from '@/widgets/footer'
+import { FloatingKakaoButton } from '@/widgets/kakao/floating-kakao-button'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <FloatingKakaoButton />
         </Providers>
       </body>
     </html>
