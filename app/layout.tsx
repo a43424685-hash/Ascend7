@@ -4,6 +4,9 @@ import { Header } from '@/widgets/header'
 import { Footer } from '@/widgets/footer'
 import { FloatingKakaoButton } from '@/widgets/kakao/floating-kakao-button'
 import { AnnouncementBarServer } from '@/widgets/announcement-bar/announcement-bar-server'
+import { EditModeProvider } from '@/features/admin-edit/edit-mode-provider'
+import { AdminEditButton } from '@/features/admin-edit/admin-edit-button'
+import { EditPanel } from '@/features/admin-edit/edit-panel'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
@@ -34,11 +37,15 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <Providers>
-          <AnnouncementBarServer />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <FloatingKakaoButton />
+          <EditModeProvider>
+            <AnnouncementBarServer />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <FloatingKakaoButton />
+            <AdminEditButton />
+            <EditPanel />
+          </EditModeProvider>
         </Providers>
       </body>
     </html>
