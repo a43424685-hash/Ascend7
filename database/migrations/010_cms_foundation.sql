@@ -1,12 +1,11 @@
 -- ============================================================
--- 010: CMS Foundation
+-- 010: CMS Foundation (멱등성 보장 - 재실행 가능)
 -- is_admin(), audit triggers, site_settings, announcement_bar,
 -- hero_banners enhancements
 -- ============================================================
 
 -- ─── 1. Utility Functions ───
 
--- is_admin(): SECURITY DEFINER로 RLS 정책에서 재사용
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -18,7 +17,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
--- updated_at 자동 갱신 트리거 함수
 CREATE OR REPLACE FUNCTION auto_update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -42,14 +40,14 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admin read audit_logs" ON audit_logs;
 CREATE POLICY "Admin read audit_logs"
   ON audit_logs FOR SELECT USING (is_admin());
 
--- trigger에서 SECURITY DEFINER로 삽입하므로 INSERT는 열어둠
+DROP POLICY IF EXISTS "System insert audit_logs" ON audit_logs;
 CREATE POLICY "System insert audit_logs"
   ON audit_logs FOR INSERT WITH CHECK (true);
 
--- 감사로그 자동 기록 트리거 함수
 CREATE OR REPLACE FUNCTION log_audit_change()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -66,7 +64,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ─── 3. Site Settings (key-value, is_public로 공개 범위 통제) ───
+-- ─── 3. Site Settings ───
 
 CREATE TABLE IF NOT EXISTS site_settings (
   key TEXT PRIMARY KEY,
@@ -78,23 +76,26 @@ CREATE TABLE IF NOT EXISTS site_settings (
 
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
--- 공개 설정만 일반 사용자가 읽을 수 있음
+DROP POLICY IF EXISTS "Public read public settings" ON site_settings;
 CREATE POLICY "Public read public settings"
   ON site_settings FOR SELECT USING (is_public = true);
 
+DROP POLICY IF EXISTS "Admin select site_settings" ON site_settings;
 CREATE POLICY "Admin select site_settings"
   ON site_settings FOR SELECT USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin insert site_settings" ON site_settings;
 CREATE POLICY "Admin insert site_settings"
   ON site_settings FOR INSERT WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin update site_settings" ON site_settings;
 CREATE POLICY "Admin update site_settings"
   ON site_settings FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin delete site_settings" ON site_settings;
 CREATE POLICY "Admin delete site_settings"
   ON site_settings FOR DELETE USING (is_admin());
 
--- 기본 설정 삽입
 INSERT INTO site_settings (key, value, is_public) VALUES
   ('site_name', '"ASCEND7"', true),
   ('site_description', '"고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드"', true),
@@ -103,10 +104,12 @@ INSERT INTO site_settings (key, value, is_public) VALUES
   ('og_image_url', '""', true)
 ON CONFLICT (key) DO NOTHING;
 
+DROP TRIGGER IF EXISTS site_settings_updated_at ON site_settings;
 CREATE TRIGGER site_settings_updated_at
   BEFORE UPDATE ON site_settings
   FOR EACH ROW EXECUTE FUNCTION auto_update_updated_at();
 
+DROP TRIGGER IF EXISTS site_settings_audit ON site_settings;
 CREATE TRIGGER site_settings_audit
   AFTER INSERT OR UPDATE OR DELETE ON site_settings
   FOR EACH ROW EXECUTE FUNCTION log_audit_change();
@@ -130,7 +133,7 @@ CREATE TABLE IF NOT EXISTS announcement_bar (
 
 ALTER TABLE announcement_bar ENABLE ROW LEVEL SECURITY;
 
--- 일반: 활성 + 기간 내만 조회
+DROP POLICY IF EXISTS "Public read active announcements" ON announcement_bar;
 CREATE POLICY "Public read active announcements"
   ON announcement_bar FOR SELECT
   USING (
@@ -139,26 +142,31 @@ CREATE POLICY "Public read active announcements"
     AND (end_at IS NULL OR now() <= end_at)
   );
 
+DROP POLICY IF EXISTS "Admin select announcements" ON announcement_bar;
 CREATE POLICY "Admin select announcements"
   ON announcement_bar FOR SELECT USING (is_admin());
 
+DROP POLICY IF EXISTS "Admin insert announcements" ON announcement_bar;
 CREATE POLICY "Admin insert announcements"
   ON announcement_bar FOR INSERT WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin update announcements" ON announcement_bar;
 CREATE POLICY "Admin update announcements"
   ON announcement_bar FOR UPDATE USING (is_admin()) WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Admin delete announcements" ON announcement_bar;
 CREATE POLICY "Admin delete announcements"
   ON announcement_bar FOR DELETE USING (is_admin());
 
--- 동시에 활성 공지 1개만 허용
 CREATE UNIQUE INDEX IF NOT EXISTS idx_announcement_single_active
   ON announcement_bar (is_active) WHERE is_active = true;
 
+DROP TRIGGER IF EXISTS announcement_bar_updated_at ON announcement_bar;
 CREATE TRIGGER announcement_bar_updated_at
   BEFORE UPDATE ON announcement_bar
   FOR EACH ROW EXECUTE FUNCTION auto_update_updated_at();
 
+DROP TRIGGER IF EXISTS announcement_bar_audit ON announcement_bar;
 CREATE TRIGGER announcement_bar_audit
   AFTER INSERT OR UPDATE OR DELETE ON announcement_bar
   FOR EACH ROW EXECUTE FUNCTION log_audit_change();
@@ -173,10 +181,14 @@ ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS start_at TIMESTAMPTZ;
 ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS end_at TIMESTAMPTZ;
 ALTER TABLE hero_banners ADD COLUMN IF NOT EXISTS updated_by UUID REFERENCES profiles(id);
 
--- 기존 RLS 재설정 (기간 필터 + WITH CHECK 분리)
 DO $$ BEGIN
   DROP POLICY IF EXISTS "Anyone can view active banners" ON hero_banners;
   DROP POLICY IF EXISTS "Admins can manage banners" ON hero_banners;
+  DROP POLICY IF EXISTS "Public read active banners" ON hero_banners;
+  DROP POLICY IF EXISTS "Admin select banners" ON hero_banners;
+  DROP POLICY IF EXISTS "Admin insert banners" ON hero_banners;
+  DROP POLICY IF EXISTS "Admin update banners" ON hero_banners;
+  DROP POLICY IF EXISTS "Admin delete banners" ON hero_banners;
 END $$;
 
 CREATE POLICY "Public read active banners"
@@ -199,11 +211,12 @@ CREATE POLICY "Admin update banners"
 CREATE POLICY "Admin delete banners"
   ON hero_banners FOR DELETE USING (is_admin());
 
--- updated_at 자동 갱신 + 감사 로그
+DROP TRIGGER IF EXISTS hero_banners_updated_at ON hero_banners;
 CREATE TRIGGER hero_banners_updated_at
   BEFORE UPDATE ON hero_banners
   FOR EACH ROW EXECUTE FUNCTION auto_update_updated_at();
 
+DROP TRIGGER IF EXISTS hero_banners_audit ON hero_banners;
 CREATE TRIGGER hero_banners_audit
   AFTER INSERT OR UPDATE OR DELETE ON hero_banners
   FOR EACH ROW EXECUTE FUNCTION log_audit_change();
