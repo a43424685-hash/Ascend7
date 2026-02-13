@@ -6,8 +6,22 @@ import { FloatingKakaoButton } from '@/widgets/kakao/floating-kakao-button'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
-  title: 'ASCEND7 - Premium Gymwear',
-  description: 'Elevate your training with ASCEND7 premium gymwear',
+  title: {
+    default: 'ASCEND7 - Premium Gymwear',
+    template: '%s | ASCEND7',
+  },
+  description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
+  openGraph: {
+    type: 'website',
+    siteName: 'ASCEND7',
+    title: 'ASCEND7 - Premium Gymwear',
+    description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
+    locale: 'ko_KR',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({

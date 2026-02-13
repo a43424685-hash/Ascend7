@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -7,6 +8,29 @@ import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 import { formatPrice } from '@/shared/lib/utils'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
+}): Promise<Metadata> {
+  const product = await getProductBySlug(params.slug)
+  if (!product) return {}
+
+  const firstImage = product.images?.[0]?.url
+  const minPrice = Math.min(...product.variants.map((v) => v.price))
+
+  return {
+    title: product.name,
+    description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+    openGraph: {
+      title: product.name,
+      description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+      images: firstImage ? [{ url: firstImage, width: 600, height: 800 }] : [],
+      type: 'website',
+    },
+  }
+}
 
 export default async function ProductPage({
   params,
