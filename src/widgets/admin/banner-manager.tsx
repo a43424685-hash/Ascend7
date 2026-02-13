@@ -50,12 +50,16 @@ export function BannerManager({ banners }: BannerManagerProps) {
       formData.append('linkText', form.linkText)
       formData.append('sortOrder', String(form.sortOrder))
 
-      await createBanner(formData)
-      setIsAdding(false)
-      setPreviewUrl(null)
-      setForm({ title: '', subtitle: '', linkUrl: '/shop', linkText: 'SHOP NOW', sortOrder: banners.length + 1 })
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      router.refresh()
+      const result = await createBanner(formData)
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        setIsAdding(false)
+        setPreviewUrl(null)
+        setForm({ title: '', subtitle: '', linkUrl: '/shop', linkText: 'SHOP NOW', sortOrder: banners.length + 1 })
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '배너 생성 실패')
     } finally {
@@ -66,8 +70,12 @@ export function BannerManager({ banners }: BannerManagerProps) {
   const handleToggle = async (banner: HeroBanner) => {
     setLoading(true)
     try {
-      await updateBanner(banner.id, { is_active: !banner.is_active })
-      router.refresh()
+      const result = await updateBanner(banner.id, { is_active: !banner.is_active })
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '상태 변경 실패')
     } finally {
@@ -79,8 +87,12 @@ export function BannerManager({ banners }: BannerManagerProps) {
     if (!confirm('이 배너를 삭제하시겠습니까?')) return
     setLoading(true)
     try {
-      await deleteBanner(id)
-      router.refresh()
+      const result = await deleteBanner(id)
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '삭제 실패')
     } finally {
@@ -91,15 +103,19 @@ export function BannerManager({ banners }: BannerManagerProps) {
   const handleSaveEdit = async (banner: HeroBanner, data: Partial<HeroBanner>) => {
     setLoading(true)
     try {
-      await updateBanner(banner.id, {
+      const result = await updateBanner(banner.id, {
         title: data.title,
         subtitle: data.subtitle ?? undefined,
         link_url: data.link_url ?? undefined,
         link_text: data.link_text ?? undefined,
         sort_order: data.sort_order,
       })
-      setEditingId(null)
-      router.refresh()
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        setEditingId(null)
+        router.refresh()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '수정 실패')
     } finally {
