@@ -1,5 +1,5 @@
 -- =====================================================
--- Migration 008: Orders/Storage RLS 보안 강화
+-- Migration 008: Orders/Storage RLS 보안 강화 (멱등성 보장)
 --
 -- 문제: 모든 인증된 사용자가 전체 주문을 읽고 수정 가능
 -- 수정: 본인 주문만 조회, 관리자만 전체 조회/수정
@@ -24,19 +24,16 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- =====================================================
 
 DROP POLICY IF EXISTS "auth_read_all_orders" ON orders;
+DROP POLICY IF EXISTS "admin_read_all_orders" ON orders;
+DROP POLICY IF EXISTS "user_read_own_orders" ON orders;
 
--- 관리자: 모든 주문 조회
 CREATE POLICY "admin_read_all_orders" ON orders
   FOR SELECT TO authenticated
   USING (is_admin());
 
--- 일반 회원: 본인 주문만
 CREATE POLICY "user_read_own_orders" ON orders
   FOR SELECT TO authenticated
   USING (user_id = auth.uid());
-
--- 게스트: user_id IS NULL인 주문만 (기존 유지)
--- anon_read_own_orders 정책은 이미 존재
 
 -- =====================================================
 -- Orders UPDATE: 관리자만
@@ -44,6 +41,7 @@ CREATE POLICY "user_read_own_orders" ON orders
 
 DROP POLICY IF EXISTS "auth_update_order_status" ON orders;
 DROP POLICY IF EXISTS "no_direct_update_orders" ON orders;
+DROP POLICY IF EXISTS "admin_update_orders" ON orders;
 
 CREATE POLICY "admin_update_orders" ON orders
   FOR UPDATE TO authenticated
@@ -55,6 +53,8 @@ CREATE POLICY "admin_update_orders" ON orders
 -- =====================================================
 
 DROP POLICY IF EXISTS "auth_read_own_order_items" ON order_items;
+DROP POLICY IF EXISTS "admin_read_all_order_items" ON order_items;
+DROP POLICY IF EXISTS "user_read_own_order_items" ON order_items;
 
 CREATE POLICY "admin_read_all_order_items" ON order_items
   FOR SELECT TO authenticated
@@ -77,6 +77,9 @@ CREATE POLICY "user_read_own_order_items" ON order_items
 DROP POLICY IF EXISTS "auth_insert_product_image_storage" ON storage.objects;
 DROP POLICY IF EXISTS "auth_update_product_image_storage" ON storage.objects;
 DROP POLICY IF EXISTS "auth_delete_product_image_storage" ON storage.objects;
+DROP POLICY IF EXISTS "admin_insert_product_image_storage" ON storage.objects;
+DROP POLICY IF EXISTS "admin_update_product_image_storage" ON storage.objects;
+DROP POLICY IF EXISTS "admin_delete_product_image_storage" ON storage.objects;
 
 CREATE POLICY "admin_insert_product_image_storage" ON storage.objects
   FOR INSERT TO authenticated
@@ -98,8 +101,3 @@ CREATE POLICY "admin_delete_product_image_storage" ON storage.objects
 -- ✅ Orders UPDATE: admin만 (일반 유저 차단)
 -- ✅ Order Items SELECT: 본인 주문 아이템만 OR admin 전체
 -- ✅ Storage WRITE: admin만
---
--- ⚠️ 실행 후 확인:
--- 1. 관리자 계정으로 /admin/orders 접속 → 주문 목록 정상 표시
--- 2. 일반 계정으로 /account → 본인 주문만 표시
--- 3. 일반 계정으로 /admin/orders → 빈 목록 또는 접근 불가
