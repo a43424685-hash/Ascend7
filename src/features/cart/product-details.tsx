@@ -6,12 +6,14 @@ import type { ProductWithDetails } from '@/shared/types/database'
 import { formatPrice } from '@/shared/lib/utils'
 import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
+import { getKakaoChatUrl } from '@/shared/lib/kakao'
 
 /* 신뢰/정책 요약 상수 - 문구 수정 가능 */
-const PURCHASE_POLICIES = [
+const kakaoChatUrl = getKakaoChatUrl()
+const PURCHASE_POLICIES: { icon: string; text: string; href?: string | null }[] = [
   { icon: '🚚', text: '50,000원 이상 무료배송' },
   { icon: '🔄', text: '수령 후 7일 이내 교환/반품' },
-  { icon: '💬', text: '카카오톡 채널 문의 가능' },
+  { icon: '💬', text: '카카오톡 채널 문의 가능', href: kakaoChatUrl },
 ]
 
 interface ProductDetailsProps {
@@ -264,15 +266,32 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
         {/* Trust / Policy Summary */}
         <div className="border-t border-gray-200 pt-6 space-y-3">
-          {PURCHASE_POLICIES.map((p, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 text-sm text-gray-500"
-            >
-              <span>{p.icon}</span>
-              <span>{p.text}</span>
-            </div>
-          ))}
+          {PURCHASE_POLICIES.map((p, i) => {
+            const inner = (
+              <>
+                <span>{p.icon}</span>
+                <span>{p.text}</span>
+              </>
+            )
+            return p.href ? (
+              <a
+                key={i}
+                href={p.href}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 text-sm text-gray-500 hover:text-black transition-colors"
+              >
+                {inner}
+              </a>
+            ) : (
+              <div
+                key={i}
+                className="flex items-center gap-3 text-sm text-gray-500"
+              >
+                {inner}
+              </div>
+            )
+          })}
         </div>
       </div>
 

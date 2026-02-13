@@ -7,6 +7,7 @@ import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 import { formatPrice } from '@/shared/lib/utils'
+import { getKakaoChatUrl } from '@/shared/lib/kakao'
 
 export default async function ProductPage({
   params,
@@ -137,6 +138,7 @@ export default async function ProductPage({
             <FooterInfoItem
               title="신제품 알림"
               desc="카카오 채널 추가"
+              href={getKakaoChatUrl()?.replace('/chat', '') ?? undefined}
               icon={
                 <svg
                   className="w-6 h-6"
@@ -156,6 +158,7 @@ export default async function ProductPage({
             <FooterInfoItem
               title="문의하기"
               desc="카카오톡 상담"
+              href={getKakaoChatUrl() ?? undefined}
               icon={
                 <svg
                   className="w-6 h-6"
@@ -183,12 +186,14 @@ function FooterInfoItem({
   icon,
   title,
   desc,
+  href,
 }: {
   icon: React.ReactNode
   title: string
   desc: string
+  href?: string
 }) {
-  return (
+  const content = (
     <div className="text-center space-y-2">
       <div className="w-10 h-10 mx-auto text-gray-600 flex items-center justify-center">
         {icon}
@@ -197,4 +202,14 @@ function FooterInfoItem({
       <p className="text-xs text-gray-500">{desc}</p>
     </div>
   )
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="hover:opacity-70 transition-opacity">
+        {content}
+      </a>
+    )
+  }
+
+  return content
 }
