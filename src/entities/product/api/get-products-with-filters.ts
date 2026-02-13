@@ -6,6 +6,7 @@ export interface ProductFilters {
   color?: string
   size?: string
   sortBy?: 'newest' | 'price-asc' | 'price-desc'
+  q?: string
 }
 
 /**
@@ -21,6 +22,11 @@ export async function getProductsWithFilters(
       .from('products')
       .select('*, images:product_images(*), variants:variants(*)')
       .eq('is_active', true)
+
+    // 검색어 필터
+    if (filters.q) {
+      query = query.ilike('name', `%${filters.q}%`)
+    }
 
     // 카테고리 필터
     if (filters.category) {

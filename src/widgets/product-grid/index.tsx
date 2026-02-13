@@ -17,15 +17,15 @@ export function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
       {products.map((product) => {
         const mainImage = product.images[0]?.url
+        const secondImage = product.images[1]?.url
         const activeVariants = product.variants?.filter((v) => v.is_active) || []
         const variantPrices = activeVariants.map((v) => v.price)
         const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 0
         const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : 0
         const hasStock = activeVariants.some((v) => v.stock > 0)
-        const totalStock = activeVariants.reduce((sum, v) => sum + v.stock, 0)
 
         return (
           <Link
@@ -33,38 +33,50 @@ export function ProductGrid({ products }: ProductGridProps) {
             href={`/product/${product.slug}`}
             className="group"
           >
-            <div className="aspect-square relative bg-gray-100 overflow-hidden">
+            <div className="aspect-[3/4] relative bg-gray-100 overflow-hidden">
               {mainImage ? (
-                <Image
-                  src={mainImage}
-                  alt={product.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform"
-                />
+                <>
+                  <Image
+                    src={mainImage}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className={`object-cover transition-all duration-500 group-hover:scale-105 ${secondImage ? 'group-hover:opacity-0' : ''}`}
+                  />
+                  {secondImage && (
+                    <Image
+                      src={secondImage}
+                      alt={`${product.name} - 2`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover transition-all duration-500 opacity-0 group-hover:opacity-100 group-hover:scale-105"
+                    />
+                  )}
+                </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                   No Image
                 </div>
               )}
+              {!hasStock && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold tracking-wider">SOLD OUT</span>
+                </div>
+              )}
             </div>
-            <div className="mt-4">
-              <h3 className="font-semibold text-sm mb-1">{product.name}</h3>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-600">
-                  {minPrice > 0 ? (
-                    minPrice === maxPrice ? (
-                      formatPrice(minPrice)
-                    ) : (
-                      `${formatPrice(minPrice)} ~ ${formatPrice(maxPrice)}`
-                    )
+            <div className="mt-3 sm:mt-4">
+              <h3 className="text-xs sm:text-sm font-semibold tracking-tight line-clamp-1">{product.name}</h3>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                {minPrice > 0 ? (
+                  minPrice === maxPrice ? (
+                    formatPrice(minPrice)
                   ) : (
-                    '가격 문의'
-                  )}
-                </p>
-                {!hasStock && (
-                  <span className="text-xs text-red-600 font-medium">품절</span>
+                    `${formatPrice(minPrice)} ~`
+                  )
+                ) : (
+                  '가격 문의'
                 )}
-              </div>
+              </p>
             </div>
           </Link>
         )
@@ -72,4 +84,3 @@ export function ProductGrid({ products }: ProductGridProps) {
     </div>
   )
 }
-
