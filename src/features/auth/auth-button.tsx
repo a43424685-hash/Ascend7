@@ -1,30 +1,26 @@
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/server'
-import { LogoutButton } from './logout-button'
 
-/**
- * 인증 상태에 따라 로그인/로그아웃 버튼 표시
- * Server Component
- */
 export async function AuthButton() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // 로그인하지 않은 경우
   if (!user) {
     return (
       <Link
         href="/auth/login"
-        className="text-sm font-medium hover:underline"
+        className="p-1"
+        aria-label="로그인"
       >
-        LOGIN
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
       </Link>
     )
   }
 
-  // 로그인한 경우 - role 확인
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -32,25 +28,24 @@ export async function AuthButton() {
     .single()
 
   return (
-    <div className="flex items-center gap-4">
-      {/* Admin 링크 (admin인 경우만) */}
+    <div className="flex items-center gap-2">
       {profile?.role === 'admin' && (
         <Link
           href="/admin/orders"
-          className="text-sm font-medium hover:underline text-purple-600"
+          className="hidden lg:block text-[10px] font-bold tracking-wider text-purple-600 hover:text-purple-800 transition-colors"
         >
-          👑 ADMIN
+          ADMIN
         </Link>
       )}
-
-      {/* 사용자 이메일 */}
-      <span className="text-sm text-gray-600">
-        {user.email?.split('@')[0]}
-      </span>
-
-      {/* 로그아웃 버튼 */}
-      <LogoutButton />
+      <Link
+        href="/account"
+        className="p-1"
+        aria-label="내 계정"
+      >
+        <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
+      </Link>
     </div>
   )
 }
-

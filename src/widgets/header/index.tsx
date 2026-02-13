@@ -7,9 +7,9 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-[9990] bg-white/95 backdrop-blur-md border-b border-gray-200">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14">
           {/* 로고 */}
-          <Link href="/" className="text-xl font-black tracking-[0.2em] shrink-0">
+          <Link href="/" className="text-lg font-black tracking-[0.15em] shrink-0">
             ASCEND7
           </Link>
 
@@ -41,24 +41,12 @@ export async function Header() {
             </Link>
           </nav>
 
-          {/* 우측 액션 버튼들 */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* 우측 아이콘들 */}
+          <div className="flex items-center gap-2.5">
+            <AuthButton />
+            <CartButton />
             <SearchButton />
-            <div className="hidden lg:flex items-center gap-4">
-              <Link
-                href="/account"
-                className="text-xs font-semibold tracking-[0.15em] hover:text-gray-500 transition-colors"
-              >
-                ACCOUNT
-              </Link>
-              <CartButton />
-              <AuthButton />
-            </div>
-            {/* 모바일: 장바구니 + 햄버거 */}
-            <div className="flex lg:hidden items-center gap-3">
-              <CartButton />
-              <MobileMenuButton />
-            </div>
+            <MobileMenuButton />
           </div>
         </div>
       </div>
