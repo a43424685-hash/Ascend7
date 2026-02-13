@@ -7,7 +7,6 @@ import { WebhookFailureAlert } from '@/widgets/admin/webhook-failure-alert'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminOrdersPage() {
-  // 관리자 권한 확인
   const { isAdmin } = await checkAdminAuth()
   if (!isAdmin) {
     redirect('/')
@@ -15,7 +14,6 @@ export default async function AdminOrdersPage() {
 
   const supabase = await createClient()
 
-  // 모든 주문 조회 (관리자는 모든 주문 볼 수 있음)
   const { data: orders, error } = await supabase
     .from('orders')
     .select(`
@@ -63,11 +61,11 @@ export default async function AdminOrdersPage() {
   if (error) {
     console.error('Failed to fetch orders:', error)
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">주문 관리</h1>
-        <div className="bg-red-50 border-2 border-red-200 p-6">
-          <p className="text-red-800 font-semibold mb-2">오류 발생</p>
-          <p className="text-red-600 text-sm">{error.message}</p>
+      <div className="px-4 py-6">
+        <h1 className="text-xl font-bold mb-4">주문 관리</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 font-semibold mb-1 text-sm">오류 발생</p>
+          <p className="text-red-600 text-xs">{error.message}</p>
         </div>
       </div>
     )
@@ -92,14 +90,17 @@ export default async function AdminOrdersPage() {
   }));
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">주문 관리</h1>
-        <p className="text-gray-600">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
+    <div>
+      <div className="mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold mb-1">주문 관리</h1>
+        <p className="text-xs sm:text-sm text-gray-500">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
       </div>
       <WebhookFailureAlert />
-      <OrdersListEnhanced orders={normalizedOrders} />
+      <div className="overflow-x-auto -mx-4 lg:mx-0">
+        <div className="min-w-[600px] px-4 lg:px-0">
+          <OrdersListEnhanced orders={normalizedOrders} />
+        </div>
+      </div>
     </div>
   )
 }
-

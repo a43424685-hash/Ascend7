@@ -2,22 +2,22 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="bg-black text-white mt-auto">
+    <footer className="bg-[#111] text-white mt-auto">
       <div className="container mx-auto px-4">
         {/* 메인 푸터 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 py-12 lg:py-16">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-10 lg:py-14">
           {/* 브랜드 */}
-          <div>
-            <p className="text-sm font-bold tracking-[0.2em] mb-3">ASCEND7</p>
-            <p className="text-xs text-gray-500 leading-relaxed">
+          <div className="col-span-2 sm:col-span-1">
+            <p className="text-sm font-black tracking-[0.15em] mb-3">ASCEND7</p>
+            <p className="text-[11px] text-gray-500 leading-relaxed">
               고성능 트레이닝을 위한<br />
               프리미엄 짐웨어 브랜드
             </p>
           </div>
 
-          {/* 쇼핑 */}
+          {/* 카테고리 */}
           <div>
-            <p className="text-[10px] tracking-[0.2em] text-gray-500 uppercase mb-3">Shop</p>
+            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Shop</p>
             <div className="space-y-2">
               <Link href="/shop" className="block text-xs text-gray-400 hover:text-white transition-colors">전체 상품</Link>
               <Link href="/shop?category=top" className="block text-xs text-gray-400 hover:text-white transition-colors">상의</Link>
@@ -26,24 +26,49 @@ export function Footer() {
             </div>
           </div>
 
-          {/* 고객 */}
+          {/* 고객 서비스 */}
           <div>
-            <p className="text-[10px] tracking-[0.2em] text-gray-500 uppercase mb-3">Support</p>
+            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Support</p>
             <div className="space-y-2">
               <Link href="/account" className="block text-xs text-gray-400 hover:text-white transition-colors">마이페이지</Link>
               <Link href="/account/orders" className="block text-xs text-gray-400 hover:text-white transition-colors">주문조회</Link>
+              <Link href="/cart" className="block text-xs text-gray-400 hover:text-white transition-colors">장바구니</Link>
+            </div>
+          </div>
+
+          {/* 회사 정보 */}
+          <div>
+            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Info</p>
+            <div className="space-y-2">
+              <Link href="/terms" className="block text-xs text-gray-400 hover:text-white transition-colors">이용약관</Link>
+              <Link href="/privacy" className="block text-xs text-gray-400 hover:text-white transition-colors">개인정보처리방침</Link>
             </div>
           </div>
         </div>
 
-        {/* 하단 저작권 */}
-        <div className="border-t border-gray-800 py-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+        {/* 사업자 정보 */}
+        <div className="border-t border-gray-800/60 py-6">
+          <div className="text-[10px] text-gray-600 leading-relaxed space-y-0.5">
+            <p>상호: ASCEND7 | 대표: 홍길동 | 사업자등록번호: 000-00-00000</p>
+            <p>주소: 서울특별시 강남구 테헤란로 00길 00, 0층</p>
+            <p>통신판매업신고: 제0000-서울강남-00000호 | 개인정보관리책임자: 홍길동</p>
+            <p>고객센터: help@ascend7.kr | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
+          </div>
+        </div>
+
+        {/* 하단 저작권 + 법적 링크 */}
+        <div className="border-t border-gray-800/60 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[10px] text-gray-600">
-            © {new Date().getFullYear()} ASCEND7. All rights reserved.
+            &copy; {new Date().getFullYear()} ASCEND7. All rights reserved.
           </p>
-          <p className="text-[10px] text-gray-700">
-            사업자등록번호 000-00-00000
-          </p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-gray-600 hover:text-gray-400 transition-colors">
+              개인정보처리방침
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

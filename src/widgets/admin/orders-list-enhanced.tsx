@@ -345,72 +345,60 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
   return (
     <div className="space-y-4">
       {/* 필터 & 검색 UI */}
-      <div className="bg-white border-2 border-gray-200 p-4">
-        <div className="flex flex-wrap gap-4 items-center">
-          {/* 검색 */}
-          <div className="flex-1 min-w-[200px]">
-            <input
-              type="text"
-              placeholder="주문번호, 이메일, 이름 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm"
-            />
-          </div>
-
+      <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4">
+        {/* 검색 */}
+        <input
+          type="text"
+          placeholder="주문번호, 이메일, 이름 검색..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded focus:border-black outline-none text-sm mb-3"
+        />
+        <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
           {/* 결제 상태 필터 */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-gray-600">결제:</label>
-            <select
-              value={paymentFilter}
-              onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
-              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
-            >
-              <option value="all">전체</option>
-              {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={paymentFilter}
+            onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
+            className="px-2 py-1.5 border border-gray-300 rounded focus:border-black outline-none text-xs sm:text-sm bg-white"
+          >
+            <option value="all">결제: 전체</option>
+            {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
 
           {/* 배송 상태 필터 */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-gray-600">배송:</label>
-            <select
-              value={fulfillmentFilter}
-              onChange={(e) => setFulfillmentFilter(e.target.value as FulfillmentStatus | 'all')}
-              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
-            >
-              <option value="all">전체</option>
-              {Object.entries(FULFILLMENT_STATUS_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={fulfillmentFilter}
+            onChange={(e) => setFulfillmentFilter(e.target.value as FulfillmentStatus | 'all')}
+            className="px-2 py-1.5 border border-gray-300 rounded focus:border-black outline-none text-xs sm:text-sm bg-white"
+          >
+            <option value="all">배송: 전체</option>
+            {Object.entries(FULFILLMENT_STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
 
           {/* 반품 상태 필터 */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-semibold text-gray-600">반품:</label>
-            <select
-              value={returnFilter}
-              onChange={(e) => setReturnFilter(e.target.value as ReturnStatus | 'all' | 'active')}
-              className="px-3 py-2 border-2 border-gray-300 focus:border-black outline-none text-sm bg-white"
-            >
-              <option value="all">전체</option>
-              <option value="active">🔴 처리필요</option>
-              {Object.entries(RETURN_STATUS_LABELS).filter(([k]) => k !== 'none').map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={returnFilter}
+            onChange={(e) => setReturnFilter(e.target.value as ReturnStatus | 'all' | 'active')}
+            className="px-2 py-1.5 border border-gray-300 rounded focus:border-black outline-none text-xs sm:text-sm bg-white"
+          >
+            <option value="all">반품: 전체</option>
+            <option value="active">처리필요</option>
+            {Object.entries(RETURN_STATUS_LABELS).filter(([k]) => k !== 'none').map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
 
           {/* 결과 카운트 */}
-          <div className="text-sm text-gray-500">
+          <span className="text-xs sm:text-sm text-gray-500 ml-auto">
             {filteredOrders.length === orders.length
               ? `총 ${orders.length}건`
               : `${filteredOrders.length} / ${orders.length}건`
             }
-          </div>
+          </span>
         </div>
       </div>
 
@@ -440,65 +428,49 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
         return (
           <div
             key={order.id}
-            className="border-2 border-gray-200 bg-white hover:border-gray-400 transition-colors"
+            className="border border-gray-200 rounded-lg bg-white hover:border-gray-400 transition-colors"
           >
-            {/* 주문 헤더 (한 줄 요약) */}
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                {/* 주문번호 */}
-                <span className="font-mono text-sm text-gray-600 font-semibold">
-                  {order.order_number || `#${order.id.slice(0, 8)}`}
-                </span>
-
-                {/* 결제 상태 */}
-                <span className={`px-2 py-1 text-xs font-semibold rounded border ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
-                  💳 {PAYMENT_STATUS_LABELS[order.payment_status]}
-                </span>
-
-                {/* 배송 상태 */}
-                <span className={`px-2 py-1 text-xs font-semibold rounded border ${FULFILLMENT_STATUS_COLORS[order.fulfillment_status]}`}>
-                  📦 {FULFILLMENT_STATUS_LABELS[order.fulfillment_status]}
-                </span>
-
-                {/* 반품 상태 (none이 아닐 때만 표시) */}
-                {order.return_status && order.return_status !== 'none' && (
-                  <span className={`px-2 py-1 text-xs font-semibold rounded border ${RETURN_STATUS_COLORS[order.return_status]}`}>
-                    🔄 {RETURN_STATUS_LABELS[order.return_status]}
-                  </span>
-                )}
-
-                {/* 고객 이메일 */}
-                {order.customer_email && (
-                  <span className="text-sm text-gray-600 truncate max-w-xs">
-                    {order.customer_email}
-                  </span>
-                )}
-
-                {/* 아이템 요약 */}
-                <span className="text-sm text-gray-500">
-                  {firstItem?.variant?.product?.name || '제품 정보 없음'}
-                  {itemsCount > 1 && ` 외 ${itemsCount - 1}개`}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* 총액 */}
-                <span className="font-bold text-lg">{formatPrice(order.total)}</span>
-
-                {/* 생성일 */}
-                <span className="text-sm text-gray-500 min-w-[100px] text-right">
-                  {new Date(order.created_at).toLocaleDateString('ko-KR', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-
-                {/* 상세 버튼 */}
+            {/* 주문 헤더 */}
+            <div className="p-3 sm:p-4">
+              {/* 모바일: 세로 스택 */}
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-0">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="font-mono text-xs sm:text-sm text-gray-600 font-semibold">
+                      {order.order_number || `#${order.id.slice(0, 8)}`}
+                    </span>
+                    <span className="font-bold text-sm sm:text-lg">{formatPrice(order.total)}</span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(order.created_at).toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                    <span className={`px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded border ${PAYMENT_STATUS_COLORS[order.payment_status]}`}>
+                      {PAYMENT_STATUS_LABELS[order.payment_status]}
+                    </span>
+                    <span className={`px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded border ${FULFILLMENT_STATUS_COLORS[order.fulfillment_status]}`}>
+                      {FULFILLMENT_STATUS_LABELS[order.fulfillment_status]}
+                    </span>
+                    {order.return_status && order.return_status !== 'none' && (
+                      <span className={`px-1.5 py-0.5 text-[10px] sm:text-xs font-semibold rounded border ${RETURN_STATUS_COLORS[order.return_status]}`}>
+                        {RETURN_STATUS_LABELS[order.return_status]}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">
+                    {firstItem?.variant?.product?.name || '제품 정보 없음'}
+                    {itemsCount > 1 && ` 외 ${itemsCount - 1}개`}
+                    {order.customer_email && ` · ${order.customer_email}`}
+                  </p>
+                </div>
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                  className="px-3 py-1 text-sm border-2 border-black hover:bg-black hover:text-white transition-colors font-semibold"
+                  className="shrink-0 px-2.5 py-1 text-xs sm:text-sm border border-black rounded hover:bg-black hover:text-white transition-colors font-semibold"
                 >
                   {isExpanded ? '접기' : '상세'}
                 </button>
@@ -507,15 +479,15 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
 
             {/* 상세 정보 (확장 시) */}
             {isExpanded && (
-              <div className="border-t-2 border-gray-200 p-6 bg-gray-50">
-                <div className="grid grid-cols-2 gap-6">
+              <div className="border-t border-gray-200 p-3 sm:p-6 bg-gray-50">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* 왼쪽: 주문 상품 */}
                   <div>
-                    <h3 className="font-bold mb-3 text-lg">📦 주문 상품</h3>
-                    <div className="space-y-2 mb-6">
+                    <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg">주문 상품</h3>
+                    <div className="space-y-2 mb-4 sm:mb-6">
                       {order.order_items.map((item) => (
-                        <div key={item.id} className="flex justify-between text-sm bg-white p-3 border border-gray-200">
-                          <div>
+                        <div key={item.id} className="flex justify-between text-xs sm:text-sm bg-white p-2 sm:p-3 border border-gray-200 rounded">
+                          <div className="min-w-0 flex-1">
                             {item.variant?.product ? (
                               <Link
                                 href={`/product/${item.variant.product.slug}`}
@@ -527,12 +499,12 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                               <span className="font-semibold text-gray-400">제품 정보 없음</span>
                             )}
                             {item.variant && (
-                              <span className="text-gray-600 ml-2">
-                                ({item.variant.color} / {item.variant.size}) x {item.quantity}
+                              <span className="text-gray-600 ml-1 sm:ml-2">
+                                ({item.variant.color}/{item.variant.size}) x{item.quantity}
                               </span>
                             )}
                           </div>
-                          <span className="font-semibold">
+                          <span className="font-semibold shrink-0 ml-2">
                             {formatPrice(item.price * item.quantity)}
                           </span>
                         </div>
@@ -540,8 +512,8 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     </div>
 
                     {/* 고객 정보 */}
-                    <h3 className="font-bold mb-3 text-lg">👤 고객 정보</h3>
-                    <div className="bg-white p-3 border border-gray-200 text-sm space-y-1">
+                    <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg">고객 정보</h3>
+                    <div className="bg-white p-2 sm:p-3 border border-gray-200 rounded text-xs sm:text-sm space-y-1">
                       <p><strong>이름:</strong> {order.customer_name || '정보 없음'}</p>
                       <p><strong>연락처:</strong> {order.customer_phone || order.shipping_address?.phone || '정보 없음'}</p>
                       <p><strong>이메일:</strong> {order.customer_email || '정보 없음'}</p>
@@ -553,8 +525,8 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     {/* 배송지 정보 */}
                     {order.shipping_address && (
                       <>
-                        <h3 className="font-bold mb-3 mt-6 text-lg">🏠 배송지</h3>
-                        <div className="bg-white p-3 border border-gray-200 text-sm space-y-1">
+                        <h3 className="font-bold mb-2 sm:mb-3 mt-4 sm:mt-6 text-sm sm:text-lg">배송지</h3>
+                        <div className="bg-white p-2 sm:p-3 border border-gray-200 rounded text-xs sm:text-sm space-y-1">
                           {order.shipping_address.name && (
                             <p><strong>수령인:</strong> {order.shipping_address.name}</p>
                           )}
@@ -589,14 +561,14 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                   {/* 오른쪽: 관리 */}
                   <div>
                     {/* 배송 상태 변경 */}
-                    <h3 className="font-bold mb-3 text-lg">📋 배송 상태 관리</h3>
-                    <div className="flex flex-wrap gap-2 mb-6">
+                    <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg">배송 상태 관리</h3>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6">
                       {(['unfulfilled', 'processing', 'shipped', 'delivered'] as FulfillmentStatus[]).map((status) => (
                         <button
                           key={status}
                           onClick={() => handleFulfillmentChange(order.id, status)}
                           disabled={order.fulfillment_status === status || isUpdating || order.fulfillment_status === 'canceled'}
-                          className={`px-3 py-2 text-sm font-semibold border-2 transition-colors ${
+                          className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold border rounded transition-colors ${
                             order.fulfillment_status === status
                               ? 'border-black bg-black text-white cursor-default'
                               : 'border-gray-300 bg-white hover:border-black disabled:opacity-50 disabled:cursor-not-allowed'
@@ -608,15 +580,15 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     </div>
 
                     {/* 운송장 정보 */}
-                    <h3 className="font-bold mb-3 text-lg">🚚 운송장 정보</h3>
+                    <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg">운송장 정보</h3>
                     {order.tracking_number ? (
-                      <div className="bg-green-50 border-2 border-green-300 p-3 mb-6">
+                      <div className="bg-green-50 border border-green-300 rounded p-2 sm:p-3 mb-4 sm:mb-6">
                         <p className="text-sm font-semibold text-green-900">운송장 등록 완료</p>
                         <p className="text-sm text-green-700">택배사: {order.carrier || '미지정'}</p>
                         <p className="text-sm text-green-700 font-mono">운송장: {order.tracking_number}</p>
                       </div>
                     ) : (
-                      <div className="bg-white border border-gray-200 p-3 mb-6">
+                      <div className="bg-white border border-gray-200 rounded p-2 sm:p-3 mb-4 sm:mb-6">
                         <input
                           type="text"
                           placeholder="택배사 (예: CJ대한통운)"
@@ -667,8 +639,8 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     {/* 반품/환불 관리 */}
                     {order.payment_status === 'paid' && order.fulfillment_status !== 'canceled' && (
                       <>
-                        <h3 className="font-bold mb-3 text-lg">🔄 반품/환불 관리</h3>
-                        <div className="bg-white border border-gray-200 p-3 mb-6">
+                        <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg">반품/환불 관리</h3>
+                        <div className="bg-white border border-gray-200 rounded p-2 sm:p-3 mb-4 sm:mb-6">
                           {/* 현재 반품 상태 표시 */}
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-sm font-semibold">반품 상태:</span>
@@ -839,7 +811,7 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
 
                     {/* 환불 완료된 주문 표시 */}
                     {order.payment_status === 'refunded' && (
-                      <div className="bg-purple-50 border-2 border-purple-300 p-3 mb-6">
+                      <div className="bg-purple-50 border border-purple-300 rounded p-2 sm:p-3 mb-4 sm:mb-6">
                         <p className="text-sm font-semibold text-purple-900">💰 환불 완료</p>
                         {order.refunded_at && (
                           <p className="text-xs text-purple-700">환불일: {new Date(order.refunded_at).toLocaleString('ko-KR')}</p>
@@ -853,11 +825,11 @@ export function OrdersListEnhanced({ orders }: { orders: Order[] }) {
                     {/* 주문 취소 */}
                     {order.fulfillment_status !== 'canceled' && (
                       <>
-                        <h3 className="font-bold mb-3 text-lg text-red-600">⚠️ 위험 구역</h3>
+                        <h3 className="font-bold mb-2 sm:mb-3 text-sm sm:text-lg text-red-600">위험 구역</h3>
                         <button
                           onClick={() => handleCancelOrder(order.id)}
                           disabled={isUpdating}
-                          className="w-full px-4 py-2 border-2 border-red-500 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full px-4 py-2 border border-red-500 rounded text-red-600 text-xs sm:text-sm font-semibold hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           ❌ 주문 취소 (재고 복구)
                         </button>

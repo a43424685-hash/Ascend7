@@ -124,95 +124,167 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
 
       {/* Variants List */}
       {variants.length > 0 && (
-        <div className="border border-gray-200">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left p-3 font-semibold">SKU</th>
-                <th className="text-left p-3 font-semibold">색상</th>
-                <th className="text-left p-3 font-semibold">사이즈</th>
-                <th className="text-left p-3 font-semibold">가격</th>
-                <th className="text-left p-3 font-semibold">재고</th>
-                <th className="text-left p-3 font-semibold">상태</th>
-                <th className="text-right p-3 font-semibold">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {variants.map((variant) => (
-                <tr key={variant.id} className="border-b border-gray-200">
-                  <td className="p-3">{variant.sku}</td>
-                  <td className="p-3">{variant.color}</td>
-                  <td className="p-3">{variant.size}</td>
-                  <td className="p-3">{formatPrice(variant.price)}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleStockChange(variant, -1)}
-                        disabled={stockLoading === variant.id || variant.stock <= 0}
-                        className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        -
-                      </button>
-                      {editingStockId === variant.id ? (
-                        <input
-                          type="number"
-                          min="0"
-                          value={editingStockValue}
-                          onChange={(e) => setEditingStockValue(parseInt(e.target.value) || 0)}
-                          onBlur={() => handleStockDirectEdit(variant)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleStockDirectEdit(variant)
-                            if (e.key === 'Escape') setEditingStockId(null)
-                          }}
-                          autoFocus
-                          className="w-14 h-7 text-center border border-blue-400 text-sm outline-none"
-                        />
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingStockId(variant.id)
-                            setEditingStockValue(variant.stock)
-                          }}
-                          className="w-14 h-7 text-center border border-gray-200 text-sm hover:border-blue-400 hover:bg-blue-50 cursor-text"
-                          title="클릭하여 직접 입력"
-                        >
-                          {stockLoading === variant.id ? '...' : variant.stock}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleStockChange(variant, 1)}
-                        disabled={stockLoading === variant.id}
-                        className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
-                        variant.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
+        <>
+          {/* 모바일: 카드 레이아웃 */}
+          <div className="sm:hidden space-y-3">
+            {variants.map((variant) => (
+              <div key={variant.id} className="border border-gray-200 rounded-lg p-3">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-semibold text-sm">{variant.color} / {variant.size}</p>
+                    <p className="text-xs text-gray-500 font-mono">{variant.sku}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${variant.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                       {variant.is_active ? '활성' : '비활성'}
                     </span>
-                  </td>
-                  <td className="p-3 text-right">
                     <button
                       onClick={() => handleDelete(variant.id)}
                       disabled={loading}
-                      className="text-red-600 hover:underline text-sm disabled:opacity-50"
+                      className="text-red-500 text-xs disabled:opacity-50"
                     >
                       삭제
                     </button>
-                  </td>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{formatPrice(variant.price)}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500 mr-1">재고</span>
+                    <button
+                      onClick={() => handleStockChange(variant, -1)}
+                      disabled={stockLoading === variant.id || variant.stock <= 0}
+                      className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded bg-gray-50 text-sm font-bold disabled:opacity-40"
+                    >
+                      -
+                    </button>
+                    {editingStockId === variant.id ? (
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingStockValue}
+                        onChange={(e) => setEditingStockValue(parseInt(e.target.value) || 0)}
+                        onBlur={() => handleStockDirectEdit(variant)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleStockDirectEdit(variant)
+                          if (e.key === 'Escape') setEditingStockId(null)
+                        }}
+                        autoFocus
+                        className="w-12 h-7 text-center border border-blue-400 rounded text-sm outline-none"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => { setEditingStockId(variant.id); setEditingStockValue(variant.stock) }}
+                        className="w-12 h-7 text-center border border-gray-200 rounded text-sm hover:border-blue-400 cursor-text"
+                        title="클릭하여 직접 입력"
+                      >
+                        {stockLoading === variant.id ? '...' : variant.stock}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleStockChange(variant, 1)}
+                      disabled={stockLoading === variant.id}
+                      className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded bg-gray-50 text-sm font-bold disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 데스크탑: 테이블 레이아웃 */}
+          <div className="hidden sm:block border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left p-3 font-semibold">SKU</th>
+                  <th className="text-left p-3 font-semibold">색상</th>
+                  <th className="text-left p-3 font-semibold">사이즈</th>
+                  <th className="text-left p-3 font-semibold">가격</th>
+                  <th className="text-left p-3 font-semibold">재고</th>
+                  <th className="text-left p-3 font-semibold">상태</th>
+                  <th className="text-right p-3 font-semibold">관리</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {variants.map((variant) => (
+                  <tr key={variant.id} className="border-b border-gray-200">
+                    <td className="p-3">{variant.sku}</td>
+                    <td className="p-3">{variant.color}</td>
+                    <td className="p-3">{variant.size}</td>
+                    <td className="p-3">{formatPrice(variant.price)}</td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleStockChange(variant, -1)}
+                          disabled={stockLoading === variant.id || variant.stock <= 0}
+                          className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          -
+                        </button>
+                        {editingStockId === variant.id ? (
+                          <input
+                            type="number"
+                            min="0"
+                            value={editingStockValue}
+                            onChange={(e) => setEditingStockValue(parseInt(e.target.value) || 0)}
+                            onBlur={() => handleStockDirectEdit(variant)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleStockDirectEdit(variant)
+                              if (e.key === 'Escape') setEditingStockId(null)
+                            }}
+                            autoFocus
+                            className="w-14 h-7 text-center border border-blue-400 text-sm outline-none"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingStockId(variant.id)
+                              setEditingStockValue(variant.stock)
+                            }}
+                            className="w-14 h-7 text-center border border-gray-200 text-sm hover:border-blue-400 hover:bg-blue-50 cursor-text"
+                            title="클릭하여 직접 입력"
+                          >
+                            {stockLoading === variant.id ? '...' : variant.stock}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleStockChange(variant, 1)}
+                          disabled={stockLoading === variant.id}
+                          className="w-7 h-7 flex items-center justify-center border border-gray-300 bg-gray-50 hover:bg-gray-100 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
+                          variant.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {variant.is_active ? '활성' : '비활성'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => handleDelete(variant.id)}
+                        disabled={loading}
+                        className="text-red-600 hover:underline text-sm disabled:opacity-50"
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* Add New Variant Form */}
