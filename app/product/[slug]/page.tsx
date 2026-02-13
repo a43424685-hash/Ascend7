@@ -7,7 +7,6 @@ import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 import { formatPrice } from '@/shared/lib/utils'
-import { getKakaoChatUrl } from '@/shared/lib/kakao'
 
 export default async function ProductPage({
   params,
@@ -96,7 +95,7 @@ export default async function ProductPage({
       {/* 하단 안내 블록 (4칸) */}
       <div className="container mx-auto px-4 mt-16 lg:mt-24 mb-8">
         <div className="border-t border-gray-200 pt-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-3 gap-6 lg:gap-8">
             <FooterInfoItem
               title="무료배송"
               desc="50,000원 이상 구매 시"
@@ -137,8 +136,7 @@ export default async function ProductPage({
             />
             <FooterInfoItem
               title="신제품 알림"
-              desc="카카오 채널 추가"
-              href={getKakaoChatUrl()?.replace('/chat', '') ?? undefined}
+              desc="SNS 팔로우"
               icon={
                 <svg
                   className="w-6 h-6"
@@ -155,26 +153,6 @@ export default async function ProductPage({
                 </svg>
               }
             />
-            <FooterInfoItem
-              title="문의하기"
-              desc="카카오톡 상담"
-              href={getKakaoChatUrl() ?? undefined}
-              icon={
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              }
-            />
           </div>
         </div>
       </div>
@@ -186,14 +164,12 @@ function FooterInfoItem({
   icon,
   title,
   desc,
-  href,
 }: {
   icon: React.ReactNode
   title: string
   desc: string
-  href?: string
 }) {
-  const content = (
+  return (
     <div className="text-center space-y-2">
       <div className="w-10 h-10 mx-auto text-gray-600 flex items-center justify-center">
         {icon}
@@ -202,14 +178,4 @@ function FooterInfoItem({
       <p className="text-xs text-gray-500">{desc}</p>
     </div>
   )
-
-  if (href) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="hover:opacity-70 transition-opacity">
-        {content}
-      </a>
-    )
-  }
-
-  return content
 }
