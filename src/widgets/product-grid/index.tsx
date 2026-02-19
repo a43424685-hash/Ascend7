@@ -10,8 +10,14 @@ interface ProductGridProps {
 export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600">제품을 찾을 수 없습니다.</p>
+      <div className="text-center py-24 px-4">
+        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+          <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+          </svg>
+        </div>
+        <p className="text-gray-500 font-medium">제품을 찾을 수 없습니다</p>
+        <p className="text-gray-400 text-sm mt-1">다른 카테고리를 선택해보세요</p>
       </div>
     )
   }
@@ -31,7 +37,7 @@ export function ProductGrid({ products }: ProductGridProps) {
           <Link
             key={product.id}
             href={`/product/${product.slug}`}
-            className="group"
+            className="group card-hover block"
           >
             <div className="aspect-[3/4] relative bg-gray-100 overflow-hidden">
               {mainImage ? (

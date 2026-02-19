@@ -22,6 +22,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
+  const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+
+  const showNotification = (type: 'error' | 'success', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 2500)
+  }
 
   const colors = Array.from(
     new Set(product.variants.map((v) => v.color))
@@ -48,15 +54,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   const validateSelection = (): boolean => {
     if (!selectedColor) {
-      alert('색상을 선택해주세요.')
+      showNotification('error', '색상을 선택해주세요.')
       return false
     }
     if (!selectedSize) {
-      alert('사이즈를 선택해주세요.')
+      showNotification('error', '사이즈를 선택해주세요.')
       return false
     }
     if (!selectedVariant || !isAvailable) {
-      alert('재고가 없습니다.')
+      showNotification('error', '재고가 없습니다.')
       return false
     }
     return true
@@ -68,7 +74,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     setSelectedColor('')
     setSelectedSize('')
     setQuantity(1)
-    alert('장바구니에 추가되었습니다.')
+    showNotification('success', '장바구니에 추가되었습니다.')
   }
 
   const handleBuyNow = () => {
@@ -87,6 +93,19 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
   return (
     <div>
+      {/* 인라인 알림 토스트 */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 z-50 px-5 py-3 rounded shadow-lg text-sm font-medium animate-fade-in-up ${
+            notification.type === 'success'
+              ? 'bg-black text-white'
+              : 'bg-red-500 text-white'
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
+
       {/* Purchase Box - sticky on desktop */}
       <div className="lg:sticky lg:top-8">
         {/* Product Name */}
