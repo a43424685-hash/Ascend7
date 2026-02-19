@@ -9,6 +9,7 @@ export type UpdateProductInput = {
   slug?: string
   description?: string
   detail_content?: string
+  size_chart?: string | null
   size_material_care?: string | null
   category?: string
   is_active?: boolean

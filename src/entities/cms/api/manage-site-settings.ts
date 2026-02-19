@@ -5,7 +5,7 @@ import { revalidateTag } from 'next/cache'
 
 type ActionResult = { success: true } | { success: false; error: string }
 
-const PUBLIC_KEYS = ['site_name', 'site_description', 'logo_url', 'favicon_url', 'og_image_url']
+const PUBLIC_KEYS = ['site_name', 'site_description', 'logo_url', 'favicon_url', 'og_image_url', 'shipping_policy']
 
 export async function updateSiteSetting(key: string, value: string): Promise<ActionResult> {
   try {

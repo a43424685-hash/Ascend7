@@ -66,18 +66,11 @@ export default function AdminLayout({
                   이벤트
                 </Link>
                 <Link
-                  href="/admin/banners"
+                  href="/admin/shipping"
                   prefetch={false}
                   className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
                 >
-                  배너
-                </Link>
-                <Link
-                  href="/admin/site"
-                  prefetch={false}
-                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
-                >
-                  사이트
+                  배송
                 </Link>
               </nav>
             </div>
@@ -101,8 +94,7 @@ export default function AdminLayout({
         <Link href="/admin/lookbook" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">룩북</Link>
         <Link href="/admin/qna" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">Q&A</Link>
         <Link href="/admin/events" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">이벤트</Link>
-        <Link href="/admin/banners" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">배너</Link>
-        <Link href="/admin/site" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">사이트</Link>
+        <Link href="/admin/shipping" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">배송</Link>
       </div>
 
       {/* Main Content */}
