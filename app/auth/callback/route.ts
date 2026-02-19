@@ -1,19 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/shared/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 
 /**
  * 인증 콜백 라우트
+ *
+ * ⚠️ 핵심 수정: Route Handler에서 NextResponse.redirect()를 반환할 때
+ * cookies().set()으로 설정한 쿠키가 redirect response에 포함되지 않는 Next.js 이슈.
+ * createServerClient를 직접 사용하고 쿠키를 response에 명시적으로 설정.
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const redirect = requestUrl.searchParams.get('redirect') || '/account'
+  const redirectParam = requestUrl.searchParams.get('redirect') || '/account'
   const origin = requestUrl.origin
-
-  const supabase = await createClient()
 
   // OAuth 흐름: code가 있으면 세션으로 교환
   if (code) {
+    // redirect response에 직접 설정하기 위해 쿠키를 수집
+    const cookiesToSet: Array<{ name: string; value: string; options: Record<string, unknown> }> = []
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookies) {
+            // redirect response에 수동으로 설정하기 위해 수집
+            cookies.forEach((c) => cookiesToSet.push(c as typeof cookiesToSet[0]))
+          },
+        },
+      }
+    )
+
     try {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
@@ -27,27 +48,45 @@ export async function GET(request: NextRequest) {
         .eq('id', data.user.id)
         .single()
 
-      const defaultRedirect =
-        profile?.role === 'admin' ? '/admin/orders' : '/account'
-      return NextResponse.redirect(`${origin}${redirect || defaultRedirect}`)
-    } catch (err) {
+      const defaultRedirect = profile?.role === 'admin' ? '/admin/orders' : '/account'
+      const response = NextResponse.redirect(`${origin}${redirectParam || defaultRedirect}`)
+
+      // ✅ 세션 쿠키를 redirect response에 명시적으로 설정 (핵심 수정)
+      cookiesToSet.forEach(({ name, value, options }) => {
+        response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
+      })
+
+      return response
+    } catch {
       return NextResponse.redirect(`${origin}/auth/login?error=unexpected`)
     }
   }
 
-  // 이메일/비밀번호 로그인 후 세션 확인
+  // code가 없는 경우: 기존 세션 확인
   try {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll() {
+            // 읽기 전용 - 쿠키 설정 불필요
+          },
+        },
+      }
+    )
+
+    const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error || !user) {
       return NextResponse.redirect(`${origin}/auth/login?error=no_session`)
     }
 
-    return NextResponse.redirect(`${origin}${redirect}`)
-  } catch (err) {
+    return NextResponse.redirect(`${origin}${redirectParam}`)
+  } catch {
     return NextResponse.redirect(`${origin}/auth/login?error=unexpected`)
   }
 }

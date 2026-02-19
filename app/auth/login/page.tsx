@@ -27,14 +27,17 @@ export default function LoginPage() {
   // 회원가입 Server Action 상태 관리
   const [signUpState, signUpFormAction] = useFormState(signUpAction, undefined)
 
-  // 이미 로그인된 사용자는 홈으로 리다이렉트
+  // 이미 로그인된 사용자는 원래 가려던 페이지로 리다이렉트
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
-        router.replace('/')
+        // ?redirect 파라미터가 있으면 해당 페이지로, 없으면 마이페이지로
+        const searchParams = new URLSearchParams(window.location.search)
+        const redirectTo = searchParams.get('redirect') || '/account'
+        router.replace(redirectTo)
       } else {
         setIsCheckingAuth(false)
       }
@@ -61,11 +64,17 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient()
-      
+      // 현재 ?redirect 파라미터를 콜백 URL에 전달 (원래 가려던 페이지로 돌아오기 위해)
+      const searchParams = new URLSearchParams(window.location.search)
+      const redirectParam = searchParams.get('redirect')
+      const callbackUrl = redirectParam
+        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
+        : `${window.location.origin}/auth/callback`
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
         },
       })
 
