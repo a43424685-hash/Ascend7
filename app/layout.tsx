@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import './globals.css'
 import { Header } from '@/widgets/header'
 import { Footer } from '@/widgets/footer'
@@ -33,18 +34,21 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = headers().get('x-pathname') || ''
+  const isAdmin = pathname.startsWith('/admin')
+
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <Providers>
           <EditModeProvider>
-            <AnnouncementBarServer />
-            <Header />
+            {!isAdmin && <AnnouncementBarServer />}
+            {!isAdmin && <Header />}
             <main className="flex-1">{children}</main>
-            <Footer />
-            <FloatingKakaoButton />
-            <AdminEditButton />
-            <EditPanel />
+            {!isAdmin && <Footer />}
+            {!isAdmin && <FloatingKakaoButton />}
+            {!isAdmin && <AdminEditButton />}
+            {!isAdmin && <EditPanel />}
           </EditModeProvider>
         </Providers>
       </body>

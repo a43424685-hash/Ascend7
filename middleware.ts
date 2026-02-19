@@ -113,8 +113,17 @@ export async function middleware(request: NextRequest) {
     })
   }
 
-  // 4. updateSession에서 반환된 response 리턴 (세션 쿠키 포함!)
-  return supabaseResponse
+  // 4. x-pathname 헤더를 request에 추가 (서버 컴포넌트에서 현재 경로 읽기 위해)
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+  const finalResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  })
+  // Supabase 세션 쿠키를 최종 response에 복사
+  supabaseResponse.cookies.getAll().forEach(({ name, value, ...rest }) => {
+    finalResponse.cookies.set(name, value, rest)
+  })
+  return finalResponse
 }
 
 export const config = {
