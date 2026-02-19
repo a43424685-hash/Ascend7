@@ -9,6 +9,7 @@ import {
   deleteLookbookItem,
 } from '@/entities/lookbook/api/manage-lookbook'
 import type { LookbookItem } from '@/entities/lookbook/api/get-lookbook'
+import { RichTextEditor } from '@/shared/ui/rich-text-editor'
 
 interface LookbookManagerProps {
   items: LookbookItem[]
@@ -208,14 +209,12 @@ export function LookbookManager({ items }: LookbookManagerProps) {
                 placeholder="/shop?category=tops"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-medium mb-1">설명 (선택)</label>
-              <input
-                type="text"
+              <RichTextEditor
                 value={form.description}
-                onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
-                placeholder="여름 감성 코디"
+                onChange={(html) => setForm(p => ({ ...p, description: html }))}
+                minHeight={80}
               />
             </div>
             <div>
@@ -297,11 +296,10 @@ function LookbookEditForm({
       </div>
       <div>
         <label className="block text-[10px] font-medium mb-0.5">설명</label>
-        <input
-          type="text"
+        <RichTextEditor
           value={form.description}
-          onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
-          className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+          onChange={(html) => setForm(p => ({ ...p, description: html }))}
+          minHeight={80}
         />
       </div>
       <div>

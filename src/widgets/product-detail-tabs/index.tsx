@@ -144,9 +144,16 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
             {product.size_material_care && (
               <div>
                 <h4 className="text-sm font-semibold mb-3">소재 / 세탁 안내</h4>
-                <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed">
-                  {product.size_material_care}
-                </pre>
+                {product.size_material_care.startsWith('<') ? (
+                  <div
+                    className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: product.size_material_care }}
+                  />
+                ) : (
+                  <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed">
+                    {product.size_material_care}
+                  </pre>
+                )}
               </div>
             )}
           </div>
@@ -163,9 +170,16 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
         onToggle={toggle}
       >
         {shippingPolicy ? (
-          <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed">
-            {shippingPolicy}
-          </pre>
+          shippingPolicy.startsWith('<') ? (
+            <div
+              className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: shippingPolicy }}
+            />
+          ) : (
+            <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed">
+              {shippingPolicy}
+            </pre>
+          )
         ) : (
           <p className="text-sm text-gray-400">배송·교환·반품 안내가 준비 중입니다.</p>
         )}

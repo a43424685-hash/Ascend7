@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/shared/ui/button'
+import { RichTextEditor } from '@/shared/ui/rich-text-editor'
 import { updateSiteSettings, uploadSiteImage } from '@/entities/cms/api/manage-site-settings'
 import type { SiteSettings } from '@/entities/cms/api/get-site-settings'
 
@@ -204,14 +205,11 @@ export function ShippingPolicyForm({ settings }: SiteSettingsFormProps) {
         </div>
       )}
 
-      <textarea
+      <RichTextEditor
         value={shippingPolicy}
-        onChange={(e) => setShippingPolicy(e.target.value)}
-        rows={12}
-        className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-black resize-y"
-        placeholder="배송 방법, 배송비, 교환/반품 정책을 입력하세요."
+        onChange={setShippingPolicy}
+        minHeight={220}
       />
-      <p className="text-[10px] text-gray-400">줄바꿈이 그대로 반영됩니다.</p>
 
       <Button onClick={handleSave} disabled={loading} size="sm">
         {loading ? '저장 중...' : '배송 안내 저장'}

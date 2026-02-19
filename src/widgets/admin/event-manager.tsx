@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { createEvent, updateEvent, deleteEvent } from '@/entities/event/api/manage-events'
 import type { EventItem } from '@/entities/event/api/get-events'
+import { RichTextEditor } from '@/shared/ui/rich-text-editor'
 
 interface EventManagerProps {
   items: EventItem[]
@@ -169,12 +170,10 @@ export function EventManager({ items }: EventManagerProps) {
 
           <div>
             <label className="block text-xs font-medium mb-1">내용</label>
-            <textarea
+            <RichTextEditor
               value={form.content}
-              onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))}
-              rows={4}
-              placeholder="이벤트 상세 내용..."
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm resize-none focus:outline-none focus:border-black"
+              onChange={(html) => setForm(p => ({ ...p, content: html }))}
+              minHeight={120}
             />
           </div>
 
@@ -303,7 +302,11 @@ function EventEditForm({
       </div>
       <div>
         <label className="block text-xs font-medium mb-1">내용</label>
-        <textarea value={form.content} onChange={(e) => setForm(p => ({ ...p, content: e.target.value }))} rows={3} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm resize-none" />
+        <RichTextEditor
+          value={form.content}
+          onChange={(html) => setForm(p => ({ ...p, content: html }))}
+          minHeight={100}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

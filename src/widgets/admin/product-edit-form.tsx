@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { updateProduct } from '@/entities/product/api/update-product'
 import { Button } from '@/shared/ui/button'
 import { SizeChartEditor } from '@/widgets/admin/size-chart-editor'
+import { RichTextEditor } from '@/shared/ui/rich-text-editor'
 import type { ProductWithDetails } from '@/shared/types/database'
 
 interface ProductEditFormProps {
@@ -21,6 +22,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     name: product.name,
     slug: product.slug,
     description: product.description || '',
+    detail_content: product.detail_content || '',
     size_material_care: product.size_material_care || '',
     category: product.category,
     is_active: product.is_active,
@@ -38,6 +40,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         id: product.id,
         ...formData,
         size_chart: sizeChart,
+        detail_content: formData.detail_content || null,
         size_material_care: formData.size_material_care || null,
       })
       setSuccess(true)
@@ -97,6 +100,19 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         />
       </div>
 
+      {/* 상품 상세 설명 */}
+      <div className="border border-gray-200 rounded p-4 space-y-2">
+        <div>
+          <label className="block text-sm font-semibold">상품 상세 설명</label>
+          <p className="text-xs text-gray-400 mt-0.5">상품 페이지 &ldquo;상품 상세&rdquo; 탭에 표시됩니다.</p>
+        </div>
+        <RichTextEditor
+          value={formData.detail_content}
+          onChange={(html) => setFormData((prev) => ({ ...prev, detail_content: html }))}
+          minHeight={200}
+        />
+      </div>
+
       {/* 사이즈 차트 */}
       <div className="border border-gray-200 rounded p-4 space-y-3">
         <div>
@@ -110,14 +126,14 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
 
       {/* 소재 / 세탁 안내 */}
       <div className="border border-gray-200 rounded p-4 space-y-2">
-        <label className="block text-sm font-semibold">소재 / 세탁 안내</label>
-        <p className="text-xs text-gray-400">줄바꿈이 그대로 반영됩니다.</p>
-        <textarea
+        <div>
+          <label className="block text-sm font-semibold">소재 / 세탁 안내</label>
+          <p className="text-xs text-gray-400 mt-0.5">소재 구성, 세탁 방법 등을 입력하세요.</p>
+        </div>
+        <RichTextEditor
           value={formData.size_material_care}
-          onChange={(e) => setFormData((prev) => ({ ...prev, size_material_care: e.target.value }))}
-          rows={6}
-          placeholder={'나일론 80% / 스판덱스 20%\n\n[세탁 안내]\n- 찬물 또는 미지근한 물에서 단독 세탁\n- 표백제 사용 금지\n- 낮은 온도에서 건조'}
-          className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+          onChange={(html) => setFormData((prev) => ({ ...prev, size_material_care: html }))}
+          minHeight={140}
         />
       </div>
 
