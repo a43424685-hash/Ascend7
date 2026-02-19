@@ -40,7 +40,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         id: product.id,
         ...formData,
         size_chart: sizeChart,
-        detail_content: formData.detail_content || null,
+        detail_content: formData.detail_content || undefined,
         size_material_care: formData.size_material_care || null,
       })
       setSuccess(true)
