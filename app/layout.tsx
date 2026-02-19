@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import './globals.css'
 import { Header } from '@/widgets/header'
 import { Footer } from '@/widgets/footer'
@@ -9,6 +8,7 @@ import { EditModeProvider } from '@/features/admin-edit/edit-mode-provider'
 import { AdminEditButton } from '@/features/admin-edit/admin-edit-button'
 import { EditPanel } from '@/features/admin-edit/edit-panel'
 import { Providers } from './providers'
+import { StoreOnly } from '@/shared/ui/store-only'
 
 export const metadata: Metadata = {
   title: {
@@ -34,21 +34,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = headers().get('x-pathname') || ''
-  const isAdmin = pathname.startsWith('/admin')
-
   return (
     <html lang="ko">
       <body className="min-h-screen flex flex-col">
         <Providers>
           <EditModeProvider>
-            {!isAdmin && <AnnouncementBarServer />}
-            {!isAdmin && <Header />}
+            <StoreOnly>
+              <AnnouncementBarServer />
+              <Header />
+            </StoreOnly>
             <main className="flex-1">{children}</main>
-            {!isAdmin && <Footer />}
-            {!isAdmin && <FloatingKakaoButton />}
-            {!isAdmin && <AdminEditButton />}
-            {!isAdmin && <EditPanel />}
+            <StoreOnly>
+              <Footer />
+              <FloatingKakaoButton />
+              <AdminEditButton />
+              <EditPanel />
+            </StoreOnly>
           </EditModeProvider>
         </Providers>
       </body>

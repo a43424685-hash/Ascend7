@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from '@/shared/ui/button'
@@ -16,9 +16,14 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
   const router = useRouter()
   const logoInputRef = useRef<HTMLInputElement>(null)
   const ogInputRef = useRef<HTMLInputElement>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    return () => { clearTimeout(successTimerRef.current) }
+  }, [])
 
   const [form, setForm] = useState({
     site_name: settings.site_name,
@@ -68,7 +73,7 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
         if (logoInputRef.current) logoInputRef.current.value = ''
         if (ogInputRef.current) ogInputRef.current.value = ''
         router.refresh()
-        setTimeout(() => setSuccess(false), 3000)
+        successTimerRef.current = setTimeout(() => setSuccess(false), 3000)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 실패')
@@ -161,10 +166,15 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
 
 export function ShippingPolicyForm({ settings }: SiteSettingsFormProps) {
   const router = useRouter()
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [shippingPolicy, setShippingPolicy] = useState(settings.shipping_policy)
+
+  useEffect(() => {
+    return () => { clearTimeout(successTimerRef.current) }
+  }, [])
 
   const handleSave = async () => {
     setLoading(true)
@@ -177,7 +187,7 @@ export function ShippingPolicyForm({ settings }: SiteSettingsFormProps) {
       } else {
         setSuccess(true)
         router.refresh()
-        setTimeout(() => setSuccess(false), 3000)
+        successTimerRef.current = setTimeout(() => setSuccess(false), 3000)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '저장 실패')
