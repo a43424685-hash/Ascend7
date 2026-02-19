@@ -24,6 +24,7 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
     site_description: settings.site_description,
     logo_url: settings.logo_url,
     og_image_url: settings.og_image_url,
+    shipping_policy: settings.shipping_policy,
   })
 
   const handleImageUpload = async (file: File, purpose: string): Promise<string | null> => {
@@ -153,6 +154,68 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
           {loading ? '저장 중...' : '설정 저장'}
         </Button>
       </div>
+    </div>
+  )
+}
+
+export function ShippingPolicyForm({ settings }: SiteSettingsFormProps) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [shippingPolicy, setShippingPolicy] = useState(settings.shipping_policy)
+
+  const handleSave = async () => {
+    setLoading(true)
+    setError(null)
+    setSuccess(false)
+    try {
+      const result = await updateSiteSettings({ shipping_policy: shippingPolicy })
+      if (!result.success) {
+        setError(result.error)
+      } else {
+        setSuccess(true)
+        router.refresh()
+        setTimeout(() => setSuccess(false), 3000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '저장 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 space-y-4">
+      <div>
+        <h2 className="text-sm font-bold">배송 / 교환 / 반품 안내</h2>
+        <p className="text-xs text-gray-500 mt-0.5">모든 상품 페이지의 &ldquo;배송 / 교환 / 반품 안내&rdquo; 탭에 동일하게 표시됩니다.</p>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">
+          {error}
+          <button onClick={() => setError(null)} className="ml-2 underline">닫기</button>
+        </div>
+      )}
+      {success && (
+        <div className="p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded">
+          배송 안내가 저장되었습니다.
+        </div>
+      )}
+
+      <textarea
+        value={shippingPolicy}
+        onChange={(e) => setShippingPolicy(e.target.value)}
+        rows={12}
+        className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-black resize-y"
+        placeholder="배송 방법, 배송비, 교환/반품 정책을 입력하세요."
+      />
+      <p className="text-[10px] text-gray-400">줄바꿈이 그대로 반영됩니다.</p>
+
+      <Button onClick={handleSave} disabled={loading} size="sm">
+        {loading ? '저장 중...' : '배송 안내 저장'}
+      </Button>
     </div>
   )
 }

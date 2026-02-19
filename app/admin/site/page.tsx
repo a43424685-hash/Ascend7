@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { checkAdminAuth } from '@/shared/lib/auth/admin'
 import { getSiteSettings } from '@/entities/cms/api/get-site-settings'
 import { getAllAnnouncements } from '@/entities/cms/api/get-announcement'
-import { SiteSettingsForm } from '@/widgets/admin/site-settings-form'
+import { SiteSettingsForm, ShippingPolicyForm } from '@/widgets/admin/site-settings-form'
 import { AnnouncementManager } from '@/widgets/admin/announcement-manager'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +24,7 @@ export default async function AdminSitePage() {
       </div>
 
       <SiteSettingsForm settings={settings} />
+      <ShippingPolicyForm settings={settings} />
       <AnnouncementManager announcements={announcements} />
     </div>
   )

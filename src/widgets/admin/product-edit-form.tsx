@@ -20,6 +20,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     name: product.name,
     slug: product.slug,
     description: product.description || '',
+    size_material_care: product.size_material_care || '',
     category: product.category,
     is_active: product.is_active,
   })
@@ -34,6 +35,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       await updateProduct({
         id: product.id,
         ...formData,
+        size_material_care: formData.size_material_care || null,
       })
       setSuccess(true)
       router.refresh()
@@ -95,6 +97,24 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
           }
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold mb-1">
+          사이즈 / 소재 / 세탁 안내
+        </label>
+        <p className="text-xs text-gray-400 mb-1.5">
+          상품 상세 페이지 &ldquo;사이즈 / 소재 / 세탁 안내&rdquo; 탭에 표시됩니다. 줄바꿈이 그대로 반영됩니다.
+        </p>
+        <textarea
+          value={formData.size_material_care}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, size_material_care: e.target.value }))
+          }
+          rows={8}
+          placeholder={`예:\n[사이즈]\nS: 총장 67 / 어깨 44 / 가슴 104\nM: 총장 69 / 어깨 46 / 가슴 108\n\n[소재]\n나일론 80% / 스판덱스 20%\n\n[세탁 안내]\n찬물 단독 세탁 / 표백제 사용 금지`}
+          className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
         />
       </div>
 

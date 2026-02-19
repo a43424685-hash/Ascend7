@@ -4,6 +4,7 @@ export type Product = {
   name: string
   description: string | null
   detail_content: string | null
+  size_material_care: string | null
   category: string
   is_active: boolean
   created_at: string

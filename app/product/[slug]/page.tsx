@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getProductBySlug } from '@/entities/product/api/get-product-by-slug'
 import { getProductsWithFilters } from '@/entities/product/api/get-products-with-filters'
+import { getSiteSettings } from '@/entities/cms/api/get-site-settings'
 import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
@@ -41,10 +42,11 @@ export default async function ProductPage({
   const product = await getProductBySlug(params.slug)
   if (!product) notFound()
 
-  // 추천 상품 (같은 카테고리, 현재 상품 제외, 최대 4개)
-  const allProducts = await getProductsWithFilters({
-    category: product.category,
-  })
+  // 배송 정책 + 추천 상품 병렬 조회
+  const [siteSettings, allProducts] = await Promise.all([
+    getSiteSettings(),
+    getProductsWithFilters({ category: product.category }),
+  ])
   const recommendations = allProducts
     .filter((p) => p.id !== product.id)
     .slice(0, 4)
@@ -61,7 +63,7 @@ export default async function ProductPage({
 
       {/* 상세 콘텐츠 영역 (아코디언) */}
       <div className="container mx-auto px-4 mt-16 lg:mt-24 max-w-4xl">
-        <ProductDetailTabs product={product} />
+        <ProductDetailTabs product={product} shippingPolicy={siteSettings.shipping_policy} />
       </div>
 
       {/* 리뷰 섹션 */}
