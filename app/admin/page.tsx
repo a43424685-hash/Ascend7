@@ -27,6 +27,8 @@ export default async function AdminPage() {
     lowStockRes,
     totalProductsRes,
     returnRequestsRes,
+    unansweredQnaRes,
+    totalReviewsRes,
   ] = await Promise.all([
     // 오늘 주문 (매출 포함)
     supabase
@@ -86,6 +88,17 @@ export default async function AdminPage() {
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('return_status', 'requested'),
+    // 미답변 Q&A
+    supabase
+      .from('qna')
+      .select('*', { count: 'exact', head: true })
+      .is('answer', null)
+      .eq('is_active', true),
+    // 총 리뷰 수
+    supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true),
   ])
 
   const todayOrders = todayOrdersRes.data || []
@@ -287,6 +300,42 @@ export default async function AdminPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* 커뮤니티 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          href="/admin/qna"
+          className="bg-white rounded-xl border border-gray-200 p-5 hover:border-black transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">미답변 Q&A</p>
+            <span className="text-lg">💬</span>
+          </div>
+          <p className="text-2xl font-bold">{unansweredQnaRes.count || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">답변 필요</p>
+        </Link>
+        <Link
+          href="/admin/reviews"
+          className="bg-white rounded-xl border border-gray-200 p-5 hover:border-black transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">리뷰</p>
+            <span className="text-lg">⭐</span>
+          </div>
+          <p className="text-2xl font-bold">{totalReviewsRes.count || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">공개 리뷰</p>
+        </Link>
+        <Link
+          href="/admin/lookbook"
+          className="bg-white rounded-xl border border-gray-200 p-5 hover:border-black transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">룩북</p>
+            <span className="text-lg">📸</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-6">룩북 관리 →</p>
+        </Link>
       </div>
 
       {/* 빠른 이동 */}

@@ -35,6 +35,24 @@ export default function AdminLayout({
                   주문
                 </Link>
                 <Link
+                  href="/admin/reviews"
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  리뷰
+                </Link>
+                <Link
+                  href="/admin/lookbook"
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  룩북
+                </Link>
+                <Link
+                  href="/admin/qna"
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  Q&A
+                </Link>
+                <Link
                   href="/admin/banners"
                   className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
                 >
@@ -59,12 +77,15 @@ export default function AdminLayout({
       </header>
 
       {/* Mobile nav */}
-      <div className="sm:hidden bg-white border-b border-gray-200 px-4 py-2 flex gap-4">
-        <Link href="/admin" className="text-xs font-medium text-gray-600">대시보드</Link>
-        <Link href="/admin/products" className="text-xs font-medium text-gray-600">상품</Link>
-        <Link href="/admin/orders" className="text-xs font-medium text-gray-600">주문</Link>
-        <Link href="/admin/banners" className="text-xs font-medium text-gray-600">배너</Link>
-        <Link href="/admin/site" className="text-xs font-medium text-gray-600">사이트</Link>
+      <div className="sm:hidden bg-white border-b border-gray-200 px-4 py-2 flex gap-3 overflow-x-auto">
+        <Link href="/admin" className="text-xs font-medium text-gray-600 shrink-0">대시보드</Link>
+        <Link href="/admin/products" className="text-xs font-medium text-gray-600 shrink-0">상품</Link>
+        <Link href="/admin/orders" className="text-xs font-medium text-gray-600 shrink-0">주문</Link>
+        <Link href="/admin/reviews" className="text-xs font-medium text-gray-600 shrink-0">리뷰</Link>
+        <Link href="/admin/lookbook" className="text-xs font-medium text-gray-600 shrink-0">룩북</Link>
+        <Link href="/admin/qna" className="text-xs font-medium text-gray-600 shrink-0">Q&A</Link>
+        <Link href="/admin/banners" className="text-xs font-medium text-gray-600 shrink-0">배너</Link>
+        <Link href="/admin/site" className="text-xs font-medium text-gray-600 shrink-0">사이트</Link>
       </div>
 
       {/* Main Content */}
