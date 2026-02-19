@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { AdminLogoutButton } from '@/widgets/admin/admin-logout-button'
 
 export default function AdminLayout({
   children,
@@ -74,13 +75,17 @@ export default function AdminLayout({
                 </Link>
               </nav>
             </div>
-            <Link
-              href="/"
-              prefetch={false}
-              className="text-xs text-gray-400 hover:text-white transition-colors"
-            >
-              스토어 보기 →
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/"
+                prefetch={false}
+                className="text-xs text-gray-400 hover:text-white transition-colors"
+              >
+                스토어 보기 →
+              </Link>
+              <span className="text-gray-600 text-xs">|</span>
+              <AdminLogoutButton />
+            </div>
           </div>
         </div>
       </header>

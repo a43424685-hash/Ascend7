@@ -146,7 +146,7 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
                 <h4 className="text-sm font-semibold mb-3">소재 / 세탁 안내</h4>
                 {product.size_material_care.startsWith('<') ? (
                   <div
-                    className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed"
+                    className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed prose-ul:list-none prose-ul:pl-0 prose-li:pl-0 prose-li:before:hidden"
                     dangerouslySetInnerHTML={{ __html: product.size_material_care }}
                   />
                 ) : (
@@ -172,7 +172,7 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
         {shippingPolicy ? (
           shippingPolicy.startsWith('<') ? (
             <div
-              className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed"
+              className="prose prose-sm max-w-none prose-p:text-gray-600 prose-p:leading-relaxed prose-ul:list-none prose-ul:pl-0 prose-li:pl-0 prose-li:before:hidden"
               dangerouslySetInnerHTML={{ __html: shippingPolicy }}
             />
           ) : (
