@@ -96,7 +96,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       {/* 인라인 알림 토스트 */}
       {notification && (
         <div
-          className={`fixed top-4 right-4 z-50 px-5 py-3 rounded shadow-lg text-sm font-medium animate-fade-in-up ${
+          className={`fixed top-[72px] right-4 z-[9995] px-5 py-3 rounded shadow-lg text-sm font-medium animate-fade-in-up ${
             notification.type === 'success'
               ? 'bg-black text-white'
               : 'bg-red-500 text-white'
