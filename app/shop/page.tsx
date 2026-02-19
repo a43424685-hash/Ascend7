@@ -25,19 +25,46 @@ export default async function ShopPage({
   const products = await getProductsWithFilters(filters)
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:py-12">
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-baseline justify-between mb-5 sm:mb-6">
-          <h1 className="text-xl sm:text-3xl font-bold tracking-tight">
-            {searchParams.q ? `"${searchParams.q}" 검색 결과` : 'SHOP'}
-          </h1>
-          <span className="text-xs text-gray-400">{products.length}개</span>
+    <div className="min-h-screen">
+      {/* 필터 바 - sticky */}
+      <Suspense fallback={<div className="h-12 border-b border-gray-100" />}>
+        <ShopFilters currentFilters={filters} totalCount={products.length} />
+      </Suspense>
+
+      {/* 페이지 헤더 */}
+      <div className="container mx-auto px-6 lg:px-10 pt-10 pb-8">
+        <div className="flex items-baseline justify-between">
+          <div>
+            {searchParams.q ? (
+              <>
+                <p className="text-[9px] tracking-[0.4em] text-gray-400 uppercase mb-1">Search Results</p>
+                <h1 className="text-xl font-black tracking-tight">&ldquo;{searchParams.q}&rdquo;</h1>
+              </>
+            ) : searchParams.category ? (
+              <>
+                <p className="text-[9px] tracking-[0.4em] text-gray-400 uppercase mb-1">Category</p>
+                <h1 className="text-xl font-black tracking-tight">
+                  {searchParams.category === 'top' ? 'TOPS'
+                    : searchParams.category === 'bottom' ? 'BOTTOMS'
+                    : searchParams.category === 'accessories' ? 'ACCESSORIES'
+                    : 'SHOP'}
+                </h1>
+              </>
+            ) : (
+              <>
+                <p className="text-[9px] tracking-[0.4em] text-gray-400 uppercase mb-1">Collection</p>
+                <h1 className="text-xl font-black tracking-tight">ALL PRODUCTS</h1>
+              </>
+            )}
+          </div>
+          <span className="text-xs text-gray-300 tabular-nums sm:hidden">{products.length}개</span>
         </div>
-        <Suspense fallback={<div className="h-10" />}>
-          <ShopFilters currentFilters={filters} />
-        </Suspense>
       </div>
-      <ProductGrid products={products} />
+
+      {/* 상품 그리드 */}
+      <div className="container mx-auto px-6 lg:px-10 pb-24">
+        <ProductGrid products={products} />
+      </div>
     </div>
   )
 }

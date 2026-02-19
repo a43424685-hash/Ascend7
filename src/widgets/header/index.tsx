@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { CartButton } from '@/features/cart/cart-button'
 import { AuthButton } from '@/features/auth/auth-button'
 import { MobileMenuButton, SearchButton } from './mobile-menu'
+import { DesktopNav } from './desktop-nav'
 
 export async function Header() {
   return (
@@ -13,13 +14,8 @@ export async function Header() {
             ASCEND7
           </Link>
 
-          {/* 데스크탑 네비게이션 (lg 이상) */}
-          <nav className="hidden lg:flex items-center gap-10">
-            <Link href="/shop" className="text-xs font-medium tracking-[0.12em] text-gray-500 hover:text-black transition-colors duration-200">SHOP</Link>
-            <Link href="/shop?category=top" className="text-xs font-medium tracking-[0.12em] text-gray-500 hover:text-black transition-colors duration-200">TOPS</Link>
-            <Link href="/shop?category=bottom" className="text-xs font-medium tracking-[0.12em] text-gray-500 hover:text-black transition-colors duration-200">BOTTOMS</Link>
-            <Link href="/shop?category=accessories" className="text-xs font-medium tracking-[0.12em] text-gray-500 hover:text-black transition-colors duration-200">ACCESSORIES</Link>
-          </nav>
+          {/* 데스크탑 네비게이션 - DesktopNav (SHOP 드롭다운 포함) */}
+          <DesktopNav />
 
           {/* 우측 아이콘들 */}
           <div className="flex items-center gap-3">
