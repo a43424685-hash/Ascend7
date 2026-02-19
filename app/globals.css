@@ -8,9 +8,9 @@
 :root {
   --background: #ffffff;
   --foreground: #000000;
-  --accent: #C9A84C;        /* 브랜드 골드 */
-  --accent-dark: #B8941F;   /* 골드 다크 */
-  --accent-muted: rgba(201, 168, 76, 0.12);
+  --surface-dark: #0a0a0a;    /* 다크 섹션 배경 */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-dark: rgba(255, 255, 255, 0.05);
 }
 
 body {
