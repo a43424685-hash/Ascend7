@@ -8,6 +8,7 @@ import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 import { formatPrice } from '@/shared/lib/utils'
+import { ProductReviews } from '@/widgets/product-reviews'
 
 export async function generateMetadata({
   params,
@@ -61,6 +62,11 @@ export default async function ProductPage({
       {/* 상세 콘텐츠 영역 (아코디언) */}
       <div className="container mx-auto px-4 mt-16 lg:mt-24 max-w-4xl">
         <ProductDetailTabs product={product} />
+      </div>
+
+      {/* 리뷰 섹션 */}
+      <div className="container mx-auto px-4 max-w-4xl">
+        <ProductReviews productId={product.id} productSlug={product.slug} />
       </div>
 
       {/* 추천 상품 */}

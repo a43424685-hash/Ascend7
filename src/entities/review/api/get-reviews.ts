@@ -51,6 +51,51 @@ export async function getReviews(sortBy: ReviewSortBy = 'newest'): Promise<Revie
   }
 }
 
+export async function getReviewsByProduct(
+  productId: string,
+  limit = 5
+): Promise<ReviewWithDetails[]> {
+  try {
+    const supabase = await getSupabaseClient()
+    const { data, error } = await supabase
+      .from('reviews')
+      .select(`
+        *,
+        product:products!product_id(id, name, slug, images:product_images(url, sort_order)),
+        reviewer:profiles!user_id(display_name)
+      `)
+      .eq('product_id', productId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return (data || []) as unknown as ReviewWithDetails[]
+  } catch {
+    return []
+  }
+}
+
+export async function getReviewStatsByProduct(
+  productId: string
+): Promise<{ count: number; average: number }> {
+  try {
+    const supabase = await getSupabaseClient()
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('product_id', productId)
+      .eq('is_active', true)
+
+    if (error || !data) return { count: 0, average: 0 }
+    const count = data.length
+    const average = count > 0 ? data.reduce((sum, r) => sum + r.rating, 0) / count : 0
+    return { count, average: Math.round(average * 10) / 10 }
+  } catch {
+    return { count: 0, average: 0 }
+  }
+}
+
 export async function getReviewStats(): Promise<{ count: number; average: number }> {
   try {
     const supabase = await getSupabaseClient()
