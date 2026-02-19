@@ -53,40 +53,46 @@ export default async function HomePage() {
             }} />
 
             <div className="relative container mx-auto px-4">
-              <div className="flex flex-col items-center justify-center min-h-[85vh] lg:min-h-[90vh] text-center">
-                <p className="text-[10px] sm:text-xs tracking-[0.4em] uppercase text-gray-400 mb-4 sm:mb-6 animate-fade-in">
-                  프리미엄 짐웨어 (2026)
+              <div className="flex flex-col items-center justify-center min-h-[85vh] lg:min-h-[90vh] text-center px-4">
+                {/* 서브 태그라인 */}
+                <p className="text-[9px] sm:text-[10px] tracking-[0.55em] uppercase text-[#C9A84C] mb-8 sm:mb-10 animate-fade-in font-bold">
+                  Premium Gymwear · Est. 2026
                 </p>
 
-                <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.85] animate-fade-in-up">
-                  ASCEND
-                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                    SEVEN
-                  </span>
-                </h1>
+                {/* 메인 헤드라인 - 거대한 골드 7 */}
+                <div className="animate-fade-in-up">
+                  <h1 className="font-black tracking-[-0.04em] leading-none">
+                    <span className="block text-[17vw] sm:text-[14vw] lg:text-[11vw] xl:text-[10rem] text-white">ASCEND</span>
+                    <span className="block text-[28vw] sm:text-[24vw] lg:text-[18vw] xl:text-[17rem] text-[#C9A84C] leading-[0.8]">7</span>
+                  </h1>
+                </div>
 
-                <p className="mt-6 sm:mt-8 text-sm sm:text-base text-gray-400 max-w-md mx-auto leading-relaxed px-4 animate-fade-in">
-                  Ascend every day. All seven.<br />
-                  <span className="text-xs text-gray-500">일주일동안 멈추지 않고 성장하다</span>
-                </p>
+                {/* 골드 구분 라인 + 태그라인 */}
+                <div className="flex items-center gap-4 mt-10 sm:mt-12 animate-fade-in">
+                  <div className="w-10 h-px bg-[#C9A84C]/40" />
+                  <p className="text-[9px] tracking-[0.45em] text-gray-500 uppercase whitespace-nowrap">Seven Days. No Limits.</p>
+                  <div className="w-10 h-px bg-[#C9A84C]/40" />
+                </div>
 
+                {/* CTA 버튼 */}
                 <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 animate-fade-in-up">
                   <Link
                     href="/shop"
-                    className="px-10 py-4 bg-white text-black text-sm font-bold tracking-wider hover:bg-gray-100 transition-all duration-300"
+                    className="px-12 py-4 bg-[#C9A84C] text-black text-[10px] font-black tracking-[0.3em] hover:bg-[#B8941F] transition-all duration-300"
                   >
                     SHOP NOW
                   </Link>
                   <Link
                     href="/shop?category=top"
-                    className="px-10 py-4 border border-gray-600 text-white text-sm font-medium tracking-wider hover:border-white transition-all duration-300"
+                    className="px-12 py-4 border border-white/20 text-white text-[10px] font-medium tracking-[0.3em] hover:border-[#C9A84C]/60 hover:text-[#C9A84C] transition-all duration-300"
                   >
                     NEW ARRIVALS
                   </Link>
                 </div>
 
+                {/* 스크롤 다운 */}
                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#C9A84C]/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
                 </div>
@@ -98,29 +104,29 @@ export default async function HomePage() {
 
       {/* ─── Brand Values ─── */}
       <EditableSection sectionId="brand-values" label="브랜드 가치">
-        <section className="border-b border-gray-200 relative overflow-hidden">
+        <section className="border-b border-gray-100 relative overflow-hidden bg-white">
           {brandValues.bgImage && (
             <Image src={brandValues.bgImage} alt="" fill className="object-cover opacity-10" sizes="100vw" />
           )}
-          <div className="container mx-auto px-4 relative">
-            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-gray-200">
+          <div className="container mx-auto px-4 lg:px-8 relative">
+            <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-gray-100">
               {brandValues.items.map((v, i) => (
                 <ScrollAnimate key={v.num} delay={i * 100}>
-                  <div className="py-8 lg:py-12 px-4 lg:px-8 text-center">
+                  <div className="py-10 lg:py-14 px-4 lg:px-10 text-center group">
                     <span
-                      className={`tracking-widest ${!brandValues.styles?.num?.fontSize ? 'text-[10px]' : ''} ${!brandValues.styles?.num?.color ? 'text-gray-400' : ''}`}
+                      className={`tracking-[0.35em] ${!brandValues.styles?.num?.fontSize ? 'text-[9px]' : ''} ${!brandValues.styles?.num?.color ? 'text-[#C9A84C]' : ''}`}
                       style={toCSS(brandValues.styles?.num)}
                     >
                       {v.num}
                     </span>
                     <h3
-                      className={`tracking-wider mt-2 ${!brandValues.styles?.title?.fontSize ? 'text-xs sm:text-sm' : ''} ${!brandValues.styles?.title?.fontWeight ? 'font-bold' : ''}`}
+                      className={`tracking-wider mt-3 ${!brandValues.styles?.title?.fontSize ? 'text-xs sm:text-sm' : ''} ${!brandValues.styles?.title?.fontWeight ? 'font-black' : ''}`}
                       style={toCSS(brandValues.styles?.title)}
                     >
                       {v.title}
                     </h3>
                     <p
-                      className={`mt-1 ${!brandValues.styles?.desc?.fontSize ? 'text-[11px] sm:text-xs' : ''} ${!brandValues.styles?.desc?.color ? 'text-gray-500' : ''}`}
+                      className={`mt-2 ${!brandValues.styles?.desc?.fontSize ? 'text-[11px] sm:text-xs' : ''} ${!brandValues.styles?.desc?.color ? 'text-gray-400' : ''} leading-relaxed`}
                       style={toCSS(brandValues.styles?.desc)}
                     >
                       {v.desc}
@@ -135,18 +141,19 @@ export default async function HomePage() {
 
       {/* ─── Featured Products ─── */}
       {featuredProducts.length > 0 && (
-        <section className="container mx-auto px-4 py-16 lg:py-24">
+        <section className="container mx-auto px-4 lg:px-8 py-20 lg:py-28">
           <ScrollAnimate>
-            <div className="flex items-end justify-between mb-8 lg:mb-12">
+            <div className="flex items-end justify-between mb-10 lg:mb-14">
               <div>
-                <p className="text-[10px] tracking-[0.3em] text-gray-400 uppercase mb-1">Collection</p>
-                <h2 className="text-2xl lg:text-3xl font-bold tracking-tight">FEATURED</h2>
+                <p className="text-[9px] tracking-[0.45em] text-[#C9A84C] uppercase mb-2 font-bold">Collection</p>
+                <h2 className="text-3xl lg:text-4xl font-black tracking-tighter">FEATURED</h2>
               </div>
               <Link
                 href="/shop"
-                className="text-xs font-medium tracking-wider border-b border-black pb-0.5 hover:text-gray-600 hover:border-gray-600 transition-colors"
+                className="text-[10px] font-semibold tracking-[0.2em] text-gray-500 hover:text-[#C9A84C] transition-colors duration-200 flex items-center gap-1.5"
               >
                 VIEW ALL
+                <span className="text-[#C9A84C]">→</span>
               </Link>
             </div>
           </ScrollAnimate>
@@ -193,12 +200,13 @@ export default async function HomePage() {
                   </Link>
                 </div>
               </ScrollAnimate>
-              <ScrollAnimate delay={200} className="flex items-center justify-center py-16 lg:py-24 border-t lg:border-t-0 lg:border-l border-gray-800">
-                <div className="grid grid-cols-2 gap-8 sm:gap-12 text-center">
+              <ScrollAnimate delay={200} className="flex items-center justify-center py-16 lg:py-24 border-t lg:border-t-0 lg:border-l border-gray-800/60">
+                <div className="grid grid-cols-2 gap-10 sm:gap-14 text-center">
                   {philosophy.stats.map((s) => (
                     <div key={s.label}>
-                      <p className="text-2xl sm:text-3xl font-black">{s.num}</p>
-                      <p className="text-[11px] text-gray-500 mt-1">{s.label}</p>
+                      <p className="text-3xl sm:text-4xl font-black text-[#C9A84C]">{s.num}</p>
+                      <div className="w-6 h-px bg-[#C9A84C]/30 mx-auto my-2" />
+                      <p className="text-[10px] text-gray-500 tracking-[0.15em] uppercase">{s.label}</p>
                     </div>
                   ))}
                 </div>
@@ -210,33 +218,35 @@ export default async function HomePage() {
 
       {/* ─── Bottom CTA ─── */}
       <EditableSection sectionId="bottom-cta" label="하단 CTA">
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden bg-[#080808]">
+          {/* 골드 상단 라인 */}
+          <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/40 to-transparent" />
           {bottomCta.bgImage && (
             <Image src={bottomCta.bgImage} alt="" fill className="object-cover opacity-10" sizes="100vw" />
           )}
-          <div className="container mx-auto px-4 py-20 lg:py-28 text-center relative">
+          <div className="container mx-auto px-4 lg:px-8 py-24 lg:py-32 text-center relative">
             <ScrollAnimate>
               <p
-                className={`uppercase mb-3 ${!bottomCta.styles?.subheading?.fontSize ? 'text-[10px]' : ''} ${!bottomCta.styles?.subheading?.color ? 'text-gray-400' : ''}`}
-                style={{ letterSpacing: '0.4em', ...toCSS(bottomCta.styles?.subheading) }}
+                className={`uppercase mb-4 ${!bottomCta.styles?.subheading?.fontSize ? 'text-[9px]' : ''} ${!bottomCta.styles?.subheading?.color ? 'text-[#C9A84C]' : ''} font-bold`}
+                style={{ letterSpacing: '0.5em', ...toCSS(bottomCta.styles?.subheading) }}
               >
                 {bottomCta.subheading}
               </p>
               <h2
-                className={`tracking-tight mb-6 ${!bottomCta.styles?.heading?.fontSize ? 'text-3xl sm:text-4xl lg:text-5xl' : ''} ${!bottomCta.styles?.heading?.fontWeight ? 'font-black' : ''}`}
+                className={`tracking-tighter mb-6 ${!bottomCta.styles?.heading?.fontSize ? 'text-4xl sm:text-5xl lg:text-6xl' : ''} ${!bottomCta.styles?.heading?.fontWeight ? 'font-black' : ''} text-white`}
                 style={toCSS(bottomCta.styles?.heading)}
               >
                 {bottomCta.heading}
               </h2>
               <p
-                className={`mb-8 max-w-md mx-auto ${!bottomCta.styles?.description?.fontSize ? 'text-sm' : ''} ${!bottomCta.styles?.description?.color ? 'text-gray-500' : ''}`}
+                className={`mb-10 max-w-sm mx-auto leading-relaxed ${!bottomCta.styles?.description?.fontSize ? 'text-sm' : ''} ${!bottomCta.styles?.description?.color ? 'text-gray-500' : ''}`}
                 style={toCSS(bottomCta.styles?.description)}
               >
                 {bottomCta.description}
               </p>
               <Link
                 href={bottomCta.buttonUrl}
-                className="inline-block px-12 py-4 bg-black text-white text-sm font-bold tracking-wider hover:bg-gray-900 transition-colors"
+                className="inline-block px-14 py-4 bg-[#C9A84C] text-black text-[10px] font-black tracking-[0.3em] hover:bg-[#B8941F] transition-all duration-300"
               >
                 {bottomCta.buttonText}
               </Link>

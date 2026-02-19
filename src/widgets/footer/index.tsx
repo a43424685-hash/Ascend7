@@ -2,58 +2,66 @@ import Link from 'next/link'
 
 export function Footer() {
   return (
-    <footer className="bg-[#111] text-white mt-auto">
-      <div className="container mx-auto px-4">
+    <footer className="bg-[#080808] text-white mt-auto">
+      {/* 골드 상단 그라디언트 라인 */}
+      <div className="h-px bg-gradient-to-r from-transparent via-[#C9A84C]/50 to-transparent" />
+
+      <div className="container mx-auto px-4 lg:px-8">
         {/* 메인 푸터 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-10 lg:py-14">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-12 lg:py-16">
           {/* 브랜드 */}
           <div className="col-span-2 sm:col-span-1">
-            <p className="text-sm font-black tracking-[0.15em] mb-3">ASCEND7</p>
-            <p className="text-[11px] text-gray-500 leading-relaxed">
+            <p className="text-sm font-black tracking-[0.2em] mb-4">
+              ASCEND<span className="text-[#C9A84C]">7</span>
+            </p>
+            <p className="text-[11px] text-gray-500 leading-relaxed mb-4">
               고성능 트레이닝을 위한<br />
               프리미엄 짐웨어 브랜드
+            </p>
+            <p className="text-[10px] text-gray-600 tracking-[0.15em]">
+              ASCEND EVERY DAY. ALL SEVEN.
             </p>
           </div>
 
           {/* 카테고리 */}
           <div>
-            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Shop</p>
-            <div className="space-y-2">
-              <Link href="/shop" className="block text-xs text-gray-400 hover:text-white transition-colors">전체 상품</Link>
-              <Link href="/shop?category=top" className="block text-xs text-gray-400 hover:text-white transition-colors">상의</Link>
-              <Link href="/shop?category=bottom" className="block text-xs text-gray-400 hover:text-white transition-colors">하의</Link>
-              <Link href="/shop?category=accessories" className="block text-xs text-gray-400 hover:text-white transition-colors">악세서리</Link>
+            <p className="text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-4 font-bold">Shop</p>
+            <div className="space-y-2.5">
+              <Link href="/shop" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">전체 상품</Link>
+              <Link href="/shop?category=top" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">상의</Link>
+              <Link href="/shop?category=bottom" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">하의</Link>
+              <Link href="/shop?category=accessories" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">악세서리</Link>
             </div>
           </div>
 
           {/* 고객 서비스 */}
           <div>
-            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Support</p>
-            <div className="space-y-2">
-              <Link href="/account" className="block text-xs text-gray-400 hover:text-white transition-colors">마이페이지</Link>
-              <Link href="/account/orders" className="block text-xs text-gray-400 hover:text-white transition-colors">주문조회</Link>
-              <Link href="/cart" className="block text-xs text-gray-400 hover:text-white transition-colors">장바구니</Link>
+            <p className="text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-4 font-bold">Support</p>
+            <div className="space-y-2.5">
+              <Link href="/account" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">마이페이지</Link>
+              <Link href="/account/orders" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">주문조회</Link>
+              <Link href="/cart" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">장바구니</Link>
             </div>
           </div>
 
           {/* 회사 정보 */}
           <div>
-            <p className="text-[10px] tracking-[0.15em] text-gray-500 uppercase mb-3 font-semibold">Info</p>
-            <div className="space-y-2">
-              <Link href="/terms" className="block text-xs text-gray-400 hover:text-white transition-colors">이용약관</Link>
-              <Link href="/privacy" className="block text-xs text-gray-400 hover:text-white transition-colors">개인정보처리방침</Link>
+            <p className="text-[10px] tracking-[0.2em] text-[#C9A84C] uppercase mb-4 font-bold">Info</p>
+            <div className="space-y-2.5">
+              <Link href="/terms" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">이용약관</Link>
+              <Link href="/privacy" className="block text-xs text-gray-500 hover:text-white hover:translate-x-0.5 transition-all duration-200">개인정보처리방침</Link>
             </div>
           </div>
         </div>
 
         {/* 사업자 정보 + 저작권 */}
-        <div className="border-t border-gray-800/60 py-6">
-          <div className="text-[10px] text-gray-600 leading-relaxed space-y-0.5">
+        <div className="border-t border-white/5 py-6">
+          <div className="text-[10px] text-gray-700 leading-relaxed space-y-0.5">
             <p>상호: 보틀천 | 대표: 이병천 | 사업자등록번호: 369-17-02526</p>
             <p>주소: 서울특별시 강북구 노해로34, 9층</p>
             <p>통신판매업신고: 제2026-서울강북-0119호 | 개인정보관리책임자: 이병천</p>
             <p>고객센터: help@ascend7.kr | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
-            <p className="pt-2">&copy; {new Date().getFullYear()} ASCEND7. All rights reserved.</p>
+            <p className="pt-2 text-gray-600">&copy; {new Date().getFullYear()} ASCEND7. All rights reserved.</p>
           </div>
         </div>
       </div>
