@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateProduct } from '@/entities/product/api/update-product'
 import { Button } from '@/shared/ui/button'
+import { SizeChartEditor } from '@/widgets/admin/size-chart-editor'
 import type { ProductWithDetails } from '@/shared/types/database'
 
 interface ProductEditFormProps {
@@ -20,11 +21,11 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     name: product.name,
     slug: product.slug,
     description: product.description || '',
-    size_chart: product.size_chart || '',
     size_material_care: product.size_material_care || '',
     category: product.category,
     is_active: product.is_active,
   })
+  const [sizeChart, setSizeChart] = useState<string | null>(product.size_chart)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +37,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       await updateProduct({
         id: product.id,
         ...formData,
-        size_chart: formData.size_chart || null,
+        size_chart: sizeChart,
         size_material_care: formData.size_material_care || null,
       })
       setSuccess(true)
@@ -69,9 +70,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
             type="text"
             required
             value={formData.name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, name: e.target.value }))
-            }
+            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
           />
         </div>
@@ -82,9 +81,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
             type="text"
             required
             value={formData.slug}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, slug: e.target.value }))
-            }
+            onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
           />
         </div>
@@ -94,43 +91,30 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         <label className="block text-sm font-semibold mb-1">간단 설명</label>
         <textarea
           value={formData.description}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, description: e.target.value }))
-          }
+          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
         />
       </div>
 
       {/* 사이즈 차트 */}
-      <div className="border border-gray-200 rounded p-4 space-y-2">
-        <label className="block text-sm font-semibold">사이즈 차트</label>
-        <p className="text-xs text-gray-400">
-          첫 줄에 헤더, 이후 각 줄에 사이즈 데이터를 <code className="bg-gray-100 px-1">|</code>로 구분해 입력하세요.
-        </p>
-        <textarea
-          value={formData.size_chart}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, size_chart: e.target.value }))
-          }
-          rows={7}
-          placeholder={'사이즈|총장|어깨|가슴|소매\nS|67|44|104|62\nM|69|46|108|63\nL|71|48|112|64\nXL|73|50|116|65'}
-          className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
-        />
-        <p className="text-xs text-gray-400">→ 상품 페이지에서 자동으로 표(테이블)로 변환되어 표시됩니다.</p>
+      <div className="border border-gray-200 rounded p-4 space-y-3">
+        <div>
+          <label className="block text-sm font-semibold">사이즈 차트</label>
+          <p className="text-xs text-gray-400 mt-0.5">
+            상품 페이지 &ldquo;사이즈 / 소재 / 세탁 안내&rdquo; 탭에 표로 표시됩니다.
+          </p>
+        </div>
+        <SizeChartEditor value={sizeChart} onChange={setSizeChart} />
       </div>
 
       {/* 소재 / 세탁 안내 */}
       <div className="border border-gray-200 rounded p-4 space-y-2">
         <label className="block text-sm font-semibold">소재 / 세탁 안내</label>
-        <p className="text-xs text-gray-400">
-          줄바꿈이 그대로 반영됩니다.
-        </p>
+        <p className="text-xs text-gray-400">줄바꿈이 그대로 반영됩니다.</p>
         <textarea
           value={formData.size_material_care}
-          onChange={(e) =>
-            setFormData((prev) => ({ ...prev, size_material_care: e.target.value }))
-          }
+          onChange={(e) => setFormData((prev) => ({ ...prev, size_material_care: e.target.value }))}
           rows={6}
           placeholder={'나일론 80% / 스판덱스 20%\n\n[세탁 안내]\n- 찬물 또는 미지근한 물에서 단독 세탁\n- 표백제 사용 금지\n- 낮은 온도에서 건조'}
           className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
@@ -143,9 +127,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
           <select
             required
             value={formData.category}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, category: e.target.value }))
-            }
+            onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
           >
             <option value="top">상의</option>
@@ -159,9 +141,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
             type="checkbox"
             id="is_active"
             checked={formData.is_active}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, is_active: e.target.checked }))
-            }
+            onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.checked }))}
             className="w-4 h-4"
           />
           <label htmlFor="is_active" className="text-sm font-semibold">

@@ -2,20 +2,11 @@
 
 import { useState, type ReactNode } from 'react'
 import type { ProductWithDetails } from '@/shared/types/database'
+import { parseSizeChartJSON, QUALITY_OPTIONS } from '@/widgets/admin/size-chart-editor'
 
 interface ProductDetailTabsProps {
   product: ProductWithDetails
   shippingPolicy?: string | null
-}
-
-/** "사이즈|총장|어깨\nS|67|44\n..." 형식을 파싱해 { headers, rows } 반환 */
-function parseSizeChart(raw: string): { headers: string[]; rows: string[][] } | null {
-  const lines = raw.trim().split('\n').filter(Boolean)
-  if (lines.length < 2) return null
-  const headers = lines[0].split('|').map((s) => s.trim())
-  const rows = lines.slice(1).map((line) => line.split('|').map((s) => s.trim()))
-  if (headers.length < 2) return null
-  return { headers, rows }
 }
 
 export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabsProps) {
@@ -32,12 +23,15 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
     })
   }
 
-  const sizeChart = product.size_chart ? parseSizeChart(product.size_chart) : null
-  const hasSizeInfo = sizeChart || product.size_material_care
+  const sizeChart = parseSizeChartJSON(product.size_chart)
+  const activeQualities = sizeChart
+    ? Object.entries(sizeChart.qualities || {}).filter(([, v]) => v)
+    : []
+  const hasSizeSection = sizeChart || product.size_material_care
 
   return (
     <div className="border-t border-gray-200">
-      {/* Section 1: 상품 설명 */}
+      {/* Section 1: 상품 상세 */}
       <Accordion
         id="description"
         title="상품 상세"
@@ -63,32 +57,45 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
         isOpen={openSections.has('info')}
         onToggle={toggle}
       >
-        {hasSizeInfo ? (
+        {hasSizeSection ? (
           <div className="space-y-8">
             {/* 사이즈 차트 테이블 */}
-            {sizeChart && (
+            {sizeChart && sizeChart.sizes.length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold mb-3">사이즈 가이드</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="border-b-2 border-gray-900">
-                        {sizeChart.headers.map((h, i) => (
-                          <th key={i} className="py-2.5 px-3 text-left font-semibold text-gray-800">
-                            {h}
+                        <th className="py-2.5 px-3 text-center font-semibold text-gray-800">
+                          사이즈
+                        </th>
+                        {sizeChart.columns.map((col) => (
+                          <th
+                            key={col}
+                            className="py-2.5 px-3 text-center font-semibold text-gray-800"
+                          >
+                            {col}
+                            <span className="block text-xs font-normal text-gray-400">(cm)</span>
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {sizeChart.rows.map((row, i) => (
-                        <tr key={i} className="border-b border-gray-100">
-                          {row.map((cell, j) => (
+                      {sizeChart.sizes.map((size, i) => (
+                        <tr
+                          key={size}
+                          className={`border-b border-gray-100 ${i % 2 === 1 ? 'bg-gray-50/50' : ''}`}
+                        >
+                          <td className="py-2.5 px-3 text-center font-semibold text-gray-900">
+                            {size}
+                          </td>
+                          {sizeChart.columns.map((col) => (
                             <td
-                              key={j}
-                              className={`py-2.5 px-3 ${j === 0 ? 'font-semibold text-gray-900' : 'text-gray-600'}`}
+                              key={col}
+                              className="py-2.5 px-3 text-center text-gray-600"
                             >
-                              {cell}
+                              {sizeChart.data[size]?.[col] || '—'}
                             </td>
                           ))}
                         </tr>
@@ -99,6 +106,37 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
                 <p className="text-xs text-gray-400 mt-2">
                   * 측정 방법에 따라 1~2cm 오차가 발생할 수 있습니다.
                 </p>
+              </div>
+            )}
+
+            {/* 원단 특성 */}
+            {activeQualities.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-4">원단 특성</h4>
+                <div className="space-y-3">
+                  {activeQualities.map(([metric, selected]) => {
+                    const options = QUALITY_OPTIONS[metric] ?? []
+                    return (
+                      <div key={metric} className="flex items-center gap-4">
+                        <span className="text-xs text-gray-500 w-14 shrink-0">{metric}</span>
+                        <div className="flex gap-1 flex-1">
+                          {options.map((opt) => (
+                            <div
+                              key={opt}
+                              className={`flex-1 text-center py-1 text-xs border rounded ${
+                                opt === selected
+                                  ? 'bg-gray-900 text-white border-gray-900 font-medium'
+                                  : 'text-gray-300 border-gray-100'
+                              }`}
+                            >
+                              {opt}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 
