@@ -106,7 +106,12 @@ export default async function ReviewPage({
             {reviews.map((review) => {
               const mainImage = review.product?.images
                 ?.sort((a, b) => a.sort_order - b.sort_order)[0]?.url
-              const authorName = review.reviewer?.display_name || '회원'
+              const authorName = review.admin_author_name || review.reviewer?.display_name || '회원'
+              const bodyInfo = [
+                review.height ? `${review.height}cm` : null,
+                review.weight ? `${review.weight}kg` : null,
+                review.body_type || null,
+              ].filter(Boolean).join(' / ')
 
               return (
                 <div key={review.id} className="border border-gray-100 p-5 hover:border-gray-300 transition-colors">
@@ -154,6 +159,11 @@ export default async function ReviewPage({
                   <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-3">
                     {review.content}
                   </p>
+
+                  {/* 체형 정보 */}
+                  {bodyInfo && (
+                    <p className="text-[10px] text-gray-400 mt-2">{bodyInfo}</p>
+                  )}
 
                   {/* 작성자 + 날짜 */}
                   <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">

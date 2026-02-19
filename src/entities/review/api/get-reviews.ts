@@ -11,6 +11,10 @@ export interface ReviewWithDetails {
   content: string
   is_active: boolean
   created_at: string
+  admin_author_name: string | null
+  height: number | null
+  weight: number | null
+  body_type: string | null
   product: {
     id: string
     name: string

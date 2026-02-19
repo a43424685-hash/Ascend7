@@ -29,6 +29,7 @@ export default async function AdminPage() {
     returnRequestsRes,
     unansweredQnaRes,
     totalReviewsRes,
+    activeEventsRes,
   ] = await Promise.all([
     // 오늘 주문 (매출 포함)
     supabase
@@ -97,6 +98,11 @@ export default async function AdminPage() {
     // 총 리뷰 수
     supabase
       .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true),
+    // 활성 이벤트 수
+    supabase
+      .from('events')
       .select('*', { count: 'exact', head: true })
       .eq('is_active', true),
   ])
@@ -303,7 +309,7 @@ export default async function AdminPage() {
       </div>
 
       {/* 커뮤니티 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Link
           href="/admin/qna"
           className="bg-white rounded-xl border border-gray-200 p-5 hover:border-black transition-colors"
@@ -335,6 +341,17 @@ export default async function AdminPage() {
             <span className="text-lg">📸</span>
           </div>
           <p className="text-xs text-gray-400 mt-6">룩북 관리 →</p>
+        </Link>
+        <Link
+          href="/admin/events"
+          className="bg-white rounded-xl border border-gray-200 p-5 hover:border-black transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">이벤트</p>
+            <span className="text-lg">🎉</span>
+          </div>
+          <p className="text-2xl font-bold">{activeEventsRes.count || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">진행 중</p>
         </Link>
       </div>
 

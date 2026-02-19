@@ -6,14 +6,22 @@ export const dynamic = 'force-dynamic'
 export default async function AdminReviewsPage() {
   const supabase = createAdminClient()
 
-  const { data: items } = await supabase
-    .from('reviews')
-    .select(`
-      id, rating, title, content, is_active, created_at,
-      author:profiles!user_id(display_name),
-      product:products(name, slug)
-    `)
-    .order('created_at', { ascending: false })
+  const [{ data: items }, { data: products }] = await Promise.all([
+    supabase
+      .from('reviews')
+      .select(`
+        id, rating, title, content, is_active, created_at,
+        admin_author_name,
+        author:profiles!user_id(display_name),
+        product:products(name, slug)
+      `)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('products')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false }),
+  ])
 
   const allItems = items || []
   const activeCount = allItems.filter((r: any) => r.is_active).length
@@ -30,7 +38,7 @@ export default async function AdminReviewsPage() {
         </p>
       </div>
 
-      <ReviewManager items={allItems as any} />
+      <ReviewManager items={allItems as any} products={products || []} />
     </div>
   )
 }
