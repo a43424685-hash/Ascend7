@@ -48,8 +48,16 @@ export function MobileMenuButton() {
           {/* 메인 메뉴 */}
           <div className="space-y-5 mb-10">
             <Link href="/shop" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">SHOP</Link>
-            <Link href="/shop?sort=newest" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">NEW ARRIVALS</Link>
-            <Link href="#" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">COMMUNITY</Link>
+            <Link href="/new-arrivals" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">NEW ARRIVALS</Link>
+            <div>
+              <p className="text-[24px] font-black tracking-tight mb-4">COMMUNITY</p>
+              <div className="space-y-3 pl-1 border-l border-gray-100">
+                <Link href="/community/review" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">REVIEW</Link>
+                <Link href="/community/lookbook" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">LOOK BOOK</Link>
+                <Link href="/community/qna" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">Q&amp;A</Link>
+                <Link href="/community/event" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">EVENT</Link>
+              </div>
+            </div>
           </div>
 
           {/* 카테고리 */}
