@@ -193,9 +193,16 @@ export default function CheckoutPage() {
   )
 
   const handleCheckout = async () => {
-    if (widgets == null || !ready) return
+    console.log('[CHECKOUT] 버튼 클릭 - widgets:', !!widgets, 'ready:', ready)
+    if (widgets == null || !ready) {
+      console.log('[CHECKOUT] 중단 - widgets 또는 ready 문제')
+      return
+    }
     if (cartItemsWithData.length === 0) return
-    if (!validateForm()) return
+    if (!validateForm()) {
+      console.log('[CHECKOUT] 중단 - 폼 유효성 실패')
+      return
+    }
 
     setIsProcessing(true)
     setError(null)
@@ -205,16 +212,19 @@ export default function CheckoutPage() {
         await saveDefaultShippingInfo(shippingInfo)
       }
 
+      console.log('[CHECKOUT] createPendingOrder 시작')
       const { orderId: dbOrderId, orderNumber } = await createPendingOrder(
         cartItemsWithData,
         shippingInfo
       )
+      console.log('[CHECKOUT] createPendingOrder 완료 - dbOrderId:', dbOrderId, 'orderNumber:', orderNumber)
 
       const orderName =
         cartItemsWithData.length === 1
           ? cartItemsWithData[0].product.name
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
+      console.log('[CHECKOUT] requestPayment 시작 - orderId:', orderNumber)
       await widgets.requestPayment({
         orderId: orderNumber,
         orderName,
@@ -224,6 +234,7 @@ export default function CheckoutPage() {
         customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
       })
     } catch (err: any) {
+      console.error('[CHECKOUT] 에러:', { code: err?.code, message: err?.message })
       const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
       if (!cancelCodes.includes(err?.code)) {
         setError(err?.message || '결제 처리 중 오류가 발생했습니다')
