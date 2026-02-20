@@ -163,28 +163,37 @@ export default function CheckoutPage() {
 
       // 2. TossPayments 결제 요청 (API 개별 연동)
       const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
-      const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY!
+      const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
+      if (!clientKey) {
+        throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
+      }
+
       const tossPayments = await loadTossPayments(clientKey)
-      // ANONYMOUS는 widgets() 전용 - payment()는 UUID 사용
       const customerKey = crypto.randomUUID()
       const payment = tossPayments.payment({ customerKey })
 
-      const baseParams = {
-        amount: { currency: 'KRW' as const, value: total },
+      // 한국 휴대폰 번호 형식 검증 (010/011/016/017/018/019 시작)
+      const rawPhone = shippingInfo.phone.replace(/-/g, '')
+      const isValidKoreanPhone = /^01[016789]\d{7,8}$/.test(rawPhone)
+
+      const baseParams: Record<string, unknown> = {
+        amount: { currency: 'KRW', value: total },
         orderId,
         orderName,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerName: shippingInfo.name,
-        customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
+        ...(isValidKoreanPhone ? { customerMobilePhone: rawPhone } : {}),
       }
+
+      console.log('[TossPayments] requestPayment params:', { ...baseParams, clientKey: clientKey.slice(0, 10) + '...' })
 
       if (selectedMethod === 'TRANSFER') {
         await payment.requestPayment({
           method: 'TRANSFER',
           ...baseParams,
           transfer: { cashReceipt: { type: '소득공제' }, useEscrow: false },
-        })
+        } as any)
       } else if (selectedMethod === 'VIRTUAL_ACCOUNT') {
         await payment.requestPayment({
           method: 'VIRTUAL_ACCOUNT',
@@ -194,18 +203,23 @@ export default function CheckoutPage() {
             useEscrow: false,
             validHours: 24,
           },
-        })
+        } as any)
       } else {
         // CARD (카드 + 간편결제: 카카오페이, 네이버페이, 토스페이 등 결제창 내에서 선택)
         await payment.requestPayment({
           method: 'CARD',
           ...baseParams,
           card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false },
-        })
+        } as any)
       }
       // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
       const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
+      console.error('[TossPayments] Error:', {
+        code: err?.code,
+        message: err?.message,
+        full: JSON.stringify(err),
+      })
       if (!cancelCodes.includes(err?.code)) {
         const msg = err?.message || '결제 처리 중 오류가 발생했습니다'
         const code = err?.code ? ` (${err.code})` : ''
