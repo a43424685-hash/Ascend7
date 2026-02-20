@@ -162,10 +162,12 @@ export default function CheckoutPage() {
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
       // 2. TossPayments 결제 요청 (API 개별 연동)
-      const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
+      const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
       const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY!
       const tossPayments = await loadTossPayments(clientKey)
-      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
+      // ANONYMOUS는 widgets() 전용 - payment()는 UUID 사용
+      const customerKey = crypto.randomUUID()
+      const payment = tossPayments.payment({ customerKey })
 
       const baseParams = {
         amount: { currency: 'KRW' as const, value: total },
@@ -203,8 +205,11 @@ export default function CheckoutPage() {
       }
       // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
-      if (err?.code !== 'USER_CANCEL' && err?.code !== 'PAY_PROCESS_CANCELED') {
-        setError(err.message || '결제 처리 중 오류가 발생했습니다')
+      const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
+      if (!cancelCodes.includes(err?.code)) {
+        const msg = err?.message || '결제 처리 중 오류가 발생했습니다'
+        const code = err?.code ? ` (${err.code})` : ''
+        setError(msg + code)
       }
       setIsProcessing(false)
     }
