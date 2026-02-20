@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/features/cart/cart-context'
 import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
-// import { createCheckoutSession } from '@/features/checkout/actions/create-checkout-session' // Stripe (주석처리)
 import { createPendingOrder } from '@/features/checkout/actions/create-pending-order'
 import {
   getDefaultShippingInfo,
@@ -19,14 +18,6 @@ import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { AddressSearch } from '@/shared/ui/address-search'
 
-const PAYMENT_METHODS = [
-  { id: 'CARD', label: '카드 / 간편결제', desc: '신용·체크카드, 카카오페이, 네이버페이, 토스페이' },
-  { id: 'TRANSFER', label: '계좌이체', desc: '실시간 계좌이체' },
-  { id: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금' },
-] as const
-
-type PaymentMethodId = typeof PAYMENT_METHODS[number]['id']
-
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, isLoaded } = useCart()
@@ -36,9 +27,9 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [authStatus, setAuthStatus] = useState<CheckoutAuthStatus | null>(null)
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>('CARD')
+  const [widgetReady, setWidgetReady] = useState(false)
+  const widgetsRef = useRef<any>(null)
 
-  // 배송 정보 폼 상태
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     name: '',
     phone: '',
@@ -49,6 +40,7 @@ export default function CheckoutPage() {
   })
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof ShippingInfo, string>>>({})
 
+  // 장바구니 + 기본 배송지 로드
   useEffect(() => {
     if (!isLoaded) return
 
@@ -68,15 +60,11 @@ export default function CheckoutPage() {
           return
         }
 
-        // 기본 배송지 로드
         const result = await getDefaultShippingInfo()
         setAuthStatus(result.status)
 
         if (result.shippingInfo) {
-          setShippingInfo((prev) => ({
-            ...prev,
-            ...result.shippingInfo,
-          }))
+          setShippingInfo((prev) => ({ ...prev, ...result.shippingInfo }))
         }
       } catch (err: any) {
         setError(err.message || '장바구니를 불러올 수 없습니다.')
@@ -87,6 +75,49 @@ export default function CheckoutPage() {
 
     fetchData()
   }, [cartItems, isLoaded, router])
+
+  // 결제위젯 초기화 (데이터 로드 완료 후)
+  useEffect(() => {
+    if (isLoading || cartItemsWithData.length === 0) return
+
+    const subtotal = cartItemsWithData.reduce(
+      (sum, item) => sum + item.variant.price * item.quantity,
+      0
+    )
+    const shippingFee = subtotal >= 50000 ? 0 : 3000
+    const total = subtotal + shippingFee
+
+    const initWidget = async () => {
+      try {
+        const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
+        const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
+        if (!clientKey) throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
+
+        const tossPayments = await loadTossPayments(clientKey)
+        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS })
+
+        await widgets.setAmount({ currency: 'KRW', value: total })
+
+        await Promise.all([
+          widgets.renderPaymentMethods({
+            selector: '#payment-method',
+            variantKey: 'DEFAULT',
+          }),
+          widgets.renderAgreement({
+            selector: '#agreement',
+            variantKey: 'AGREEMENT',
+          }),
+        ])
+
+        widgetsRef.current = widgets
+        setWidgetReady(true)
+      } catch (err: any) {
+        setError(err.message || '결제 수단을 불러올 수 없습니다.')
+      }
+    }
+
+    initWidget()
+  }, [isLoading, cartItemsWithData])
 
   const formatPhoneNumber = (value: string) => {
     const nums = value.replace(/\D/g, '')
@@ -132,16 +163,13 @@ export default function CheckoutPage() {
         postalCode: result.postalCode,
         address: result.address,
       }))
-      setFormErrors((prev) => ({
-        ...prev,
-        postalCode: undefined,
-        address: undefined,
-      }))
+      setFormErrors((prev) => ({ ...prev, postalCode: undefined, address: undefined }))
     },
     []
   )
 
   const handleCheckout = async () => {
+    if (!widgetsRef.current || !widgetReady) return
     if (cartItemsWithData.length === 0) return
     if (!validateForm()) return
 
@@ -153,75 +181,29 @@ export default function CheckoutPage() {
         await saveDefaultShippingInfo(shippingInfo)
       }
 
-      // 1. 결제 대기 주문 생성
-      console.log('[STEP 1] createPendingOrder 시작')
-      const { orderId: dbOrderId, orderNumber } = await createPendingOrder(cartItemsWithData, shippingInfo)
-      console.log('[STEP 1] 완료 - dbOrderId:', dbOrderId, 'orderNumber:', orderNumber)
+      const { orderId: dbOrderId, orderNumber } = await createPendingOrder(
+        cartItemsWithData,
+        shippingInfo
+      )
 
       const orderName =
         cartItemsWithData.length === 1
           ? cartItemsWithData[0].product.name
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
-      // 2. TossPayments SDK 로드
-      console.log('[STEP 2] loadTossPayments 시작')
-      const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
-      const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
-      if (!clientKey) {
-        throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
-      }
-      const tossPayments = await loadTossPayments(clientKey)
-      console.log('[STEP 2] 완료')
-
-      // 3. payment 인스턴스 생성 (비회원/게스트는 ANONYMOUS 사용)
-      console.log('[STEP 3] payment() 생성 시작')
-      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
-      console.log('[STEP 3] 완료')
-
-      // 4. 결제 요청 - TossPayments orderId로 orderNumber 사용 (A7-... 형식)
-      // successUrl에 dbOrderId를 쿼리 파라미터로 전달하여 confirm API에서 DB 조회에 사용
-      const tossOrderId = orderNumber // A7-260220-AB3X 형식 (64자 이내, 영숫자+하이픈)
-      console.log('[STEP 4] requestPayment 시작 - tossOrderId:', tossOrderId, 'method:', selectedMethod)
-
-      const params: Record<string, unknown> = {
-        amount: { currency: 'KRW', value: total },
-        orderId: tossOrderId,
+      await widgetsRef.current.requestPayment({
+        orderId: orderNumber,
         orderName,
         successUrl: `${window.location.origin}/payment/success?dbOrderId=${dbOrderId}`,
         failUrl: `${window.location.origin}/payment/fail`,
-      }
-
-      if (selectedMethod === 'TRANSFER') {
-        await payment.requestPayment({
-          method: 'TRANSFER',
-          ...params,
-          transfer: { cashReceipt: { type: '소득공제' }, useEscrow: false },
-        } as any)
-      } else if (selectedMethod === 'VIRTUAL_ACCOUNT') {
-        await payment.requestPayment({
-          method: 'VIRTUAL_ACCOUNT',
-          ...params,
-          virtualAccount: { cashReceipt: { type: '소득공제' }, useEscrow: false, validHours: 24 },
-        } as any)
-      } else {
-        await payment.requestPayment({
-          method: 'CARD',
-          ...params,
-        } as any)
-      }
+        customerName: shippingInfo.name,
+        customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
+      })
       // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
       const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
-      console.error('[TossPayments] 에러 상세:', JSON.stringify({
-        code: err?.code,
-        message: err?.message,
-        name: err?.name,
-        stack: err?.stack?.slice(0, 200),
-      }))
       if (!cancelCodes.includes(err?.code)) {
-        const msg = err?.message || '결제 처리 중 오류가 발생했습니다'
-        const code = err?.code ? ` (${err.code})` : ''
-        setError(msg + code)
+        setError(err?.message || '결제 처리 중 오류가 발생했습니다')
       }
       setIsProcessing(false)
     }
@@ -255,9 +237,8 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold mb-8">주문 / 결제</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* 왼쪽: 배송 정보 + 결제 수단 */}
+        {/* 왼쪽: 배송 정보 + 결제위젯 */}
         <div className="lg:col-span-3 space-y-6">
-          {/* 배너: 3분기 조건 */}
           {authStatus === 'guest' && (
             <div className="bg-blue-50 border border-blue-200 p-4">
               <p className="text-sm text-blue-800 font-medium">
@@ -274,9 +255,7 @@ export default function CheckoutPage() {
 
           {authStatus === 'logged_in_with_address' && (
             <div className="bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-800">
-                기본 배송지가 자동으로 입력되었습니다.
-              </p>
+              <p className="text-sm text-green-800">기본 배송지가 자동으로 입력되었습니다.</p>
             </div>
           )}
 
@@ -291,6 +270,7 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* 배송 정보 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">배송 정보</h2>
             <div className="space-y-4">
@@ -305,7 +285,9 @@ export default function CheckoutPage() {
                   className={`w-full px-3 py-2.5 border-2 ${formErrors.name ? 'border-red-500' : 'border-gray-300'} focus:border-black outline-none`}
                   placeholder="수령인 이름"
                 />
-                {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                {formErrors.name && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
+                )}
               </div>
 
               <div>
@@ -320,10 +302,11 @@ export default function CheckoutPage() {
                   className={`w-full px-3 py-2.5 border-2 ${formErrors.phone ? 'border-red-500' : 'border-gray-300'} focus:border-black outline-none`}
                   placeholder="010-0000-0000"
                 />
-                {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                {formErrors.phone && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>
+                )}
               </div>
 
-              {/* 우편번호 + 주소검색 */}
               <div>
                 <label className="block text-sm font-semibold mb-1">
                   우편번호 <span className="text-red-500">*</span>
@@ -338,7 +321,9 @@ export default function CheckoutPage() {
                   />
                   <AddressSearch onComplete={handleAddressComplete} />
                 </div>
-                {formErrors.postalCode && <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>}
+                {formErrors.postalCode && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.postalCode}</p>
+                )}
               </div>
 
               <div>
@@ -352,7 +337,9 @@ export default function CheckoutPage() {
                   className={`w-full px-3 py-2.5 border-2 ${formErrors.address ? 'border-red-500' : 'border-gray-300'} bg-gray-50 outline-none`}
                   placeholder="주소 검색 버튼을 눌러주세요"
                 />
-                {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
+                {formErrors.address && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>
+                )}
               </div>
 
               <div>
@@ -382,7 +369,12 @@ export default function CheckoutPage() {
                 {shippingInfo.memo === '직접입력' && (
                   <input
                     type="text"
-                    onChange={(e) => setShippingInfo(prev => ({ ...prev, memo: e.target.value || '직접입력' }))}
+                    onChange={(e) =>
+                      setShippingInfo((prev) => ({
+                        ...prev,
+                        memo: e.target.value || '직접입력',
+                      }))
+                    }
                     className="w-full px-3 py-2.5 border-2 border-gray-300 focus:border-black outline-none mt-2"
                     placeholder="배송 메모를 입력해주세요"
                     autoFocus
@@ -390,7 +382,6 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* 기본 배송지로 저장 (로그인 사용자만) */}
               {authStatus !== 'guest' && authStatus !== null && (
                 <label className="flex items-center gap-2 pt-2 cursor-pointer">
                   <input
@@ -405,28 +396,18 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* 결제 수단 선택 */}
+          {/* 결제위젯 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">결제 수단</h2>
-            <div className="space-y-2">
-              {PAYMENT_METHODS.map((method) => (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => setSelectedMethod(method.id)}
-                  className={`w-full flex items-center justify-between py-3.5 px-4 border-2 text-sm transition-colors ${
-                    selectedMethod === method.id
-                      ? 'border-black bg-black text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
-                  }`}
-                >
-                  <span className="font-medium">{method.label}</span>
-                  <span className={`text-xs ${selectedMethod === method.id ? 'text-gray-300' : 'text-gray-400'}`}>
-                    {method.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {!widgetReady && (
+              <div className="animate-pulse space-y-3 py-4">
+                <div className="h-12 bg-gray-100 rounded" />
+                <div className="h-12 bg-gray-100 rounded" />
+                <div className="h-12 bg-gray-100 rounded" />
+              </div>
+            )}
+            <div id="payment-method" />
+            <div id="agreement" className="mt-2" />
           </div>
         </div>
 
@@ -498,18 +479,32 @@ export default function CheckoutPage() {
 
             <Button
               onClick={handleCheckout}
-              disabled={isProcessing}
+              disabled={isProcessing || !widgetReady}
               className="w-full"
               size="lg"
             >
               {isProcessing ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
                   </svg>
                   결제 처리 중...
                 </span>
+              ) : !widgetReady ? (
+                '결제 수단 로딩 중...'
               ) : (
                 `${formatPrice(total)} 결제하기`
               )}
