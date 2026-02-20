@@ -20,11 +20,9 @@ import { Button } from '@/shared/ui/button'
 import { AddressSearch } from '@/shared/ui/address-search'
 
 const PAYMENT_METHODS = [
-  { id: 'CARD', label: '신용/체크카드' },
-  { id: 'TOSSPAY', label: '토스페이' },
-  { id: 'KAKAO_PAY', label: '카카오페이' },
-  { id: 'NAVER_PAY', label: '네이버페이' },
-  { id: 'TRANSFER', label: '계좌이체' },
+  { id: 'CARD', label: '카드 / 간편결제', desc: '신용·체크카드, 카카오페이, 네이버페이, 토스페이' },
+  { id: 'TRANSFER', label: '계좌이체', desc: '실시간 계좌이체' },
+  { id: 'VIRTUAL_ACCOUNT', label: '가상계좌', desc: '무통장 입금' },
 ] as const
 
 type PaymentMethodId = typeof PAYMENT_METHODS[number]['id']
@@ -185,11 +183,23 @@ export default function CheckoutPage() {
           ...baseParams,
           transfer: { cashReceipt: { type: '소득공제' }, useEscrow: false },
         })
-      } else {
+      } else if (selectedMethod === 'VIRTUAL_ACCOUNT') {
         await payment.requestPayment({
-          method: selectedMethod,
+          method: 'VIRTUAL_ACCOUNT',
           ...baseParams,
-        } as any)
+          virtualAccount: {
+            cashReceipt: { type: '소득공제' },
+            useEscrow: false,
+            validHours: 24,
+          },
+        })
+      } else {
+        // CARD (카드 + 간편결제: 카카오페이, 네이버페이, 토스페이 등 결제창 내에서 선택)
+        await payment.requestPayment({
+          method: 'CARD',
+          ...baseParams,
+          card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false },
+        })
       }
       // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
@@ -381,19 +391,22 @@ export default function CheckoutPage() {
           {/* 결제 수단 선택 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">결제 수단</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="space-y-2">
               {PAYMENT_METHODS.map((method) => (
                 <button
                   key={method.id}
                   type="button"
                   onClick={() => setSelectedMethod(method.id)}
-                  className={`py-3 px-4 border-2 text-sm font-medium transition-colors ${
+                  className={`w-full flex items-center justify-between py-3.5 px-4 border-2 text-sm transition-colors ${
                     selectedMethod === method.id
                       ? 'border-black bg-black text-white'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  {method.label}
+                  <span className="font-medium">{method.label}</span>
+                  <span className={`text-xs ${selectedMethod === method.id ? 'text-gray-300' : 'text-gray-400'}`}>
+                    {method.desc}
+                  </span>
                 </button>
               ))}
             </div>
