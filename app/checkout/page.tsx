@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -19,6 +19,16 @@ import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { AddressSearch } from '@/shared/ui/address-search'
 
+const PAYMENT_METHODS = [
+  { id: 'CARD', label: '신용/체크카드' },
+  { id: 'TOSSPAY', label: '토스페이' },
+  { id: 'KAKAO_PAY', label: '카카오페이' },
+  { id: 'NAVER_PAY', label: '네이버페이' },
+  { id: 'TRANSFER', label: '계좌이체' },
+] as const
+
+type PaymentMethodId = typeof PAYMENT_METHODS[number]['id']
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { cartItems, isLoaded } = useCart()
@@ -28,11 +38,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [authStatus, setAuthStatus] = useState<CheckoutAuthStatus | null>(null)
-
-  // TossPayments 위젯 상태
-  const [paymentWidgetReady, setPaymentWidgetReady] = useState(false)
-  const [widgetError, setWidgetError] = useState<string | null>(null)
-  const paymentWidgetRef = useRef<any>(null)
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodId>('CARD')
 
   // 배송 정보 폼 상태
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -83,55 +89,6 @@ export default function CheckoutPage() {
 
     fetchData()
   }, [cartItems, isLoaded, router])
-
-  // TossPayments 위젯 초기화 (장바구니 로드 완료 후)
-  useEffect(() => {
-    if (cartItemsWithData.length === 0 || isLoading) return
-    if (paymentWidgetRef.current) return // 이미 초기화됨
-
-    const subtotal = cartItemsWithData.reduce(
-      (sum, item) => sum + item.variant.price * item.quantity,
-      0
-    )
-    const shippingFee = subtotal >= 50000 ? 0 : 3000
-    const total = subtotal + shippingFee
-
-    const initWidget = async () => {
-      try {
-        const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
-        const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY || ''
-
-        if (!clientKey) {
-          setWidgetError('결제 모듈 설정 오류: 클라이언트 키가 없습니다.')
-          return
-        }
-
-        const tossPayments = await loadTossPayments(clientKey)
-        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS })
-
-        await widgets.setAmount({ currency: 'KRW', value: total })
-
-        await Promise.all([
-          widgets.renderPaymentMethods({
-            selector: '#payment-method-widget',
-            variantKey: 'DEFAULT',
-          }),
-          widgets.renderAgreement({
-            selector: '#payment-agreement-widget',
-            variantKey: 'AGREEMENT',
-          }),
-        ])
-
-        paymentWidgetRef.current = widgets
-        setPaymentWidgetReady(true)
-      } catch (err: any) {
-        console.error('[TossPayments] Widget init failed:', err)
-        setWidgetError(`결제 모듈 로딩 실패: ${err?.message || String(err)}`)
-      }
-    }
-
-    initWidget()
-  }, [cartItemsWithData, isLoading])
 
   const formatPhoneNumber = (value: string) => {
     const nums = value.replace(/\D/g, '')
@@ -190,11 +147,6 @@ export default function CheckoutPage() {
     if (cartItemsWithData.length === 0) return
     if (!validateForm()) return
 
-    if (!paymentWidgetRef.current) {
-      setError('결제 모듈이 로딩 중입니다. 잠시 후 다시 시도해주세요.')
-      return
-    }
-
     setIsProcessing(true)
     setError(null)
 
@@ -203,26 +155,44 @@ export default function CheckoutPage() {
         await saveDefaultShippingInfo(shippingInfo)
       }
 
-      // 1. 결제 대기 주문 생성 (orderId = DB orders.id)
+      // 1. 결제 대기 주문 생성
       const { orderId } = await createPendingOrder(cartItemsWithData, shippingInfo)
 
-      // 2. TossPayments 결제 요청 (사용자가 결제수단 선택 후 결제 진행)
       const orderName =
         cartItemsWithData.length === 1
           ? cartItemsWithData[0].product.name
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
-      await paymentWidgetRef.current.requestPayment({
+      // 2. TossPayments 결제 요청 (API 개별 연동)
+      const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
+      const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY!
+      const tossPayments = await loadTossPayments(clientKey)
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
+
+      const baseParams = {
+        amount: { currency: 'KRW' as const, value: total },
         orderId,
         orderName,
         successUrl: `${window.location.origin}/payment/success`,
         failUrl: `${window.location.origin}/payment/fail`,
         customerName: shippingInfo.name,
         customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
-      })
-      // 결제 진행 중 (TossPayments가 페이지를 리다이렉트)
+      }
+
+      if (selectedMethod === 'TRANSFER') {
+        await payment.requestPayment({
+          method: 'TRANSFER',
+          ...baseParams,
+          transfer: { cashReceipt: { type: '소득공제' }, useEscrow: false },
+        })
+      } else {
+        await payment.requestPayment({
+          method: selectedMethod,
+          ...baseParams,
+        } as any)
+      }
+      // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
-      // 사용자가 취소하거나 오류 발생
       if (err?.code !== 'USER_CANCEL' && err?.code !== 'PAY_PROCESS_CANCELED') {
         setError(err.message || '결제 처리 중 오류가 발생했습니다')
       }
@@ -258,7 +228,7 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold mb-8">주문 / 결제</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* 왼쪽: 배송 정보 + 결제 위젯 */}
+        {/* 왼쪽: 배송 정보 + 결제 수단 */}
         <div className="lg:col-span-3 space-y-6">
           {/* 배너: 3분기 조건 */}
           {authStatus === 'guest' && (
@@ -408,24 +378,25 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* TossPayments 결제 위젯 */}
+          {/* 결제 수단 선택 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">결제 수단</h2>
-            {!paymentWidgetReady && !widgetError && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 py-10 justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0" />
-                결제 수단을 불러오는 중...
-              </div>
-            )}
-            {widgetError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
-                {widgetError}
-              </div>
-            )}
-            {/* TossPayments 결제수단 선택 위젯 렌더링 대상 */}
-            <div id="payment-method-widget" />
-            {/* TossPayments 약관 동의 위젯 렌더링 대상 */}
-            <div id="payment-agreement-widget" className="mt-4" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {PAYMENT_METHODS.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setSelectedMethod(method.id)}
+                  className={`py-3 px-4 border-2 text-sm font-medium transition-colors ${
+                    selectedMethod === method.id
+                      ? 'border-black bg-black text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                  }`}
+                >
+                  {method.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -497,7 +468,7 @@ export default function CheckoutPage() {
 
             <Button
               onClick={handleCheckout}
-              disabled={isProcessing || !paymentWidgetReady}
+              disabled={isProcessing}
               className="w-full"
               size="lg"
             >
@@ -509,8 +480,6 @@ export default function CheckoutPage() {
                   </svg>
                   결제 처리 중...
                 </span>
-              ) : !paymentWidgetReady ? (
-                '결제 수단 로딩 중...'
               ) : (
                 `${formatPrice(total)} 결제하기`
               )}
