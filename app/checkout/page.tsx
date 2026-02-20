@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/features/cart/cart-context'
 import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
-import { createCheckoutSession } from '@/features/checkout/actions/create-checkout-session'
+// import { createCheckoutSession } from '@/features/checkout/actions/create-checkout-session' // Stripe (주석처리)
+import { createPendingOrder } from '@/features/checkout/actions/create-pending-order'
 import {
   getDefaultShippingInfo,
   saveDefaultShippingInfo,
@@ -27,6 +28,10 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [authStatus, setAuthStatus] = useState<CheckoutAuthStatus | null>(null)
+
+  // TossPayments 위젯 상태
+  const [paymentWidgetReady, setPaymentWidgetReady] = useState(false)
+  const paymentWidgetRef = useRef<any>(null)
 
   // 배송 정보 폼 상태
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
@@ -77,6 +82,55 @@ export default function CheckoutPage() {
 
     fetchData()
   }, [cartItems, isLoaded, router])
+
+  // TossPayments 위젯 초기화 (장바구니 로드 완료 후)
+  useEffect(() => {
+    if (cartItemsWithData.length === 0 || isLoading) return
+    if (paymentWidgetRef.current) return // 이미 초기화됨
+
+    const subtotal = cartItemsWithData.reduce(
+      (sum, item) => sum + item.variant.price * item.quantity,
+      0
+    )
+    const shippingFee = subtotal >= 50000 ? 0 : 3000
+    const total = subtotal + shippingFee
+
+    const initWidget = async () => {
+      try {
+        const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
+        const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY || ''
+
+        if (!clientKey) {
+          console.warn('[TossPayments] NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY가 설정되지 않았습니다.')
+          return
+        }
+
+        const tossPayments = await loadTossPayments(clientKey)
+        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS })
+
+        paymentWidgetRef.current = widgets
+
+        await widgets.setAmount({ currency: 'KRW', value: total })
+
+        await Promise.all([
+          widgets.renderPaymentMethods({
+            selector: '#payment-method-widget',
+            variantKey: 'DEFAULT',
+          }),
+          widgets.renderAgreement({
+            selector: '#payment-agreement-widget',
+            variantKey: 'AGREEMENT',
+          }),
+        ])
+
+        setPaymentWidgetReady(true)
+      } catch (err) {
+        console.error('[TossPayments] Widget init failed:', err)
+      }
+    }
+
+    initWidget()
+  }, [cartItemsWithData, isLoading])
 
   const formatPhoneNumber = (value: string) => {
     const nums = value.replace(/\D/g, '')
@@ -135,6 +189,11 @@ export default function CheckoutPage() {
     if (cartItemsWithData.length === 0) return
     if (!validateForm()) return
 
+    if (!paymentWidgetRef.current) {
+      setError('결제 모듈이 로딩 중입니다. 잠시 후 다시 시도해주세요.')
+      return
+    }
+
     setIsProcessing(true)
     setError(null)
 
@@ -143,15 +202,29 @@ export default function CheckoutPage() {
         await saveDefaultShippingInfo(shippingInfo)
       }
 
-      const { url } = await createCheckoutSession(cartItemsWithData, shippingInfo)
-      if (url) {
-        window.location.href = url
-      } else {
-        setError('결제 세션 생성에 실패했습니다')
-      }
+      // 1. 결제 대기 주문 생성 (orderId = DB orders.id)
+      const { orderId } = await createPendingOrder(cartItemsWithData, shippingInfo)
+
+      // 2. TossPayments 결제 요청 (사용자가 결제수단 선택 후 결제 진행)
+      const orderName =
+        cartItemsWithData.length === 1
+          ? cartItemsWithData[0].product.name
+          : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
+
+      await paymentWidgetRef.current.requestPayment({
+        orderId,
+        orderName,
+        successUrl: `${window.location.origin}/payment/success`,
+        failUrl: `${window.location.origin}/payment/fail`,
+        customerName: shippingInfo.name,
+        customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
+      })
+      // 결제 진행 중 (TossPayments가 페이지를 리다이렉트)
     } catch (err: any) {
-      setError(err.message || '결제 처리 중 오류가 발생했습니다')
-    } finally {
+      // 사용자가 취소하거나 오류 발생
+      if (err?.code !== 'USER_CANCEL' && err?.code !== 'PAY_PROCESS_CANCELED') {
+        setError(err.message || '결제 처리 중 오류가 발생했습니다')
+      }
       setIsProcessing(false)
     }
   }
@@ -184,7 +257,7 @@ export default function CheckoutPage() {
       <h1 className="text-3xl font-bold mb-8">주문 / 결제</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* 왼쪽: 배송 정보 */}
+        {/* 왼쪽: 배송 정보 + 결제 위젯 */}
         <div className="lg:col-span-3 space-y-6">
           {/* 배너: 3분기 조건 */}
           {authStatus === 'guest' && (
@@ -333,6 +406,21 @@ export default function CheckoutPage() {
               )}
             </div>
           </div>
+
+          {/* TossPayments 결제 위젯 */}
+          <div className="border-2 border-black p-6">
+            <h2 className="text-xl font-bold mb-4">결제 수단</h2>
+            {!paymentWidgetReady && (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-10 justify-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0" />
+                결제 수단을 불러오는 중...
+              </div>
+            )}
+            {/* TossPayments 결제수단 선택 위젯 렌더링 대상 */}
+            <div id="payment-method-widget" />
+            {/* TossPayments 약관 동의 위젯 렌더링 대상 */}
+            <div id="payment-agreement-widget" className="mt-4" />
+          </div>
         </div>
 
         {/* 오른쪽: 주문 요약 (sticky) */}
@@ -403,7 +491,7 @@ export default function CheckoutPage() {
 
             <Button
               onClick={handleCheckout}
-              disabled={isProcessing}
+              disabled={isProcessing || !paymentWidgetReady}
               className="w-full"
               size="lg"
             >
@@ -415,6 +503,8 @@ export default function CheckoutPage() {
                   </svg>
                   결제 처리 중...
                 </span>
+              ) : !paymentWidgetReady ? (
+                '결제 수단 로딩 중...'
               ) : (
                 `${formatPrice(total)} 결제하기`
               )}

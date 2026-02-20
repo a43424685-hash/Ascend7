@@ -11,7 +11,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
 import { requireAdmin } from '@/shared/lib/auth/admin'
-import { stripe } from '@/shared/lib/stripe'
+// import { stripe } from '@/shared/lib/stripe' // Stripe (주석처리 - TossPayments로 전환)
+import { cancelTossPayment } from '@/shared/lib/tosspayments'
 import {
   sendReturnRequestConfirmation,
   sendRefundConfirmation,
@@ -314,7 +315,7 @@ export async function rejectReturn(orderId: string, rejectionReason: string) {
 }
 
 /**
- * Stripe 환불 실행 + 상태 업데이트
+ * 환불 실행 + 상태 업데이트 (TossPayments)
  *
  * 조건:
  * - 배송 전: return_status가 none 또는 requested일 때 가능
@@ -328,7 +329,7 @@ export async function processRefund(orderId: string, amount?: number) {
     // 주문 정보 조회
     const { data: order, error: fetchError } = await supabase
       .from('orders')
-      .select('id, return_status, fulfillment_status, payment_status, stripe_session_id, total')
+      .select('id, return_status, fulfillment_status, payment_status, tosspayments_payment_key, stripe_session_id, total')
       .eq('id', orderId)
       .single()
 
@@ -362,25 +363,34 @@ export async function processRefund(orderId: string, amount?: number) {
       }
     }
 
-    // Stripe 세션에서 payment_intent 가져오기
-    if (!order.stripe_session_id) {
-      return { success: false, error: 'Stripe 세션 정보가 없습니다.' }
-    }
-
-    const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id)
-    const paymentIntentId = session.payment_intent as string
-
-    if (!paymentIntentId) {
-      return { success: false, error: 'Payment Intent를 찾을 수 없습니다.' }
-    }
-
-    // Stripe 환불 실행
     const refundAmount = amount || order.total
-    const refund = await stripe.refunds.create({
-      payment_intent: paymentIntentId,
-      amount: refundAmount, // 원 단위
-      reason: 'requested_by_customer',
-    })
+    let refundId: string | null = null
+
+    if (order.tosspayments_payment_key) {
+      // TossPayments 환불
+      const result = await cancelTossPayment(
+        order.tosspayments_payment_key,
+        '관리자 환불 처리',
+        refundAmount
+      )
+      refundId = result?.cancels?.[0]?.transactionKey || order.tosspayments_payment_key
+    } else if (order.stripe_session_id) {
+      // Stripe 환불 (기존 주문 하위 호환) - 주석처리
+      /*
+      const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id)
+      const paymentIntentId = session.payment_intent as string
+      if (!paymentIntentId) return { success: false, error: 'Payment Intent를 찾을 수 없습니다.' }
+      const refund = await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        amount: refundAmount,
+        reason: 'requested_by_customer',
+      })
+      refundId = refund.id
+      */
+      return { success: false, error: 'Stripe 결제 주문의 환불은 Stripe 대시보드에서 직접 처리해주세요.' }
+    } else {
+      return { success: false, error: '결제 정보가 없습니다.' }
+    }
 
     // DB 업데이트
     const { error: updateError } = await supabase
@@ -388,18 +398,16 @@ export async function processRefund(orderId: string, amount?: number) {
       .update({
         payment_status: 'refunded',
         return_status: 'refunded',
-        stripe_refund_id: refund.id,
         refund_amount: refundAmount,
         refunded_at: new Date().toISOString(),
       })
       .eq('id', orderId)
 
     if (updateError) {
-      // Stripe 환불은 성공했지만 DB 업데이트 실패
-      console.error('DB update failed after Stripe refund:', updateError)
+      console.error('DB update failed after refund:', updateError)
       return {
         success: false,
-        error: `Stripe 환불은 완료되었으나 DB 업데이트 실패. Refund ID: ${refund.id}`
+        error: `환불은 완료되었으나 DB 업데이트 실패. Refund ID: ${refundId}`
       }
     }
 
@@ -433,7 +441,7 @@ export async function processRefund(orderId: string, amount?: number) {
 
     return {
       success: true,
-      refundId: refund.id,
+      refundId,
       amount: refundAmount
     }
   } catch (error: any) {
