@@ -1,24 +1,22 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-// import Image from 'next/image' // 실제 이미지 사용 시 활성화
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 
-// 히어로 슬라이드 데이터
-// imageSrc: 실제 이미지 경로로 교체 (예: '/images/hero/slide-1.jpg')
 const SLIDES = [
   {
     id: 1,
-    // imageSrc: '/images/hero/slide-1.jpg',
+    isVideo: true,
     eyebrow: 'Premium Gymwear · 2026',
-    title: 'ASCEND7',
+    title: null,
     body: '일주일 내내, 멈추지 않고 성장하다',
     cta: { label: 'SHOP NOW', href: '/shop' },
     ctaSecondary: { label: 'NEW ARRIVALS', href: '/shop?category=top' },
   },
   {
     id: 2,
-    // imageSrc: '/images/hero/slide-2.jpg',
+    isVideo: false,
     eyebrow: 'SS 2026 Collection',
     title: 'NEW SEASON',
     body: '새 시즌, 더 강해진 퍼포먼스',
@@ -27,7 +25,7 @@ const SLIDES = [
   },
   {
     id: 3,
-    // imageSrc: '/images/hero/slide-3.jpg',
+    isVideo: false,
     eyebrow: 'Training Series',
     title: 'TRAIN HARD',
     body: '강인함은 매일의 선택에서 시작된다',
@@ -36,7 +34,6 @@ const SLIDES = [
   },
 ]
 
-// 슬라이드별 배경 그라디언트 (이미지 없을 때 대체)
 const GRADIENTS = [
   'radial-gradient(ellipse 80% 80% at 50% 60%, #1c1c1c 0%, #000000 65%)',
   'radial-gradient(ellipse 80% 80% at 30% 50%, #181818 0%, #000000 65%)',
@@ -46,6 +43,7 @@ const GRADIENTS = [
 export function StaticHeroSlider() {
   const [current, setCurrent] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const total = SLIDES.length
 
   const goTo = useCallback(
@@ -62,10 +60,20 @@ export function StaticHeroSlider() {
     goTo((current + 1) % total)
   }, [current, total, goTo])
 
+  // 슬라이드 0(비디오)이 아닐 때만 5초 자동 슬라이드
   useEffect(() => {
+    if (current === 0) return
     const timer = setInterval(next, 5000)
     return () => clearInterval(timer)
-  }, [next])
+  }, [next, current])
+
+  // 슬라이드 0으로 돌아오면 비디오 처음부터 재생
+  useEffect(() => {
+    if (current === 0 && videoRef.current) {
+      videoRef.current.currentTime = 0
+      videoRef.current.play().catch(() => {})
+    }
+  }, [current])
 
   return (
     <div className="relative w-full h-[90vh] min-h-[600px] overflow-hidden bg-black">
@@ -78,48 +86,58 @@ export function StaticHeroSlider() {
             zIndex: i === current ? 1 : 0,
           }}
         >
-          {/* 배경 그라디언트 (이미지 없을 때 기본값) */}
-          <div
-            className="absolute inset-0"
-            style={{ background: GRADIENTS[i] ?? GRADIENTS[0] }}
-          />
-
-          {/* 실제 이미지 사용 시 아래 주석 해제 + Image import 활성화
-          {slide.imageSrc && (
-            <Image
-              src={slide.imageSrc}
-              alt=""
-              fill
-              className="object-cover opacity-60"
-              sizes="100vw"
-              priority={i === 0}
+          {/* 슬라이드 1: 비디오 배경 */}
+          {slide.isVideo ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              onEnded={next}
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src="/videos/hero.mp4" type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{ background: GRADIENTS[i] ?? GRADIENTS[0] }}
             />
-          )} */}
+          )}
 
           {/* 하단 페이드아웃 */}
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent" />
 
           {/* 콘텐츠 */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white px-6">
-            {/* 아이브로우 태그 */}
             <p className="text-[9px] sm:text-[10px] tracking-[0.5em] uppercase text-white/25 mb-10 font-medium select-none">
               {slide.eyebrow}
             </p>
 
-            {/* 메인 헤드라인 */}
-            <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.025em] leading-none mb-7 text-white">
-              {slide.title}
-            </h2>
+            {/* 슬라이드 1: 로고 이미지 / 나머지: 텍스트 타이틀 */}
+            {slide.isVideo ? (
+              <div className="mb-7">
+                <Image
+                  src="/images/logo.png"
+                  alt="ASCEND7"
+                  width={320}
+                  height={180}
+                  className="object-contain drop-shadow-2xl w-[220px] sm:w-[300px] md:w-[380px]"
+                  priority
+                />
+              </div>
+            ) : (
+              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.025em] leading-none mb-7 text-white">
+                {slide.title}
+              </h2>
+            )}
 
-            {/* 얇은 구분선 */}
             <div className="w-8 h-px bg-white/20 mb-7" />
 
-            {/* 서브 텍스트 */}
             <p className="text-[13px] sm:text-sm text-white/30 tracking-wide max-w-xs leading-relaxed mb-10">
               {slide.body}
             </p>
 
-            {/* CTA 버튼 */}
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
               <Link
                 href={slide.cta.href}
