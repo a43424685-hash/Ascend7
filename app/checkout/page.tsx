@@ -154,72 +154,71 @@ export default function CheckoutPage() {
       }
 
       // 1. 결제 대기 주문 생성
-      const { orderId } = await createPendingOrder(cartItemsWithData, shippingInfo)
+      console.log('[STEP 1] createPendingOrder 시작')
+      const { orderId: dbOrderId, orderNumber } = await createPendingOrder(cartItemsWithData, shippingInfo)
+      console.log('[STEP 1] 완료 - dbOrderId:', dbOrderId, 'orderNumber:', orderNumber)
 
       const orderName =
         cartItemsWithData.length === 1
           ? cartItemsWithData[0].product.name
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
-      // 2. TossPayments 결제 요청 (API 개별 연동)
+      // 2. TossPayments SDK 로드
+      console.log('[STEP 2] loadTossPayments 시작')
       const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
       const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
       if (!clientKey) {
         throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
       }
-
       const tossPayments = await loadTossPayments(clientKey)
+      console.log('[STEP 2] 완료')
+
+      // 3. payment 인스턴스 생성
+      console.log('[STEP 3] payment() 생성 시작')
       const customerKey = crypto.randomUUID()
       const payment = tossPayments.payment({ customerKey })
+      console.log('[STEP 3] 완료')
 
-      // 한국 휴대폰 번호 형식 검증 (010/011/016/017/018/019 시작)
-      const rawPhone = shippingInfo.phone.replace(/-/g, '')
-      const isValidKoreanPhone = /^01[016789]\d{7,8}$/.test(rawPhone)
+      // 4. 결제 요청 - TossPayments orderId로 orderNumber 사용 (A7-... 형식)
+      // successUrl에 dbOrderId를 쿼리 파라미터로 전달하여 confirm API에서 DB 조회에 사용
+      const tossOrderId = orderNumber // A7-260220-AB3X 형식 (64자 이내, 영숫자+하이픈)
+      console.log('[STEP 4] requestPayment 시작 - tossOrderId:', tossOrderId, 'method:', selectedMethod)
 
-      const baseParams: Record<string, unknown> = {
+      const params: Record<string, unknown> = {
         amount: { currency: 'KRW', value: total },
-        orderId,
+        orderId: tossOrderId,
         orderName,
-        successUrl: `${window.location.origin}/payment/success`,
+        successUrl: `${window.location.origin}/payment/success?dbOrderId=${dbOrderId}`,
         failUrl: `${window.location.origin}/payment/fail`,
-        customerName: shippingInfo.name,
-        ...(isValidKoreanPhone ? { customerMobilePhone: rawPhone } : {}),
       }
-
-      console.log('[TossPayments] requestPayment params:', { ...baseParams, clientKey: clientKey.slice(0, 10) + '...' })
 
       if (selectedMethod === 'TRANSFER') {
         await payment.requestPayment({
           method: 'TRANSFER',
-          ...baseParams,
+          ...params,
           transfer: { cashReceipt: { type: '소득공제' }, useEscrow: false },
         } as any)
       } else if (selectedMethod === 'VIRTUAL_ACCOUNT') {
         await payment.requestPayment({
           method: 'VIRTUAL_ACCOUNT',
-          ...baseParams,
-          virtualAccount: {
-            cashReceipt: { type: '소득공제' },
-            useEscrow: false,
-            validHours: 24,
-          },
+          ...params,
+          virtualAccount: { cashReceipt: { type: '소득공제' }, useEscrow: false, validHours: 24 },
         } as any)
       } else {
-        // CARD (카드 + 간편결제: 카카오페이, 네이버페이, 토스페이 등 결제창 내에서 선택)
         await payment.requestPayment({
           method: 'CARD',
-          ...baseParams,
-          card: { useEscrow: false, flowMode: 'DEFAULT', useCardPoint: false, useAppCardOnly: false },
+          ...params,
         } as any)
       }
       // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
       const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
-      console.error('[TossPayments] Error:', {
+      console.error('[TossPayments] 에러 상세:', JSON.stringify({
         code: err?.code,
         message: err?.message,
-        full: JSON.stringify(err),
-      })
+        name: err?.name,
+        stack: err?.stack?.slice(0, 200),
+      }))
       if (!cancelCodes.includes(err?.code)) {
         const msg = err?.message || '결제 처리 중 오류가 발생했습니다'
         const code = err?.code ? ` (${err.code})` : ''

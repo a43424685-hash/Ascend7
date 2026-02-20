@@ -23,10 +23,11 @@ function PaymentSuccessContent() {
 
   const confirmPayment = useCallback(async () => {
     const paymentKey = searchParams.get('paymentKey')
-    const orderId = searchParams.get('orderId')
+    const tossOrderId = searchParams.get('orderId') // TossPayments orderId (= orderNumber)
     const amountStr = searchParams.get('amount')
+    const dbOrderId = searchParams.get('dbOrderId') // 실제 DB UUID (checkout에서 전달)
 
-    if (!paymentKey || !orderId || !amountStr) {
+    if (!paymentKey || !tossOrderId || !amountStr) {
       router.push('/')
       return
     }
@@ -37,7 +38,8 @@ function PaymentSuccessContent() {
       const res = await fetch('/api/tosspayments/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentKey, orderId, amount }),
+        // dbOrderId가 있으면 우선 사용, 없으면 tossOrderId로 fallback
+        body: JSON.stringify({ paymentKey, orderId: dbOrderId || tossOrderId, amount }),
       })
 
       const data = await res.json()
