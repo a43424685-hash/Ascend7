@@ -31,6 +31,7 @@ export default function CheckoutPage() {
 
   // TossPayments 위젯 상태
   const [paymentWidgetReady, setPaymentWidgetReady] = useState(false)
+  const [widgetError, setWidgetError] = useState<string | null>(null)
   const paymentWidgetRef = useRef<any>(null)
 
   // 배송 정보 폼 상태
@@ -101,14 +102,12 @@ export default function CheckoutPage() {
         const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY || ''
 
         if (!clientKey) {
-          console.warn('[TossPayments] NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY가 설정되지 않았습니다.')
+          setWidgetError('결제 모듈 설정 오류: 클라이언트 키가 없습니다.')
           return
         }
 
         const tossPayments = await loadTossPayments(clientKey)
         const widgets = tossPayments.widgets({ customerKey: ANONYMOUS })
-
-        paymentWidgetRef.current = widgets
 
         await widgets.setAmount({ currency: 'KRW', value: total })
 
@@ -123,9 +122,11 @@ export default function CheckoutPage() {
           }),
         ])
 
+        paymentWidgetRef.current = widgets
         setPaymentWidgetReady(true)
-      } catch (err) {
+      } catch (err: any) {
         console.error('[TossPayments] Widget init failed:', err)
+        setWidgetError(`결제 모듈 로딩 실패: ${err?.message || String(err)}`)
       }
     }
 
@@ -410,10 +411,15 @@ export default function CheckoutPage() {
           {/* TossPayments 결제 위젯 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">결제 수단</h2>
-            {!paymentWidgetReady && (
+            {!paymentWidgetReady && !widgetError && (
               <div className="flex items-center gap-2 text-sm text-gray-500 py-10 justify-center">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black flex-shrink-0" />
                 결제 수단을 불러오는 중...
+              </div>
+            )}
+            {widgetError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+                {widgetError}
               </div>
             )}
             {/* TossPayments 결제수단 선택 위젯 렌더링 대상 */}
