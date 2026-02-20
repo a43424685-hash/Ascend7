@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -27,8 +27,11 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null)
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [authStatus, setAuthStatus] = useState<CheckoutAuthStatus | null>(null)
-  const [widgetReady, setWidgetReady] = useState(false)
-  const widgetsRef = useRef<any>(null)
+
+  // 공식 예제 패턴: widgets를 state로 관리, ready 분리
+  const [widgets, setWidgets] = useState<any>(null)
+  const [ready, setReady] = useState(false)
+  const [amount, setAmount] = useState({ currency: 'KRW', value: 0 })
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     name: '',
@@ -76,7 +79,7 @@ export default function CheckoutPage() {
     fetchData()
   }, [cartItems, isLoaded, router])
 
-  // 결제위젯 초기화 (데이터 로드 완료 후)
+  // Effect 1: 데이터 로드 완료 후 widgets 인스턴스 생성 (공식 예제 1번 useEffect)
   useEffect(() => {
     if (isLoading || cartItemsWithData.length === 0) return
 
@@ -87,16 +90,32 @@ export default function CheckoutPage() {
     const shippingFee = subtotal >= 50000 ? 0 : 3000
     const total = subtotal + shippingFee
 
-    const initWidget = async () => {
+    setAmount({ currency: 'KRW', value: total })
+
+    async function fetchPaymentWidgets() {
       try {
         const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
         const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
         if (!clientKey) throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
 
         const tossPayments = await loadTossPayments(clientKey)
-        const widgets = tossPayments.widgets({ customerKey: ANONYMOUS })
+        const widgetsInstance = tossPayments.widgets({ customerKey: ANONYMOUS })
+        setWidgets(widgetsInstance)
+      } catch (err: any) {
+        setError(err.message || '결제 수단을 불러올 수 없습니다.')
+      }
+    }
 
-        await widgets.setAmount({ currency: 'KRW', value: total })
+    fetchPaymentWidgets()
+  }, [isLoading, cartItemsWithData])
+
+  // Effect 2: widgets 인스턴스 준비되면 UI 렌더링 (공식 예제 2번 useEffect)
+  useEffect(() => {
+    if (widgets == null) return
+
+    async function renderPaymentWidgets() {
+      try {
+        await widgets.setAmount(amount)
 
         await Promise.all([
           widgets.renderPaymentMethods({
@@ -109,15 +128,20 @@ export default function CheckoutPage() {
           }),
         ])
 
-        widgetsRef.current = widgets
-        setWidgetReady(true)
+        setReady(true)
       } catch (err: any) {
-        setError(err.message || '결제 수단을 불러올 수 없습니다.')
+        setError(err.message || '결제 UI 렌더링 실패')
       }
     }
 
-    initWidget()
-  }, [isLoading, cartItemsWithData])
+    renderPaymentWidgets()
+  }, [widgets])
+
+  // Effect 3: amount 변경 시 위젯 금액 업데이트 (공식 예제 3번 useEffect)
+  useEffect(() => {
+    if (widgets == null) return
+    widgets.setAmount(amount)
+  }, [widgets, amount])
 
   const formatPhoneNumber = (value: string) => {
     const nums = value.replace(/\D/g, '')
@@ -169,7 +193,7 @@ export default function CheckoutPage() {
   )
 
   const handleCheckout = async () => {
-    if (!widgetsRef.current || !widgetReady) return
+    if (widgets == null || !ready) return
     if (cartItemsWithData.length === 0) return
     if (!validateForm()) return
 
@@ -191,7 +215,7 @@ export default function CheckoutPage() {
           ? cartItemsWithData[0].product.name
           : `${cartItemsWithData[0].product.name} 외 ${cartItemsWithData.length - 1}건`
 
-      await widgetsRef.current.requestPayment({
+      await widgets.requestPayment({
         orderId: orderNumber,
         orderName,
         successUrl: `${window.location.origin}/payment/success?dbOrderId=${dbOrderId}`,
@@ -199,7 +223,6 @@ export default function CheckoutPage() {
         customerName: shippingInfo.name,
         customerMobilePhone: shippingInfo.phone.replace(/-/g, ''),
       })
-      // TossPayments가 successUrl로 리다이렉트
     } catch (err: any) {
       const cancelCodes = ['USER_CANCEL', 'PAY_PROCESS_CANCELED', 'PAYMENT_CANCELED']
       if (!cancelCodes.includes(err?.code)) {
@@ -399,7 +422,7 @@ export default function CheckoutPage() {
           {/* 결제위젯 */}
           <div className="border-2 border-black p-6">
             <h2 className="text-xl font-bold mb-4">결제 수단</h2>
-            {!widgetReady && (
+            {!ready && (
               <div className="animate-pulse space-y-3 py-4">
                 <div className="h-12 bg-gray-100 rounded" />
                 <div className="h-12 bg-gray-100 rounded" />
@@ -479,7 +502,7 @@ export default function CheckoutPage() {
 
             <Button
               onClick={handleCheckout}
-              disabled={isProcessing || !widgetReady}
+              disabled={isProcessing || !ready}
               className="w-full"
               size="lg"
             >
@@ -503,7 +526,7 @@ export default function CheckoutPage() {
                   </svg>
                   결제 처리 중...
                 </span>
-              ) : !widgetReady ? (
+              ) : !ready ? (
                 '결제 수단 로딩 중...'
               ) : (
                 `${formatPrice(total)} 결제하기`
