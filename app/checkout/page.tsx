@@ -165,7 +165,7 @@ export default function CheckoutPage() {
 
       // 2. TossPayments SDK 로드
       console.log('[STEP 2] loadTossPayments 시작')
-      const { loadTossPayments } = await import('@tosspayments/tosspayments-sdk')
+      const { loadTossPayments, ANONYMOUS } = await import('@tosspayments/tosspayments-sdk')
       const clientKey = process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
       if (!clientKey) {
         throw new Error('TossPayments 클라이언트 키가 설정되지 않았습니다.')
@@ -173,10 +173,9 @@ export default function CheckoutPage() {
       const tossPayments = await loadTossPayments(clientKey)
       console.log('[STEP 2] 완료')
 
-      // 3. payment 인스턴스 생성
+      // 3. payment 인스턴스 생성 (비회원/게스트는 ANONYMOUS 사용)
       console.log('[STEP 3] payment() 생성 시작')
-      const customerKey = crypto.randomUUID()
-      const payment = tossPayments.payment({ customerKey })
+      const payment = tossPayments.payment({ customerKey: ANONYMOUS })
       console.log('[STEP 3] 완료')
 
       // 4. 결제 요청 - TossPayments orderId로 orderNumber 사용 (A7-... 형식)
