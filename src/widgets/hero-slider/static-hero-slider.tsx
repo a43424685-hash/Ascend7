@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 
 const SLIDES = [
@@ -114,19 +113,8 @@ export function StaticHeroSlider() {
               {slide.eyebrow}
             </p>
 
-            {/* 슬라이드 1: 로고 이미지 / 나머지: 텍스트 타이틀 */}
-            {slide.isVideo ? (
-              <div className="mb-7">
-                <Image
-                  src="/images/logo.png"
-                  alt="ASCEND7"
-                  width={320}
-                  height={180}
-                  className="object-contain drop-shadow-2xl w-[220px] sm:w-[300px] md:w-[380px]"
-                  priority
-                />
-              </div>
-            ) : (
+            {/* 타이틀 (슬라이드 1은 title이 null이므로 표시 안 함) */}
+            {slide.title && (
               <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.025em] leading-none mb-7 text-white">
                 {slide.title}
               </h2>
