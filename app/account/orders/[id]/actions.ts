@@ -10,7 +10,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
-// import { stripe } from '@/shared/lib/stripe' // Stripe (주석처리 - TossPayments로 전환)
 import { cancelTossPayment } from '@/shared/lib/tosspayments'
 
 export type CancelResult = {
@@ -80,15 +79,6 @@ export async function cancelOrder(orderId: string, reason: string): Promise<Canc
       )
       refundId = result?.cancels?.[0]?.transactionKey || order.tosspayments_payment_key
     } else if (order.stripe_session_id) {
-      // Stripe 환불 (기존 주문 하위 호환)
-      /*
-      const { stripe } = await import('@/shared/lib/stripe')
-      const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id)
-      const paymentIntentId = session.payment_intent as string
-      if (!paymentIntentId) return { success: false, error: 'Payment Intent를 찾을 수 없습니다.' }
-      const refund = await stripe.refunds.create({ payment_intent: paymentIntentId, amount: order.total, reason: 'requested_by_customer' })
-      refundId = refund.id
-      */
       return { success: false, error: 'Stripe 결제 주문의 환불은 관리자에게 문의해주세요.' }
     } else {
       return { success: false, error: '결제 정보가 없습니다. 관리자에게 문의해주세요.' }

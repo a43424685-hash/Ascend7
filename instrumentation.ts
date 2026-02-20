@@ -4,14 +4,14 @@ export async function register() {
       'NEXT_PUBLIC_SUPABASE_URL',
       'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'SUPABASE_SERVICE_ROLE_KEY',
-      'STRIPE_SECRET_KEY',
-      'STRIPE_WEBHOOK_SECRET',
+      'NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY',
+      'TOSSPAYMENTS_SECRET_KEY',
     ]
 
     const optional = [
       { key: 'RESEND_API_KEY', warn: '이메일 발송이 비활성화됩니다.' },
       { key: 'NEXT_PUBLIC_KAKAO_CHANNEL_ID', warn: '카카오 문의 버튼이 숨겨집니다.' },
-      { key: 'NEXT_PUBLIC_SITE_URL', warn: 'Stripe 리다이렉트가 localhost로 fallback됩니다.' },
+      { key: 'NEXT_PUBLIC_SITE_URL', warn: '결제 리다이렉트가 localhost로 fallback됩니다.' },
     ]
 
     const missing = required.filter((key) => !process.env[key])
