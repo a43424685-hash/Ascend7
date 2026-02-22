@@ -17,7 +17,8 @@ import type { ShippingInfo } from './get-default-shipping'
 
 export async function createPendingOrder(
   cartItems: CartItemWithVariant[],
-  shippingInfo: ShippingInfo
+  shippingInfo: ShippingInfo,
+  coupon?: { couponId: string; couponCode: string; discountAmount: number } | null
 ): Promise<{ orderId: string; orderNumber: string; total: number }> {
   if (cartItems.length === 0) {
     throw new Error('장바구니가 비어있습니다.')
@@ -35,7 +36,8 @@ export async function createPendingOrder(
     0
   )
   const shippingFee = subtotal >= 50000 ? 0 : 3000
-  const total = subtotal + shippingFee
+  const discountAmount = coupon?.discountAmount ?? 0
+  const total = subtotal + shippingFee - discountAmount
 
   // 재고 검증
   for (const item of cartItems) {
@@ -77,6 +79,9 @@ export async function createPendingOrder(
       customer_phone: shippingInfo.phone,
       customer_email: user?.email || null,
       shipping_address: shippingAddress,
+      coupon_id: coupon?.couponId || null,
+      coupon_code: coupon?.couponCode || null,
+      discount_amount: discountAmount || null,
     })
     .select('id, order_number')
     .single()

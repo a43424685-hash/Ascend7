@@ -17,6 +17,7 @@ import type { CartItemWithVariant } from '@/shared/types/cart'
 import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { AddressSearch } from '@/shared/ui/address-search'
+import { validateCoupon } from '@/features/coupon/actions/validate-coupon'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -32,6 +33,37 @@ export default function CheckoutPage() {
   const [widgets, setWidgets] = useState<any>(null)
   const [ready, setReady] = useState(false)
   const [amount, setAmount] = useState({ currency: 'KRW', value: 0 })
+
+  const [couponCode, setCouponCode] = useState('')
+  const [couponState, setCouponState] = useState<{
+    couponId: string
+    couponCode: string
+    discountAmount: number
+  } | null>(null)
+  const [couponError, setCouponError] = useState<string | null>(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return
+    const currentSubtotal = cartItemsWithData.reduce(
+      (sum, item) => sum + item.variant.price * item.quantity,
+      0
+    )
+    setCouponLoading(true)
+    setCouponError(null)
+    const result = await validateCoupon(couponCode, currentSubtotal)
+    setCouponLoading(false)
+    if (result.valid && result.couponId) {
+      setCouponState({
+        couponId: result.couponId,
+        couponCode: result.couponCode!,
+        discountAmount: result.discountAmount!,
+      })
+    } else {
+      setCouponState(null)
+      setCouponError(result.error || '유효하지 않은 쿠폰입니다.')
+    }
+  }
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     name: '',
@@ -143,6 +175,16 @@ export default function CheckoutPage() {
     widgets.setAmount(amount)
   }, [widgets, amount])
 
+  // 쿠폰 할인 적용 시 위젯 금액 업데이트
+  useEffect(() => {
+    if (widgets == null || !ready || cartItemsWithData.length === 0) return
+    const sub = cartItemsWithData.reduce((s, i) => s + i.variant.price * i.quantity, 0)
+    const fee = sub >= 50000 ? 0 : 3000
+    const disc = couponState?.discountAmount ?? 0
+    const newTotal = sub + fee - disc
+    setAmount({ currency: 'KRW', value: newTotal })
+  }, [couponState, widgets, ready, cartItemsWithData])
+
   const formatPhoneNumber = (value: string) => {
     const nums = value.replace(/\D/g, '')
     if (nums.length <= 3) return nums
@@ -215,7 +257,8 @@ export default function CheckoutPage() {
       console.log('[CHECKOUT] createPendingOrder 시작')
       const { orderId: dbOrderId, orderNumber } = await createPendingOrder(
         cartItemsWithData,
-        shippingInfo
+        shippingInfo,
+        couponState
       )
       console.log('[CHECKOUT] createPendingOrder 완료 - dbOrderId:', dbOrderId, 'orderNumber:', orderNumber)
 
@@ -264,7 +307,8 @@ export default function CheckoutPage() {
     0
   )
   const shippingFee = subtotal >= 50000 ? 0 : 3000
-  const total = subtotal + shippingFee
+  const discountAmount = couponState?.discountAmount ?? 0
+  const total = subtotal + shippingFee - discountAmount
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -476,6 +520,45 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            {/* 쿠폰 입력 */}
+            <div className="border-t border-gray-200 pt-4 mb-4">
+              <p className="text-xs font-semibold text-gray-600 mb-2">쿠폰 코드</p>
+              {couponState ? (
+                <div className="flex items-center justify-between p-2 bg-green-50 border border-green-200 text-sm">
+                  <span className="text-green-700 font-medium">
+                    {couponState.couponCode} ({formatPrice(couponState.discountAmount)} 할인)
+                  </span>
+                  <button
+                    onClick={() => { setCouponState(null); setCouponCode('') }}
+                    className="text-gray-400 hover:text-black text-xs ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                    placeholder="쿠폰 코드 입력"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 focus:border-black outline-none font-mono uppercase"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={couponLoading || !couponCode.trim()}
+                    className="px-3 py-2 text-xs bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    {couponLoading ? '...' : '적용'}
+                  </button>
+                </div>
+              )}
+              {couponError && (
+                <p className="text-xs text-red-500 mt-1">{couponError}</p>
+              )}
+            </div>
+
             <div className="border-t border-gray-200 pt-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">상품 금액</span>
@@ -491,6 +574,12 @@ export default function CheckoutPage() {
                   )}
                 </span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600 font-medium">
+                  <span>쿠폰 할인</span>
+                  <span>-{formatPrice(discountAmount)}</span>
+                </div>
+              )}
               {shippingFee > 0 && (
                 <p className="text-xs text-gray-400">
                   {formatPrice(50000 - subtotal)} 더 구매 시 무료배송

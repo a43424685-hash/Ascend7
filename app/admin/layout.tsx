@@ -73,6 +73,20 @@ export default function AdminLayout({
                 >
                   배송
                 </Link>
+                <Link
+                  href="/admin/coupons"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  쿠폰
+                </Link>
+                <Link
+                  href="/admin/restock"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  재입고
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-4">
@@ -100,6 +114,8 @@ export default function AdminLayout({
         <Link href="/admin/qna" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">Q&A</Link>
         <Link href="/admin/events" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">이벤트</Link>
         <Link href="/admin/shipping" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">배송</Link>
+        <Link href="/admin/coupons" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">쿠폰</Link>
+        <Link href="/admin/restock" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">재입고</Link>
       </div>
 
       {/* Main Content */}

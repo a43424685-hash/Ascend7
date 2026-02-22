@@ -6,6 +6,7 @@ import type { ProductWithDetails } from '@/shared/types/database'
 import { formatPrice } from '@/shared/lib/utils'
 import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
+import { RestockAlertForm } from '@/features/restock/restock-alert-form'
 /* 신뢰/정책 요약 상수 - 문구 수정 가능 */
 const PURCHASE_POLICIES = [
   { icon: '🚚', text: '50,000원 이상 무료배송' },
@@ -23,6 +24,18 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null)
+
+  const handleShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, url })
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url)
+      showNotification('success', '링크가 복사되었습니다.')
+    }
+  }
 
   const showNotification = (type: 'error' | 'success', message: string) => {
     setNotification({ type, message })
@@ -277,6 +290,14 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               바로 구매
             </Button>
           )}
+
+          {/* 재입고 알림 (품절된 옵션 선택 시) */}
+          {selectedVariant && !isAvailable && (
+            <RestockAlertForm
+              variantId={selectedVariant.id}
+              variantLabel={`${selectedColor} / ${selectedSize}`}
+            />
+          )}
         </div>
 
         {/* Trust / Policy Summary */}
@@ -290,6 +311,15 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               <span>{p.text}</span>
             </div>
           ))}
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-black transition-colors mt-4 pt-4 border-t border-gray-100 w-full"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            이 상품 공유하기
+          </button>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
 import { formatPrice } from '@/shared/lib/utils'
 import { ProductReviews } from '@/widgets/product-reviews'
+import { RecentlyViewedSection } from '@/widgets/recently-viewed'
 
 export async function generateMetadata({
   params,
@@ -70,6 +71,16 @@ export default async function ProductPage({
       <div className="container mx-auto px-4 max-w-4xl">
         <ProductReviews productId={product.id} productSlug={product.slug} />
       </div>
+
+      {/* 최근 본 상품 */}
+      <RecentlyViewedSection
+        current={{
+          slug: product.slug,
+          name: product.name,
+          imageUrl: product.images?.[0]?.url || null,
+          price: product.variants.length > 0 ? Math.min(...product.variants.map((v) => v.price)) : 0,
+        }}
+      />
 
       {/* 추천 상품 */}
       {recommendations.length > 0 && (
