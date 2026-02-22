@@ -14,13 +14,12 @@ export async function Header() {
           <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity">
             <Image
               src="/images/logo2.png"
-              alt=""
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain"
+              alt="ASCEND7"
+              width={120}
+              height={96}
+              className="h-9 w-auto object-contain"
               priority
             />
-            <span className="text-sm font-black tracking-[0.25em]">ASCEND7</span>
           </Link>
 
           {/* 데스크탑 네비게이션 - DesktopNav (SHOP 드롭다운 포함) */}
