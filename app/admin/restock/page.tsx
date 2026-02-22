@@ -48,7 +48,8 @@ export default async function RestockAlertsPage() {
               <th className="px-4 py-3 text-left font-semibold text-gray-700">상품</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">옵션</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">현재 재고</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">신청 이메일</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">알림 방법</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-700">연락처</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">신청일</th>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">상태</th>
             </tr>
@@ -56,7 +57,7 @@ export default async function RestockAlertsPage() {
           <tbody className="divide-y divide-gray-100">
             {alerts.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                   재입고 알림 신청 내역이 없습니다.
                 </td>
               </tr>
@@ -75,7 +76,20 @@ export default async function RestockAlertsPage() {
                         {variant?.stock ?? '-'}개
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{alert.email}</td>
+                    <td className="px-4 py-3">
+                      {(alert as any).notification_type === 'kakao' ? (
+                        <span className="text-xs px-2 py-0.5 bg-[#FEE500] text-[#3A1D1D] font-medium">
+                          카카오톡
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700">
+                          이메일
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">
+                      {alert.email || '-'}
+                    </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
                       {new Date(alert.created_at).toLocaleDateString('ko-KR')}
                     </td>
