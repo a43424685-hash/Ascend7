@@ -29,7 +29,7 @@ export async function AuthButton() {
 
   return (
     <div className="flex items-center gap-2">
-      {profile?.role === 'admin' && (
+      {profile?.role === 'admin' && user.email === 'chun8588@naver.com' && (
         <Link
           href="/admin/orders"
           className="hidden lg:block text-[10px] font-bold tracking-wider text-purple-600 hover:text-purple-800 transition-colors"
