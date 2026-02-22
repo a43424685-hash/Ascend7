@@ -3,11 +3,32 @@ import { getProductsWithFilters } from '@/entities/product/api/get-products-with
 import { ProductGrid } from '@/widgets/product-grid'
 import { ShopFilters } from '@/widgets/shop-filters'
 
+const CATEGORY_LABELS: Record<string, string> = {
+  outer: 'OUTER',
+  top: 'TOPS',
+  bottom: 'BOTTOMS',
+  accessories: 'ACC',
+}
+
+const SUB_LABELS: Record<string, string> = {
+  hoodie: 'HOODIE',
+  sweater: 'SWEATER',
+  tshirts: 'T-SHIRTS',
+  longsleeve: 'LONG SLEEVE',
+  sleeveless: 'SLEEVELESS',
+  shorts: 'SHORTS',
+  pants: 'PANTS',
+  cap: 'CAP',
+  socks: 'SOCKS',
+  bag: 'BAG',
+}
+
 export default async function ShopPage({
   searchParams,
 }: {
   searchParams: {
     category?: string
+    sub?: string
     color?: string
     size?: string
     sort?: 'newest' | 'price-asc' | 'price-desc'
@@ -16,6 +37,7 @@ export default async function ShopPage({
 }) {
   const filters = {
     category: searchParams.category,
+    sub: searchParams.sub,
     color: searchParams.color,
     size: searchParams.size,
     sortBy: searchParams.sort || 'newest',
@@ -23,6 +45,13 @@ export default async function ShopPage({
   }
 
   const products = await getProductsWithFilters(filters)
+
+  const categoryLabel = searchParams.category
+    ? (CATEGORY_LABELS[searchParams.category] ?? searchParams.category.toUpperCase())
+    : null
+  const subLabel = searchParams.sub
+    ? (SUB_LABELS[searchParams.sub] ?? searchParams.sub.toUpperCase())
+    : null
 
   return (
     <div className="min-h-screen">
@@ -40,14 +69,11 @@ export default async function ShopPage({
                 <p className="text-[9px] tracking-[0.4em] text-gray-400 uppercase mb-1">Search Results</p>
                 <h1 className="text-xl font-black tracking-tight">&ldquo;{searchParams.q}&rdquo;</h1>
               </>
-            ) : searchParams.category ? (
+            ) : categoryLabel ? (
               <>
                 <p className="text-[9px] tracking-[0.4em] text-gray-400 uppercase mb-1">Category</p>
                 <h1 className="text-xl font-black tracking-tight">
-                  {searchParams.category === 'top' ? 'TOPS'
-                    : searchParams.category === 'bottom' ? 'BOTTOMS'
-                    : searchParams.category === 'accessories' ? 'ACCESSORIES'
-                    : 'SHOP'}
+                  {subLabel ? `${categoryLabel} · ${subLabel}` : categoryLabel}
                 </h1>
               </>
             ) : (

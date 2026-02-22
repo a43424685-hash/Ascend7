@@ -3,6 +3,7 @@ import type { ProductWithImages, Variant } from '@/shared/types/database'
 
 export interface ProductFilters {
   category?: string
+  sub?: string
   color?: string
   size?: string
   sortBy?: 'newest' | 'price-asc' | 'price-desc'
@@ -31,6 +32,11 @@ export async function getProductsWithFilters(
     // 카테고리 필터
     if (filters.category) {
       query = query.eq('category', filters.category)
+    }
+
+    // 서브카테고리 필터
+    if (filters.sub && filters.sub !== 'all') {
+      query = query.eq('sub_category', filters.sub)
     }
 
     // 정렬
