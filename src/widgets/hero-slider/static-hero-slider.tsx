@@ -75,7 +75,7 @@ export function StaticHeroSlider() {
   }, [current])
 
   return (
-    <div className="relative w-full h-screen min-h-[600px] overflow-hidden bg-black">
+    <div className="relative w-full h-dvh min-h-[600px] overflow-hidden bg-black">
       {SLIDES.map((slide, i) => (
         <div
           key={slide.id}

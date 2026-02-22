@@ -13,12 +13,11 @@ export async function Header() {
           {/* 로고 */}
           <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity">
             <Image
-              src="/images/logo.png"
+              src="/images/logo2.png"
               alt=""
               width={28}
               height={28}
               className="h-7 w-7 object-contain"
-              style={{ filter: 'brightness(0)' }}
               priority
             />
             <span className="text-sm font-black tracking-[0.25em]">ASCEND7</span>
