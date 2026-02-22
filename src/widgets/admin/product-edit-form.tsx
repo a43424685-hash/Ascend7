@@ -12,6 +12,25 @@ interface ProductEditFormProps {
   product: ProductWithDetails
 }
 
+const SUB_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  top: [
+    { value: 'hoodie', label: '후디 (HOODIE)' },
+    { value: 'sweater', label: '스웨터 (SWEATER)' },
+    { value: 'tshirts', label: '티셔츠 (T-SHIRTS)' },
+    { value: 'longsleeve', label: '긴소매 (LONG SLEEVE)' },
+    { value: 'sleeveless', label: '민소매 (SLEEVELESS)' },
+  ],
+  bottom: [
+    { value: 'shorts', label: '반바지 (SHORTS)' },
+    { value: 'pants', label: '팬츠 (PANTS)' },
+  ],
+  accessories: [
+    { value: 'cap', label: '캡 (CAP)' },
+    { value: 'socks', label: '양말 (SOCKS)' },
+    { value: 'bag', label: '가방 (BAG)' },
+  ],
+}
+
 export function ProductEditForm({ product }: ProductEditFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -25,9 +44,14 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     detail_content: product.detail_content || '',
     size_material_care: product.size_material_care || '',
     category: product.category,
+    sub_category: product.sub_category || '',
     is_active: product.is_active,
   })
   const [sizeChart, setSizeChart] = useState<string | null>(product.size_chart)
+
+  const handleCategoryChange = (category: string) => {
+    setFormData((prev) => ({ ...prev, category, sub_category: '' }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,6 +63,7 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       await updateProduct({
         id: product.id,
         ...formData,
+        sub_category: formData.sub_category || null,
         size_chart: sizeChart,
         detail_content: formData.detail_content || undefined,
         size_material_care: formData.size_material_care || null,
@@ -51,6 +76,8 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       setLoading(false)
     }
   }
+
+  const subOptions = SUB_OPTIONS[formData.category] ?? null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -137,18 +164,38 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 카테고리 + 서브카테고리 + 활성 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-semibold mb-1">카테고리 *</label>
           <select
             required
             value={formData.category}
-            onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
+            onChange={(e) => handleCategoryChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none"
           >
-            <option value="top">상의</option>
-            <option value="bottom">하의</option>
-            <option value="accessories">액세서리</option>
+            <option value="outer">아우터 (OUTER)</option>
+            <option value="top">상의 (TOP)</option>
+            <option value="bottom">하의 (BOTTOM)</option>
+            <option value="accessories">액세서리 (ACC)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-1">
+            세부 카테고리
+            {!subOptions && <span className="text-gray-400 font-normal"> (해당 없음)</span>}
+          </label>
+          <select
+            value={formData.sub_category}
+            onChange={(e) => setFormData((prev) => ({ ...prev, sub_category: e.target.value }))}
+            disabled={!subOptions}
+            className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none disabled:bg-gray-50 disabled:text-gray-400"
+          >
+            <option value="">미지정</option>
+            {subOptions?.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
         </div>
 

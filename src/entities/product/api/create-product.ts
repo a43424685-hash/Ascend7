@@ -8,6 +8,7 @@ export type CreateProductInput = {
   slug: string
   description?: string
   category: string
+  sub_category?: string | null
   is_active?: boolean
 }
 
@@ -21,6 +22,7 @@ export async function createProduct(input: CreateProductInput) {
       slug: input.slug,
       description: input.description,
       category: input.category,
+      sub_category: input.sub_category || null,
       is_active: input.is_active ?? true,
     })
     .select()
@@ -36,4 +38,3 @@ export async function createProduct(input: CreateProductInput) {
 
   return data
 }
-

@@ -12,6 +12,7 @@ export type UpdateProductInput = {
   size_chart?: string | null
   size_material_care?: string | null
   category?: string
+  sub_category?: string | null
   is_active?: boolean
 }
 
@@ -38,4 +39,3 @@ export async function updateProduct(input: UpdateProductInput) {
 
   return data
 }
-

@@ -5,6 +5,25 @@ import { useRouter } from 'next/navigation'
 import { createProduct } from '@/entities/product/api/create-product'
 import { Button } from '@/shared/ui/button'
 
+const SUB_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  top: [
+    { value: 'hoodie', label: '후디 (HOODIE)' },
+    { value: 'sweater', label: '스웨터 (SWEATER)' },
+    { value: 'tshirts', label: '티셔츠 (T-SHIRTS)' },
+    { value: 'longsleeve', label: '긴소매 (LONG SLEEVE)' },
+    { value: 'sleeveless', label: '민소매 (SLEEVELESS)' },
+  ],
+  bottom: [
+    { value: 'shorts', label: '반바지 (SHORTS)' },
+    { value: 'pants', label: '팬츠 (PANTS)' },
+  ],
+  accessories: [
+    { value: 'cap', label: '캡 (CAP)' },
+    { value: 'socks', label: '양말 (SOCKS)' },
+    { value: 'bag', label: '가방 (BAG)' },
+  ],
+}
+
 export default function NewProductPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -15,6 +34,7 @@ export default function NewProductPage() {
     slug: '',
     description: '',
     category: 'top',
+    sub_category: '',
     is_active: true,
   })
 
@@ -24,7 +44,10 @@ export default function NewProductPage() {
     setError(null)
 
     try {
-      const product = await createProduct(formData)
+      const product = await createProduct({
+        ...formData,
+        sub_category: formData.sub_category || null,
+      })
       router.push(`/admin/products/${product.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : '상품 생성에 실패했습니다')
@@ -41,6 +64,12 @@ export default function NewProductPage() {
     }))
   }
 
+  const handleCategoryChange = (category: string) => {
+    setFormData((prev) => ({ ...prev, category, sub_category: '' }))
+  }
+
+  const subOptions = SUB_OPTIONS[formData.category] ?? null
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-3xl font-bold mb-8">새 상품 등록</h1>
@@ -53,16 +82,14 @@ export default function NewProductPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-semibold mb-2">
-            상품명 *
-          </label>
+          <label className="block text-sm font-semibold mb-2">상품명 *</label>
           <input
             type="text"
             required
             value={formData.name}
             onChange={(e) => handleNameChange(e.target.value)}
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-            placeholder="예: Training Gloves"
+            placeholder="예: Training Hoodie"
           />
         </div>
 
@@ -76,7 +103,7 @@ export default function NewProductPage() {
               setFormData((prev) => ({ ...prev, slug: e.target.value }))
             }
             className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-            placeholder="예: training-gloves"
+            placeholder="예: training-hoodie"
           />
           <p className="text-sm text-gray-600 mt-1">
             URL에 사용됩니다: /product/{formData.slug || 'slug'}
@@ -84,9 +111,7 @@ export default function NewProductPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-2">
-            간단 설명
-          </label>
+          <label className="block text-sm font-semibold mb-2">간단 설명</label>
           <textarea
             value={formData.description}
             onChange={(e) =>
@@ -98,20 +123,41 @@ export default function NewProductPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold mb-2">카테고리 *</label>
-          <select
-            required
-            value={formData.category}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, category: e.target.value }))
-            }
-            className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
-          >
-            <option value="top">상의</option>
-            <option value="bottom">하의</option>
-            <option value="accessories">액세서리</option>
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-semibold mb-2">카테고리 *</label>
+            <select
+              required
+              value={formData.category}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none"
+            >
+              <option value="outer">아우터 (OUTER)</option>
+              <option value="top">상의 (TOP)</option>
+              <option value="bottom">하의 (BOTTOM)</option>
+              <option value="accessories">액세서리 (ACC)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              세부 카테고리
+              {!subOptions && <span className="text-gray-400 font-normal"> (해당 없음)</span>}
+            </label>
+            <select
+              value={formData.sub_category}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, sub_category: e.target.value }))
+              }
+              disabled={!subOptions}
+              className="w-full px-4 py-2 border-2 border-gray-300 focus:border-black outline-none disabled:bg-gray-50 disabled:text-gray-400"
+            >
+              <option value="">미지정</option>
+              {subOptions?.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
