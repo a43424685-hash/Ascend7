@@ -5,9 +5,73 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
+type ShopChild = { label: string; href: string }
+type ShopNavItem = {
+  label: string
+  href: string
+  children: ShopChild[] | null
+}
+
+const SHOP_NAV: ShopNavItem[] = [
+  {
+    label: 'OUTER',
+    href: '/shop?category=outer',
+    children: null,
+  },
+  {
+    label: 'TOP',
+    href: '/shop?category=top',
+    children: [
+      { label: 'HOODIE', href: '/shop?category=top&sub=hoodie' },
+      { label: 'SWEATER', href: '/shop?category=top&sub=sweater' },
+      { label: 'T-SHIRTS', href: '/shop?category=top&sub=tshirts' },
+      { label: 'LONG SLEEVE', href: '/shop?category=top&sub=longsleeve' },
+      { label: 'SLEEVELESS', href: '/shop?category=top&sub=sleeveless' },
+    ],
+  },
+  {
+    label: 'BOTTOM',
+    href: '/shop?category=bottom',
+    children: [
+      { label: 'SHORTS', href: '/shop?category=bottom&sub=shorts' },
+      { label: 'PANTS', href: '/shop?category=bottom&sub=pants' },
+    ],
+  },
+  {
+    label: 'ACC',
+    href: '/shop?category=accessories',
+    children: [
+      { label: 'CAP', href: '/shop?category=accessories&sub=cap' },
+      { label: 'SOCKS', href: '/shop?category=accessories&sub=socks' },
+      { label: 'BAG', href: '/shop?category=accessories&sub=bag' },
+    ],
+  },
+  {
+    label: 'ALL PRODUCTS',
+    href: '/shop',
+    children: null,
+  },
+]
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
 export function MobileMenuButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [shopOpen, setShopOpen] = useState(false)
+  const [openSubs, setOpenSubs] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     setMounted(true)
@@ -22,14 +86,24 @@ export function MobileMenuButton() {
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
+  const close = () => {
+    setIsOpen(false)
+    setShopOpen(false)
+    setOpenSubs({})
+  }
+
+  const toggleSub = (label: string) => {
+    setOpenSubs((prev) => ({ ...prev, [label]: !prev[label] }))
+  }
+
   const menu = isOpen ? (
     <div className="fixed inset-0 z-[9999]">
-      <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={() => setIsOpen(false)} />
+      <div className="absolute inset-0 bg-black/30 animate-fade-in" onClick={close} />
       <div className="absolute inset-0 bg-white animate-slide-in-left flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100 shrink-0">
           <span className="text-sm font-black tracking-[0.2em]">ASCEND7</span>
-          <button onClick={() => setIsOpen(false)} className="p-1" aria-label="메뉴 닫기">
+          <button onClick={close} className="p-1" aria-label="메뉴 닫기">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -40,48 +114,91 @@ export function MobileMenuButton() {
         <nav className="flex-1 overflow-y-auto px-6 pt-8 pb-8">
           {/* 계정 */}
           <div className="flex items-center gap-5 mb-10">
-            <Link href="/auth/login" onClick={() => setIsOpen(false)} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">LOGIN</Link>
+            <Link href="/auth/login" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">LOGIN</Link>
             <span className="text-gray-200">|</span>
-            <Link href="/account" onClick={() => setIsOpen(false)} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">MY ACCOUNT</Link>
+            <Link href="/account" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">MY ACCOUNT</Link>
           </div>
 
           {/* 메인 메뉴 */}
-          <div className="space-y-5 mb-10">
-            <Link href="/shop" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">SHOP</Link>
-            <Link href="/new-arrivals" onClick={() => setIsOpen(false)} className="block text-[24px] font-black tracking-tight">NEW ARRIVALS</Link>
-            <div>
-              <p className="text-[24px] font-black tracking-tight mb-4">COMMUNITY</p>
-              <div className="space-y-3 pl-1 border-l border-gray-100">
-                <Link href="/community/review" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">REVIEW</Link>
-                <Link href="/community/lookbook" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">LOOK BOOK</Link>
-                <Link href="/community/qna" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">Q&amp;A</Link>
-                <Link href="/community/event" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">EVENT</Link>
-              </div>
-            </div>
-          </div>
+          <div className="space-y-1 mb-10">
 
-          {/* 카테고리 */}
-          <div className="border-t border-gray-100 pt-6 mb-6">
-            <p className="text-[9px] tracking-[0.3em] text-gray-400 uppercase mb-4 font-medium">Categories</p>
-            <div className="space-y-3">
-              <Link href="/shop" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">All Products</Link>
-              <Link href="/shop?category=top" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">Tops</Link>
-              <Link href="/shop?category=bottom" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">Bottoms</Link>
-              <Link href="/shop?category=accessories" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">Accessories</Link>
+            {/* SHOP 아코디언 */}
+            <div>
+              <button
+                onClick={() => setShopOpen((v) => !v)}
+                className="flex items-center justify-between w-full text-[24px] font-black tracking-tight py-2"
+              >
+                SHOP
+                <ChevronIcon open={shopOpen} />
+              </button>
+
+              {shopOpen && (
+                <div className="mt-2 mb-3 pl-1 border-l-2 border-gray-100 space-y-1">
+                  {SHOP_NAV.map((item) => (
+                    <div key={item.label}>
+                      {item.children ? (
+                        <>
+                          <button
+                            onClick={() => toggleSub(item.label)}
+                            className="flex items-center justify-between w-full py-2 pr-2 text-sm font-semibold tracking-[0.1em] text-gray-700 hover:text-black transition-colors"
+                          >
+                            {item.label}
+                            <ChevronIcon open={!!openSubs[item.label]} />
+                          </button>
+                          {openSubs[item.label] && (
+                            <div className="pl-4 space-y-2 pb-2">
+                              {item.children.map((child) => (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  onClick={close}
+                                  className="block text-xs tracking-[0.1em] text-gray-400 hover:text-black transition-colors py-1"
+                                >
+                                  {child.label}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={close}
+                          className="block py-2 text-sm font-semibold tracking-[0.1em] text-gray-700 hover:text-black transition-colors"
+                        >
+                          {item.label}
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link href="/new-arrivals" onClick={close} className="block text-[24px] font-black tracking-tight py-2">NEW ARRIVALS</Link>
+
+            <div>
+              <p className="text-[24px] font-black tracking-tight py-2">COMMUNITY</p>
+              <div className="space-y-3 pl-1 border-l border-gray-100 mb-2">
+                <Link href="/community/review" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">REVIEW</Link>
+                <Link href="/community/lookbook" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">LOOK BOOK</Link>
+                <Link href="/community/qna" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">Q&amp;A</Link>
+                <Link href="/community/event" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">EVENT</Link>
+              </div>
             </div>
           </div>
 
           {/* 하단 링크 */}
           <div className="border-t border-gray-100 pt-6 space-y-3">
-            <Link href="/account/orders" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">주문조회</Link>
-            <Link href="/cart" onClick={() => setIsOpen(false)} className="block text-sm text-gray-500 hover:text-black transition-colors">장바구니</Link>
+            <Link href="/account/orders" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">주문조회</Link>
+            <Link href="/cart" onClick={close} className="block text-sm text-gray-500 hover:text-black transition-colors">장바구니</Link>
           </div>
         </nav>
 
         {/* 하단 바 */}
         <div className="shrink-0 border-t border-gray-100 px-6 py-4 flex items-center gap-4 text-[10px] text-gray-400">
-          <Link href="/terms" onClick={() => setIsOpen(false)}>이용약관</Link>
-          <Link href="/privacy" onClick={() => setIsOpen(false)}>개인정보처리방침</Link>
+          <Link href="/terms" onClick={close}>이용약관</Link>
+          <Link href="/privacy" onClick={close}>개인정보처리방침</Link>
         </div>
       </div>
     </div>
