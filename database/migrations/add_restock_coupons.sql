@@ -1,7 +1,7 @@
 -- 재입고 알림 신청 테이블
 CREATE TABLE IF NOT EXISTS restock_alerts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  product_variant_id UUID NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+  product_variant_id UUID NOT NULL REFERENCES variants(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   notified_at TIMESTAMPTZ,

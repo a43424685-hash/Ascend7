@@ -10,7 +10,7 @@ async function getRestockAlerts() {
       email,
       notified_at,
       created_at,
-      product_variants (
+      variants (
         color,
         size,
         stock,
@@ -62,7 +62,7 @@ export default async function RestockAlertsPage() {
               </tr>
             ) : (
               alerts.map((alert) => {
-                const variant = alert.product_variants as any
+                const variant = alert.variants as any
                 const product = variant?.products as any
                 return (
                   <tr key={alert.id} className="hover:bg-gray-50">
