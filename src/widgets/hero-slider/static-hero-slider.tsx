@@ -75,7 +75,7 @@ export function StaticHeroSlider() {
   }, [current])
 
   return (
-    <div className="relative w-full h-[90vh] min-h-[600px] overflow-hidden bg-black">
+    <div className="relative w-full h-screen min-h-[600px] overflow-hidden bg-black">
       {SLIDES.map((slide, i) => (
         <div
           key={slide.id}
@@ -104,12 +104,17 @@ export function StaticHeroSlider() {
             />
           )}
 
+          {/* 비디오 슬라이드용 어두운 오버레이 */}
+          {slide.isVideo && (
+            <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} />
+          )}
+
           {/* 하단 페이드아웃 */}
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent" />
 
           {/* 콘텐츠 */}
           <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white px-6">
-            <p className="text-[9px] sm:text-[10px] tracking-[0.5em] uppercase text-white/25 mb-10 font-medium select-none">
+            <p className="text-[9px] sm:text-[10px] tracking-[0.5em] uppercase text-white/60 mb-10 font-medium select-none">
               {slide.eyebrow}
             </p>
 
@@ -120,23 +125,23 @@ export function StaticHeroSlider() {
               </h2>
             )}
 
-            <div className="w-8 h-px bg-white/20 mb-7" />
+            <div className="w-8 h-px bg-white/40 mb-7" />
 
-            <p className="text-[13px] sm:text-sm text-white/30 tracking-wide max-w-xs leading-relaxed mb-10">
+            <p className="text-[13px] sm:text-sm text-white/80 tracking-wide max-w-xs leading-relaxed mb-10">
               {slide.body}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
               <Link
                 href={slide.cta.href}
-                className="px-10 py-3.5 border border-white/15 text-[10px] font-semibold tracking-[0.3em] text-white/70 hover:bg-white hover:text-black hover:border-white transition-all duration-300"
+                className="px-10 py-3.5 border border-white/50 text-[10px] font-semibold tracking-[0.3em] text-white hover:bg-white hover:text-black hover:border-white transition-all duration-300"
               >
                 {slide.cta.label}
               </Link>
               {slide.ctaSecondary && (
                 <Link
                   href={slide.ctaSecondary.href}
-                  className="text-[10px] font-medium tracking-[0.25em] text-white/25 hover:text-white/60 transition-colors"
+                  className="text-[10px] font-medium tracking-[0.25em] text-white/60 hover:text-white transition-colors"
                 >
                   {slide.ctaSecondary.label} →
                 </Link>

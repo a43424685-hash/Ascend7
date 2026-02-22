@@ -15,9 +15,9 @@ export async function Header() {
             <Image
               src="/images/logo.png"
               alt=""
-              width={36}
-              height={36}
-              className="h-8 w-8 object-contain"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
               style={{ filter: 'brightness(0)' }}
               priority
             />
