@@ -8,6 +8,8 @@ export interface ProductFilters {
   size?: string
   sortBy?: 'newest' | 'price-asc' | 'price-desc'
   q?: string
+  minPrice?: number
+  maxPrice?: number
 }
 
 /**
@@ -73,6 +75,18 @@ export async function getProductsWithFilters(
       filteredProducts = filteredProducts.filter((product) =>
         product.variants?.some((v) => v.size === filters.size)
       )
+    }
+
+    // 가격 범위 필터
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      filteredProducts = filteredProducts.filter((product) => {
+        const prices = product.variants?.map((v) => v.price) || []
+        if (prices.length === 0) return false
+        const minP = Math.min(...prices)
+        if (filters.minPrice !== undefined && minP < filters.minPrice) return false
+        if (filters.maxPrice !== undefined && minP > filters.maxPrice) return false
+        return true
+      })
     }
 
     // 가격 정렬 (클라이언트 사이드)

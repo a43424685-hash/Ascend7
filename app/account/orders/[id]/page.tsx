@@ -103,18 +103,51 @@ export default async function OrderDetailPage({
 
         {/* 배송 정보 (운송장이 있는 경우) */}
         {order.tracking_number && (
-          <div className="border-2 border-gray-200 p-4">
-            <h2 className="font-bold mb-3">배송 정보</h2>
+          <div className="border-2 border-blue-100 bg-blue-50 p-4">
+            <h2 className="font-bold mb-3 text-blue-900">배송 정보</h2>
             <div className="space-y-2 text-sm">
               {order.carrier && (
                 <p>
-                  <span className="text-gray-500">택배사:</span> {order.carrier}
+                  <span className="text-gray-500">택배사:</span>{' '}
+                  <span className="font-medium">{order.carrier}</span>
                 </p>
               )}
               <p>
-                <span className="text-gray-500">운송장:</span>{' '}
-                {order.tracking_number}
+                <span className="text-gray-500">운송장 번호:</span>{' '}
+                <span className="font-mono font-medium">{order.tracking_number}</span>
               </p>
+              <div className="pt-2 flex flex-wrap gap-2">
+                {/* CJ대한통운 */}
+                <a
+                  href={`https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${order.tracking_number}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                  </svg>
+                  CJ대한통운 배송 조회
+                </a>
+                {/* 롯데택배 */}
+                <a
+                  href={`https://www.lotteglogis.com/open/tracking?invno=${order.tracking_number}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                >
+                  롯데택배 배송 조회
+                </a>
+                {/* 한진택배 */}
+                <a
+                  href={`https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mCode=MN038&wblnumText2=${order.tracking_number}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-700 text-white text-xs font-medium rounded hover:bg-gray-800 transition-colors"
+                >
+                  한진택배 배송 조회
+                </a>
+              </div>
             </div>
           </div>
         )}

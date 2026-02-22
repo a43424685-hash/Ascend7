@@ -33,6 +33,8 @@ export default async function ShopPage({
     size?: string
     sort?: 'newest' | 'price-asc' | 'price-desc'
     q?: string
+    minPrice?: string
+    maxPrice?: string
   }
 }) {
   const filters = {
@@ -42,6 +44,8 @@ export default async function ShopPage({
     size: searchParams.size,
     sortBy: searchParams.sort || 'newest',
     q: searchParams.q,
+    minPrice: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
+    maxPrice: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
   }
 
   const products = await getProductsWithFilters(filters)

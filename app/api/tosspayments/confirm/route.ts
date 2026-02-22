@@ -3,6 +3,7 @@ import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { confirmTossPayment } from '@/shared/lib/tosspayments'
 import { sendOrderConfirmation, type EmailOrderData } from '@/shared/lib/email'
 import { formatPrice } from '@/shared/lib/utils'
+import { earnPointsForOrder } from '@/features/points/actions/earn-points'
 
 export const runtime = 'nodejs'
 
@@ -107,7 +108,24 @@ export async function POST(req: NextRequest) {
       console.error('[TOSS_CONFIRM] MANUAL REVIEW REQUIRED - stock issue', { orderId })
     }
 
-    // 4. 주문 확인 이메일 발송 (비동기, 실패해도 결제는 완료)
+    // 4. 포인트 적립 (비동기, 실패해도 결제는 완료)
+    if (!hasStockError) {
+      const { data: orderForPoints } = await supabase
+        .from('orders')
+        .select('user_id, total')
+        .eq('id', orderId)
+        .single()
+
+      if (orderForPoints?.user_id) {
+        try {
+          await earnPointsForOrder(orderForPoints.user_id, orderId, orderForPoints.total)
+        } catch (pointErr: any) {
+          console.error('[TOSS_CONFIRM] Point earn failed (non-blocking):', pointErr.message)
+        }
+      }
+    }
+
+    // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제는 완료)
     if (order.customer_email) {
       try {
         const { data: emailItems } = await supabase

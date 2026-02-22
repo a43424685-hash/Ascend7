@@ -3,9 +3,12 @@ import Image from 'next/image'
 import { getFeaturedProducts } from '@/entities/product/api/get-featured-products'
 import { getActiveBanners } from '@/entities/banner/api/get-banners'
 import { getHomeSections } from '@/entities/cms/api/get-home-sections'
+import { getActiveFlashSales } from '@/entities/flash-sale/api/get-flash-sales'
 import { ProductGrid } from '@/widgets/product-grid'
 import { HeroSlider } from '@/widgets/hero-slider'
 import { StaticHeroSlider } from '@/widgets/hero-slider/static-hero-slider'
+import { FlashSaleSection } from '@/widgets/flash-sale/flash-sale-section'
+import { InstagramFeedSection } from '@/widgets/instagram-feed'
 import { ScrollAnimate } from '@/shared/ui/scroll-animate'
 import { EditableSection } from '@/features/admin-edit/editable-section'
 import type { TextStyle } from '@/entities/cms/types/home-sections'
@@ -29,10 +32,13 @@ export default async function HomePage() {
 
   const sections = await getHomeSections()
 
+  let flashSales: Awaited<ReturnType<typeof getActiveFlashSales>> = []
+
   try {
-    ;[featuredProducts, banners] = await Promise.all([
+    ;[featuredProducts, banners, flashSales] = await Promise.all([
       getFeaturedProducts(8),
       getActiveBanners(),
+      getActiveFlashSales(),
     ])
   } catch {
     // silently fail
@@ -87,6 +93,11 @@ export default async function HomePage() {
           </div>
         </section>
       </EditableSection>
+
+      {/* ─── Flash Sale ─── */}
+      {flashSales.length > 0 && (
+        <FlashSaleSection sales={flashSales} />
+      )}
 
       {/* ─── Featured Products ─── */}
       {featuredProducts.length > 0 && (
@@ -201,6 +212,9 @@ export default async function HomePage() {
           </div>
         </section>
       </EditableSection>
+
+      {/* ─── Instagram Feed ─── */}
+      <InstagramFeedSection />
     </div>
   )
 }

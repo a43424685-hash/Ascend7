@@ -80,6 +80,27 @@ export default function AdminLayout({
                 >
                   쿠폰
                 </Link>
+                <Link
+                  href="/admin/flash-sales"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  타임딜
+                </Link>
+                <Link
+                  href="/admin/instagram"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  인스타
+                </Link>
+                <Link
+                  href="/admin/bundles"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  번들
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-4">
@@ -108,6 +129,9 @@ export default function AdminLayout({
         <Link href="/admin/events" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">이벤트</Link>
         <Link href="/admin/shipping" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">배송</Link>
         <Link href="/admin/coupons" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">쿠폰</Link>
+        <Link href="/admin/flash-sales" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">타임딜</Link>
+        <Link href="/admin/instagram" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">인스타</Link>
+        <Link href="/admin/bundles" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">번들</Link>
       </div>
 
       {/* Main Content */}
