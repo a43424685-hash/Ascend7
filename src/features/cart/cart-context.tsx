@@ -21,9 +21,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartStorageItem[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // localStorage에서 로드
+  // sessionStorage에서 로드 (탭/브라우저 닫으면 자동 삭제)
   useEffect(() => {
-    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    const stored = sessionStorage.getItem(CART_STORAGE_KEY)
     if (stored) {
       try {
         const parsed = JSON.parse(stored)
@@ -44,10 +44,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true)
   }, [])
 
-  // localStorage에 저장
+  // sessionStorage에 저장
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
+      sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems))
     }
   }, [cartItems, isLoaded])
 
