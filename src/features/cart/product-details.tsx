@@ -6,7 +6,8 @@ import type { ProductWithDetails } from '@/shared/types/database'
 import { formatPrice } from '@/shared/lib/utils'
 import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
-import { RestockAlertForm } from '@/features/restock/restock-alert-form'
+
+const KAKAO_CHANNEL_URL = process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL || ''
 
 const PURCHASE_POLICIES = [
   { icon: '🚚', text: '50,000원 이상 무료배송' },
@@ -294,12 +295,36 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             </div>
           )}
 
-          {/* 재입고 알림 폼 */}
+          {/* 재입고 알림 - 카카오 채널 */}
           {restockVariant && (
-            <RestockAlertForm
-              variantId={restockVariant.id}
-              variantLabel={`${restockVariant.color} / ${restockVariant.size}`}
-            />
+            <div className="p-4 border border-dashed border-gray-200 space-y-3">
+              <p className="text-xs text-gray-500">
+                <span className="font-medium text-gray-700">
+                  {restockVariant.color} / {restockVariant.size}
+                </span>{' '}
+                는 현재 품절입니다.
+              </p>
+              <p className="text-xs text-gray-400">
+                카카오 채널을 추가하면 재입고 시 알림을 받을 수 있습니다.
+              </p>
+              {KAKAO_CHANNEL_URL ? (
+                <a
+                  href={KAKAO_CHANNEL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#FEE500] text-[#3A1D1D] text-sm font-semibold hover:bg-[#f5dc00] transition-colors"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.5 5.1 3.8 6.6L4.9 21l4.3-2.8c.9.2 1.8.3 2.8.3 5.523 0 10-3.477 10-7.8C22 6.477 17.523 3 12 3z" />
+                  </svg>
+                  카카오 채널 추가하고 알림 받기
+                </a>
+              ) : (
+                <p className="text-xs text-center text-gray-400 py-1">
+                  카카오 채널 준비 중입니다.
+                </p>
+              )}
+            </div>
           )}
 
           {/* 수량 */}
