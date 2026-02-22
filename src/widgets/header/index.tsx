@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { CartButton } from '@/features/cart/cart-button'
 import { AuthButton } from '@/features/auth/auth-button'
 import { MobileMenuButton, SearchButton } from './mobile-menu'
@@ -11,15 +10,8 @@ export async function Header() {
       <div className="container mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
-          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity">
-            <Image
-              src="/images/logo2.png"
-              alt="ASCEND7"
-              width={120}
-              height={96}
-              className="h-9 w-auto object-contain"
-              priority
-            />
+          <Link href="/" className="flex items-center shrink-0 hover:opacity-70 transition-opacity">
+            <span className="text-sm font-black tracking-[0.25em]">ASCEND7</span>
           </Link>
 
           {/* 데스크탑 네비게이션 - DesktopNav (SHOP 드롭다운 포함) */}
