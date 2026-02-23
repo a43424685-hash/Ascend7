@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 const DISMISS_KEY = 'ascend7_ann_v1'
 
-const DEFAULT_SLIDES = [
+export const DEFAULT_SLIDES = [
   { id: 'd1', text_ko: '🎁 신규 회원가입 시 3,000P 즉시 지급', link_url: '/auth/login' },
   { id: 'd2', text_ko: '🚚 5만원 이상 구매 시 무료배송', link_url: '/shop' },
   { id: 'd3', text_ko: '⭐ 포토리뷰 2,000P · 텍스트리뷰 1,000P 적립', link_url: '/community/review' },

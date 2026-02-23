@@ -1,6 +1,6 @@
 import { getActiveAnnouncements } from '@/entities/cms/api/get-announcement'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
-import { SlidingAnnouncementBar } from './index'
+import { SlidingAnnouncementBar, DEFAULT_SLIDES } from './index'
 
 export async function AnnouncementBarServer() {
   const supabase = createAdminClient()
@@ -43,8 +43,9 @@ export async function AnnouncementBarServer() {
       }
     })
 
-  // 이벤트 슬라이드를 맨 앞에 배치
-  const allSlides = [...eventSlides, ...announcements]
+  // 이벤트 슬라이드를 맨 앞에, DB 공지가 없으면 기본 슬라이드 사용
+  const baseSlides = announcements.length > 0 ? announcements : DEFAULT_SLIDES
+  const allSlides = [...eventSlides, ...baseSlides]
 
   return <SlidingAnnouncementBar slides={allSlides} />
 }
