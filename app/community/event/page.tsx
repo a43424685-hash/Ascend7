@@ -80,9 +80,10 @@ export default async function EventPage() {
                       </div>
 
                       {event.content && (
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap mb-4">
-                          {event.content}
-                        </p>
+                        <div
+                          className="text-sm text-gray-600 leading-relaxed mb-4 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: event.content }}
+                        />
                       )}
 
                       {/* 쿠폰 코드 */}

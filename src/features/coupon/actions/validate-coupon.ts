@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '@/shared/lib/supabase/admin'
+import { getSupabaseClient } from '@/shared/api/supabaseClient'
 
 export interface CouponValidationResult {
   valid: boolean
@@ -18,48 +19,110 @@ export async function validateCoupon(
     return { valid: false, error: '쿠폰 코드를 입력해주세요.' }
   }
 
+  const normalizedCode = code.trim().toUpperCase()
   const adminSupabase = createAdminClient()
-  const { data: coupon, error } = await adminSupabase
+
+  // 1. 기존 coupons 테이블에서 조회
+  const { data: coupon } = await adminSupabase
     .from('coupons')
     .select('*')
-    .eq('code', code.trim().toUpperCase())
+    .eq('code', normalizedCode)
     .eq('is_active', true)
     .single()
 
-  if (error || !coupon) {
+  if (coupon) {
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      return { valid: false, error: '만료된 쿠폰입니다.' }
+    }
+
+    if (coupon.min_order_amount && subtotal < coupon.min_order_amount) {
+      return {
+        valid: false,
+        error: `${Number(coupon.min_order_amount).toLocaleString()}원 이상 주문 시 사용 가능합니다.`,
+      }
+    }
+
+    if (coupon.usage_limit !== null && coupon.usage_count >= coupon.usage_limit) {
+      return { valid: false, error: '사용 가능 횟수를 초과한 쿠폰입니다.' }
+    }
+
+    let discountAmount = 0
+    if (coupon.type === 'percentage') {
+      discountAmount = Math.floor(subtotal * (coupon.value / 100))
+      if (coupon.max_discount_amount) {
+        discountAmount = Math.min(discountAmount, Number(coupon.max_discount_amount))
+      }
+    } else {
+      discountAmount = Number(coupon.value)
+    }
+    discountAmount = Math.min(discountAmount, subtotal)
+
+    return {
+      valid: true,
+      couponId: coupon.id,
+      couponCode: coupon.code,
+      discountAmount,
+    }
+  }
+
+  // 2. events 테이블에서 이벤트 쿠폰 조회
+  const now = new Date().toISOString()
+  const { data: event } = await adminSupabase
+    .from('events')
+    .select('*')
+    .eq('coupon_code', normalizedCode)
+    .eq('is_active', true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .single()
+
+  if (!event) {
     return { valid: false, error: '유효하지 않은 쿠폰 코드입니다.' }
   }
 
-  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-    return { valid: false, error: '만료된 쿠폰입니다.' }
-  }
-
-  if (coupon.min_order_amount && subtotal < coupon.min_order_amount) {
+  // 최소 주문금액 체크
+  if (event.min_order_amount > 0 && subtotal < event.min_order_amount) {
     return {
       valid: false,
-      error: `${Number(coupon.min_order_amount).toLocaleString()}원 이상 주문 시 사용 가능합니다.`,
+      error: `${Number(event.min_order_amount).toLocaleString()}원 이상 주문 시 사용 가능합니다.`,
     }
   }
 
-  if (coupon.usage_limit !== null && coupon.usage_count >= coupon.usage_limit) {
-    return { valid: false, error: '사용 가능 횟수를 초과한 쿠폰입니다.' }
+  // 1인 1회 사용 제한 체크
+  if (event.single_use) {
+    try {
+      const supabase = await getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: usage } = await adminSupabase
+          .from('event_coupon_usages')
+          .select('id')
+          .eq('event_id', event.id)
+          .eq('user_id', user.id)
+          .single()
+
+        if (usage) {
+          return { valid: false, error: '이미 사용한 쿠폰입니다.' }
+        }
+      }
+    } catch {
+      // 유저 조회 실패 시 통과 (비회원 허용)
+    }
   }
 
+  // 할인 계산
   let discountAmount = 0
-  if (coupon.type === 'percentage') {
-    discountAmount = Math.floor(subtotal * (coupon.value / 100))
-    if (coupon.max_discount_amount) {
-      discountAmount = Math.min(discountAmount, Number(coupon.max_discount_amount))
-    }
+  if (event.discount_type === 'percent') {
+    discountAmount = Math.floor(subtotal * (event.discount_value / 100))
   } else {
-    discountAmount = Number(coupon.value)
+    discountAmount = Number(event.discount_value)
   }
   discountAmount = Math.min(discountAmount, subtotal)
 
   return {
     valid: true,
-    couponId: coupon.id,
-    couponCode: coupon.code,
+    couponId: event.id,
+    couponCode: normalizedCode,
     discountAmount,
   }
 }

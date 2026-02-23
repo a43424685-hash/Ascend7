@@ -15,6 +15,38 @@ function formatDate(str: string) {
   return str.slice(0, 10)
 }
 
+type DiscountType = 'percent' | 'amount'
+
+interface EventFormState {
+  title: string
+  content: string
+  link_url: string
+  coupon_code: string
+  discount_type: DiscountType
+  discount_value: string
+  min_order_amount: string
+  single_use: boolean
+  sort_order: number
+  starts_at: string
+  ends_at: string
+}
+
+function defaultForm(sortOrder = 0): EventFormState {
+  return {
+    title: '',
+    content: '',
+    link_url: '',
+    coupon_code: '',
+    discount_type: 'percent',
+    discount_value: '',
+    min_order_amount: '',
+    single_use: false,
+    sort_order: sortOrder,
+    starts_at: '',
+    ends_at: '',
+  }
+}
+
 export function EventManager({ items }: EventManagerProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -23,16 +55,7 @@ export function EventManager({ items }: EventManagerProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    link_url: '',
-    coupon_code: '',
-    sort_order: items.length,
-    starts_at: '',
-    ends_at: '',
-  })
+  const [form, setForm] = useState<EventFormState>(defaultForm(items.length))
 
   const run = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
     setLoading(true)
@@ -57,6 +80,10 @@ export function EventManager({ items }: EventManagerProps) {
     formData.append('content', form.content)
     formData.append('link_url', form.link_url)
     formData.append('coupon_code', form.coupon_code)
+    formData.append('discount_type', form.discount_type)
+    formData.append('discount_value', form.discount_value)
+    formData.append('min_order_amount', form.min_order_amount)
+    formData.append('single_use', String(form.single_use))
     formData.append('sort_order', String(form.sort_order))
     formData.append('starts_at', form.starts_at)
     formData.append('ends_at', form.ends_at)
@@ -64,7 +91,7 @@ export function EventManager({ items }: EventManagerProps) {
     await run(() => createEvent(formData))
     setIsAdding(false)
     setPreviewUrl(null)
-    setForm({ title: '', content: '', link_url: '', coupon_code: '', sort_order: items.length + 1, starts_at: '', ends_at: '' })
+    setForm(defaultForm(items.length + 1))
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -113,18 +140,25 @@ export function EventManager({ items }: EventManagerProps) {
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-sm">{item.title}</p>
                         {item.content && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{item.content}</p>
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                            {item.content.replace(/<[^>]+>/g, ' ').trim()}
+                          </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {item.is_active ? '활성' : '비활성'}
-                        </span>
-                      </div>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {item.is_active ? '활성' : '비활성'}
+                      </span>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-gray-400 mt-2 mb-3">
                       {item.coupon_code && (
                         <span className="bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded font-mono font-medium">{item.coupon_code}</span>
+                      )}
+                      {item.coupon_code && item.discount_value > 0 && (
+                        <span className="bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">
+                          {item.discount_type === 'percent' ? `${item.discount_value}% 할인` : `${Number(item.discount_value).toLocaleString()}원 할인`}
+                          {item.min_order_amount > 0 && ` (${Number(item.min_order_amount).toLocaleString()}원↑)`}
+                          {item.single_use && ' · 1회'}
+                        </span>
                       )}
                       {item.link_url && <span>링크: {item.link_url}</span>}
                       {(item.starts_at || item.ends_at) && (
@@ -218,6 +252,65 @@ export function EventManager({ items }: EventManagerProps) {
                 className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono focus:outline-none focus:border-black"
               />
             </div>
+          </div>
+
+          {/* 쿠폰 코드 입력 시 할인 설정 */}
+          {form.coupon_code && (
+            <div className="border border-dashed border-amber-200 bg-amber-50 rounded p-3 space-y-3">
+              <p className="text-xs font-semibold text-amber-700">할인 쿠폰 설정</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1">할인 타입</label>
+                  <select
+                    value={form.discount_type}
+                    onChange={(e) => setForm(p => ({ ...p, discount_type: e.target.value as DiscountType }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                  >
+                    <option value="percent">퍼센트 할인 (%)</option>
+                    <option value="amount">금액 할인 (원)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">
+                    할인 {form.discount_type === 'percent' ? '율 (%)' : '금액 (원)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={form.discount_value}
+                    onChange={(e) => setForm(p => ({ ...p, discount_value: e.target.value }))}
+                    placeholder={form.discount_type === 'percent' ? '예: 5' : '예: 3000'}
+                    min="0"
+                    max={form.discount_type === 'percent' ? '100' : undefined}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1">최소 주문금액 (0=제한없음)</label>
+                  <input
+                    type="number"
+                    value={form.min_order_amount}
+                    onChange={(e) => setForm(p => ({ ...p, min_order_amount: e.target.value }))}
+                    placeholder="예: 30000"
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black"
+                  />
+                </div>
+                <div className="flex items-center">
+                  <label className="flex items-center gap-2 cursor-pointer mt-4">
+                    <input
+                      type="checkbox"
+                      checked={form.single_use}
+                      onChange={(e) => setForm(p => ({ ...p, single_use: e.target.checked }))}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-xs font-medium">1인 1회 사용 제한</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium mb-1">시작일</label>
               <input
@@ -289,6 +382,10 @@ function EventEditForm({
     content: item.content || '',
     link_url: item.link_url || '',
     coupon_code: item.coupon_code || '',
+    discount_type: (item.discount_type || 'percent') as 'percent' | 'amount',
+    discount_value: String(item.discount_value ?? 0),
+    min_order_amount: String(item.min_order_amount ?? 0),
+    single_use: item.single_use || false,
     sort_order: item.sort_order,
     starts_at: item.starts_at?.slice(0, 16) || '',
     ends_at: item.ends_at?.slice(0, 16) || '',
@@ -330,6 +427,59 @@ function EventEditForm({
           <input type="number" value={form.sort_order} onChange={(e) => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm" />
         </div>
       </div>
+
+      {form.coupon_code && (
+        <div className="border border-dashed border-amber-200 bg-amber-50 rounded p-3 space-y-2">
+          <p className="text-xs font-semibold text-amber-700">할인 쿠폰 설정</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-medium mb-1">할인 타입</label>
+              <select
+                value={form.discount_type}
+                onChange={(e) => setForm(p => ({ ...p, discount_type: e.target.value as 'percent' | 'amount' }))}
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white"
+              >
+                <option value="percent">퍼센트 (%)</option>
+                <option value="amount">금액 (원)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                할인 {form.discount_type === 'percent' ? '율 (%)' : '금액 (원)'}
+              </label>
+              <input
+                type="number"
+                value={form.discount_value}
+                onChange={(e) => setForm(p => ({ ...p, discount_value: e.target.value }))}
+                min="0"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">최소 주문금액 (0=제한없음)</label>
+              <input
+                type="number"
+                value={form.min_order_amount}
+                onChange={(e) => setForm(p => ({ ...p, min_order_amount: e.target.value }))}
+                min="0"
+                className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+              />
+            </div>
+            <div className="flex items-center">
+              <label className="flex items-center gap-2 cursor-pointer mt-4">
+                <input
+                  type="checkbox"
+                  checked={form.single_use}
+                  onChange={(e) => setForm(p => ({ ...p, single_use: e.target.checked }))}
+                  className="w-4 h-4"
+                />
+                <span className="text-xs font-medium">1인 1회 제한</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-2 pt-1">
         <button
           disabled={loading}
@@ -337,7 +487,11 @@ function EventEditForm({
             title: form.title,
             content: form.content || null,
             link_url: form.link_url || null,
-            coupon_code: form.coupon_code || null,
+            coupon_code: form.coupon_code.toUpperCase() || null,
+            discount_type: form.coupon_code ? form.discount_type : null,
+            discount_value: parseFloat(form.discount_value) || 0,
+            min_order_amount: parseFloat(form.min_order_amount) || 0,
+            single_use: form.single_use,
             sort_order: form.sort_order,
             starts_at: form.starts_at || null,
             ends_at: form.ends_at || null,

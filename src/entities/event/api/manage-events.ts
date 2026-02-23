@@ -44,12 +44,17 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
       imageUrl = result.url
     }
 
+    const couponCode = (formData.get('coupon_code') as string || '').trim().toUpperCase() || null
     const { error } = await supabase.from('events').insert({
       title,
       content: (formData.get('content') as string || '').trim() || null,
       image_url: imageUrl,
       link_url: (formData.get('link_url') as string || '').trim() || null,
-      coupon_code: (formData.get('coupon_code') as string || '').trim() || null,
+      coupon_code: couponCode,
+      discount_type: couponCode ? ((formData.get('discount_type') as string) || 'percent') : null,
+      discount_value: couponCode ? (parseFloat(formData.get('discount_value') as string) || 0) : 0,
+      min_order_amount: parseFloat(formData.get('min_order_amount') as string) || 0,
+      single_use: formData.get('single_use') === 'true',
       sort_order: parseInt(formData.get('sort_order') as string) || 0,
       starts_at: (formData.get('starts_at') as string) || null,
       ends_at: (formData.get('ends_at') as string) || null,
@@ -68,7 +73,7 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
 
 export async function updateEvent(
   id: string,
-  data: Partial<Pick<EventItem, 'title' | 'content' | 'link_url' | 'coupon_code' | 'sort_order' | 'is_active' | 'starts_at' | 'ends_at'>>
+  data: Partial<Pick<EventItem, 'title' | 'content' | 'link_url' | 'coupon_code' | 'discount_type' | 'discount_value' | 'min_order_amount' | 'single_use' | 'sort_order' | 'is_active' | 'starts_at' | 'ends_at'>>
 ): Promise<ActionResult> {
   try {
     await requireAdmin()

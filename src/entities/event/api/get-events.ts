@@ -7,6 +7,10 @@ export interface EventItem {
   image_url: string | null
   link_url: string | null
   coupon_code: string | null
+  discount_type: 'percent' | 'amount' | null
+  discount_value: number
+  min_order_amount: number
+  single_use: boolean
   is_active: boolean
   starts_at: string | null
   ends_at: string | null

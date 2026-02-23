@@ -125,7 +125,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제는 완료)
+    // 5. 이벤트 쿠폰 사용 기록 저장 (비동기, 실패해도 결제는 완료)
+    try {
+      const { data: orderForCoupon } = await supabase
+        .from('orders')
+        .select('user_id, coupon_code')
+        .eq('id', orderId)
+        .single()
+
+      if (orderForCoupon?.user_id && orderForCoupon?.coupon_code) {
+        const { data: eventCoupon } = await supabase
+          .from('events')
+          .select('id')
+          .eq('coupon_code', orderForCoupon.coupon_code)
+          .eq('is_active', true)
+          .single()
+
+        if (eventCoupon) {
+          await supabase
+            .from('event_coupon_usages')
+            .upsert(
+              { event_id: eventCoupon.id, user_id: orderForCoupon.user_id, order_id: orderId },
+              { onConflict: 'event_id,user_id', ignoreDuplicates: true }
+            )
+        }
+      }
+    } catch (couponErr: any) {
+      console.error('[TOSS_CONFIRM] Event coupon usage record failed (non-blocking):', couponErr.message)
+    }
+
+    // 6. 주문 확인 이메일 발송 (비동기, 실패해도 결제는 완료)
     if (order.customer_email) {
       try {
         const { data: emailItems } = await supabase
