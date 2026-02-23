@@ -160,6 +160,22 @@ export default async function ReviewPage({
                     {review.content}
                   </p>
 
+                  {/* 리뷰 이미지 */}
+                  {(review as any).image_urls && (review as any).image_urls.length > 0 && (
+                    <div className="flex gap-1.5 mt-2.5 flex-wrap">
+                      {(review as any).image_urls.slice(0, 3).map((url: string, i: number) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="" className="w-16 h-16 object-cover border border-gray-100 hover:opacity-80 transition-opacity" />
+                        </a>
+                      ))}
+                      {(review as any).image_urls.length > 3 && (
+                        <div className="w-16 h-16 bg-gray-100 border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">
+                          +{(review as any).image_urls.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* 체형 정보 */}
                   {bodyInfo && (
                     <p className="text-[10px] text-gray-400 mt-2">{bodyInfo}</p>

@@ -142,6 +142,22 @@ export async function ProductReviews({ productId, productSlug }: ProductReviewsP
                   <p className="text-[12px] text-gray-500 leading-relaxed line-clamp-3">
                     {review.content}
                   </p>
+
+                  {/* 리뷰 이미지 */}
+                  {review.image_urls && review.image_urls.length > 0 && (
+                    <div className="flex gap-1.5 mt-2.5">
+                      {review.image_urls.slice(0, 4).map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="" className="w-14 h-14 object-cover border border-gray-100 hover:opacity-80 transition-opacity" />
+                        </a>
+                      ))}
+                      {review.image_urls.length > 4 && (
+                        <div className="w-14 h-14 bg-gray-100 border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">
+                          +{review.image_urls.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}

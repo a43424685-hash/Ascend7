@@ -12,6 +12,7 @@ export interface ReviewWithDetails {
   is_active: boolean
   created_at: string
   admin_author_name: string | null
+  image_urls: string[] | null
   height: number | null
   weight: number | null
   body_type: string | null
