@@ -3,10 +3,9 @@ import { ProductCard } from './product-card'
 
 interface ProductGridProps {
   products: ProductWithImages[]
-  wishlistIds?: string[]
 }
 
-export function ProductGrid({ products, wishlistIds }: ProductGridProps) {
+export function ProductGrid({ products }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="text-center py-32 px-4">
@@ -27,7 +26,6 @@ export function ProductGrid({ products, wishlistIds }: ProductGridProps) {
         <ProductCard
           key={product.id}
           product={product}
-          initialWishlisted={wishlistIds?.includes(product.id)}
         />
       ))}
     </div>

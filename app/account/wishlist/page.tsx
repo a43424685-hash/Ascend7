@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/server'
 import { ProductGrid } from '@/widgets/product-grid'
-import { getWishlistProductIds } from '@/features/wishlist/actions/toggle-wishlist'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,8 +39,6 @@ export default async function WishlistPage() {
     })
     .filter(Boolean)
 
-  const wishlistIds = products.map((p: any) => p.id)
-
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex items-center justify-between mb-8">
@@ -65,7 +62,7 @@ export default async function WishlistPage() {
           </Link>
         </div>
       ) : (
-        <ProductGrid products={products as any} wishlistIds={wishlistIds} />
+        <ProductGrid products={products as any} />
       )}
     </div>
   )
