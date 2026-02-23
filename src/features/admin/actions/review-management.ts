@@ -11,6 +11,7 @@ export async function createReviewByAdmin(data: {
   rating: number
   title?: string
   content: string
+  image_urls?: string[]
   height?: number | null
   weight?: number | null
   body_type?: string | null
@@ -30,6 +31,7 @@ export async function createReviewByAdmin(data: {
       title: data.title?.trim() || null,
       content: data.content.trim(),
       admin_author_name: data.admin_author_name.trim(),
+      image_urls: data.image_urls ?? [],
       height: data.height || null,
       weight: data.weight || null,
       body_type: data.body_type || null,

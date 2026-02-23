@@ -8,6 +8,7 @@ export type OrderDetailWithItems = Order & {
       color: string
       size: string
       product: {
+        id: string
         name: string
         slug: string
       }
@@ -36,7 +37,7 @@ export async function getOrderById(
           sku,
           color,
           size,
-          product:products(name, slug)
+          product:products(id, name, slug)
         )
       )
     `

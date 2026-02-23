@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toggleReviewActive, deleteReview, createReviewByAdmin } from '@/features/admin/actions/review-management'
 
@@ -12,6 +12,7 @@ interface ReviewItem {
   is_active: boolean
   created_at: string
   admin_author_name: string | null
+  image_urls?: string[] | null
   author: { display_name: string | null } | null
   product: { name: string; slug: string } | null
 }
@@ -52,7 +53,7 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
           className="focus:outline-none"
         >
           <svg className={`w-6 h-6 transition-colors ${s <= (hover || value) ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         </button>
       ))}
@@ -73,6 +74,10 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
+  const [images, setImages] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     admin_author_name: '',
@@ -99,21 +104,69 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
     }
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    const remaining = 5 - images.length
+    const selected = files.slice(0, remaining)
+    setImages(prev => [...prev, ...selected])
+    setPreviews(prev => [...prev, ...selected.map(f => URL.createObjectURL(f))])
+  }
+
+  const removeImage = (idx: number) => {
+    setImages(prev => prev.filter((_, i) => i !== idx))
+    setPreviews(prev => {
+      URL.revokeObjectURL(prev[idx])
+      return prev.filter((_, i) => i !== idx)
+    })
+  }
+
+  const resetForm = () => {
+    setIsAdding(false)
+    setImages([])
+    setPreviews([])
+    setForm({ admin_author_name: '', product_id: '', rating: 0, title: '', content: '', height: '', weight: '', body_type: '' })
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    await run(() => createReviewByAdmin({
-      admin_author_name: form.admin_author_name,
-      product_id: form.product_id,
-      rating: form.rating,
-      title: form.title || undefined,
-      content: form.content,
-      height: form.height ? parseInt(form.height) : null,
-      weight: form.weight ? parseInt(form.weight) : null,
-      body_type: form.body_type || null,
-    }))
-    if (!error) {
-      setIsAdding(false)
-      setForm({ admin_author_name: '', product_id: '', rating: 0, title: '', content: '', height: '', weight: '', body_type: '' })
+    setLoading(true)
+    setError(null)
+    try {
+      let imageUrls: string[] = []
+      if (images.length > 0) {
+        setUploading(true)
+        const formData = new FormData()
+        images.forEach(f => formData.append('files', f))
+        const res = await fetch('/api/upload/review-image', { method: 'POST', body: formData })
+        const data = await res.json()
+        if (!res.ok) { setError(data.error || '이미지 업로드 실패'); return }
+        imageUrls = data.urls
+        setUploading(false)
+      }
+
+      const result = await createReviewByAdmin({
+        admin_author_name: form.admin_author_name,
+        product_id: form.product_id,
+        rating: form.rating,
+        title: form.title || undefined,
+        content: form.content,
+        image_urls: imageUrls,
+        height: form.height ? parseInt(form.height) : null,
+        weight: form.weight ? parseInt(form.weight) : null,
+        body_type: form.body_type || null,
+      })
+
+      if (result.success) {
+        resetForm()
+        router.refresh()
+      } else {
+        setError(result.error || '오류가 발생했습니다.')
+      }
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+      setUploading(false)
     }
   }
 
@@ -162,6 +215,43 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
           <div>
             <label className="block text-xs font-medium mb-1">별점 *</label>
             <StarPicker value={form.rating} onChange={(v) => setForm(p => ({ ...p, rating: v }))} />
+          </div>
+
+          {/* 이미지 첨부 */}
+          <div>
+            <label className="block text-xs font-medium mb-2">사진 첨부 <span className="text-gray-400 font-normal">(최대 5장)</span></label>
+            <div className="flex flex-wrap gap-2">
+              {previews.map((src, i) => (
+                <div key={i} className="relative w-16 h-16 shrink-0">
+                  <img src={src} alt="" className="w-full h-full object-cover border border-gray-200 rounded" />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center"
+                  >×</button>
+                </div>
+              ))}
+              {images.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-gray-500 rounded text-[10px] gap-0.5"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  추가
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={handleImageSelect}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
@@ -230,11 +320,11 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
               disabled={loading || form.rating === 0}
               className="px-5 py-2 bg-black text-white text-xs font-medium rounded hover:bg-gray-800 disabled:opacity-50"
             >
-              {loading ? '등록 중...' : '리뷰 등록'}
+              {uploading ? '이미지 업로드 중...' : loading ? '등록 중...' : '리뷰 등록'}
             </button>
             <button
               type="button"
-              onClick={() => setIsAdding(false)}
+              onClick={resetForm}
               className="px-5 py-2 border border-gray-300 text-xs rounded hover:border-black"
             >
               취소
@@ -259,6 +349,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
         <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
           {items.map((item) => {
             const displayName = item.admin_author_name || item.author?.display_name || '회원'
+            const hasImages = item.image_urls && item.image_urls.length > 0
             return (
               <div key={item.id} className={`px-4 py-3 ${!item.is_active ? 'opacity-60 bg-gray-50' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
@@ -271,6 +362,9 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
                       {item.admin_author_name && (
                         <span className="text-[10px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded">직접작성</span>
                       )}
+                      {hasImages && (
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded">📷 포토</span>
+                      )}
                       {!item.is_active && (
                         <span className="text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded">숨김</span>
                       )}
@@ -279,6 +373,18 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
                       <p className="text-sm font-medium text-gray-800 mb-0.5">{item.title}</p>
                     )}
                     <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{item.content}</p>
+                    {hasImages && (
+                      <div className="flex gap-1 mt-1.5">
+                        {item.image_urls!.slice(0, 4).map((url, i) => (
+                          <img key={i} src={url} alt="" className="w-10 h-10 object-cover rounded border border-gray-100" />
+                        ))}
+                        {item.image_urls!.length > 4 && (
+                          <div className="w-10 h-10 bg-gray-100 rounded border border-gray-100 flex items-center justify-center text-[10px] text-gray-500">
+                            +{item.image_urls!.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <p className="text-[11px] text-gray-400 mt-1">
                       {displayName} · {formatDate(item.created_at)}
                     </p>

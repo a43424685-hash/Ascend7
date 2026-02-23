@@ -20,7 +20,6 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const navItems = [
     { href: '/account', label: '내 정보', icon: '👤' },
     { href: '/account/orders', label: '주문 내역', icon: '📦' },
-    { href: '/account/wishlist', label: '찜한 상품', icon: '♥' },
     { href: '/account/points', label: '적립금', icon: '⭐' },
   ]
 
@@ -39,7 +38,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         </div>
 
         <div className="flex gap-8">
-          {/* 사이드바 */}
+          {/* 사이드바 (데스크톱) */}
           <aside className="hidden md:block w-48 shrink-0">
             <nav className="space-y-0.5">
               {navItems.map((item) => (
@@ -55,25 +54,28 @@ export default async function AccountLayout({ children }: { children: React.Reac
             </nav>
           </aside>
 
-          {/* 모바일 탭 */}
-          <div className="md:hidden w-full mb-6">
-            <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-1.5 px-4 py-2.5 text-xs text-gray-600 hover:text-black whitespace-nowrap shrink-0"
-                >
-                  {item.icon} {item.label}
-                </Link>
-              ))}
+          {/* 콘텐츠 영역 (모바일: 탭 + 내용 / 데스크톱: 내용만) */}
+          <div className="flex-1 min-w-0">
+            {/* 모바일 탭 */}
+            <div className="md:hidden mb-6">
+              <div className="flex border-b border-gray-200 overflow-x-auto scrollbar-hide">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-xs text-gray-600 hover:text-black whitespace-nowrap shrink-0"
+                  >
+                    {item.icon} {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* 메인 콘텐츠 */}
-          <main className="flex-1 min-w-0">
-            {children}
-          </main>
+            {/* 메인 콘텐츠 */}
+            <main>
+              {children}
+            </main>
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/shared/lib/supabase/server'
+import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { getOrderById } from '@/entities/order/api/get-order-by-id'
 import { formatPrice } from '@/shared/lib/utils'
 import { RefundRequestForm } from './refund-request-form'
@@ -43,6 +44,21 @@ export default async function OrderDetailPage({
 
   if (!order) {
     notFound()
+  }
+
+  // 배송 완료 시: 이미 리뷰 작성한 상품 목록 조회
+  let reviewedProductIds: string[] = []
+  if (order.fulfillment_status === 'delivered') {
+    const adminSupabase = createAdminClient()
+    const productIds = order.items.map(item => (item.variant.product as any).id).filter(Boolean)
+    if (productIds.length > 0) {
+      const { data: reviews } = await adminSupabase
+        .from('reviews')
+        .select('product_id')
+        .eq('user_id', user.id)
+        .in('product_id', productIds)
+      reviewedProductIds = (reviews ?? []).map(r => r.product_id)
+    }
   }
 
   return (
@@ -156,31 +172,48 @@ export default async function OrderDetailPage({
         <div className="border-2 border-gray-200 p-4">
           <h2 className="font-bold mb-3">주문 상품</h2>
           <div className="space-y-3">
-            {order.items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
-              >
-                <div>
-                  <Link
-                    href={`/product/${item.variant.product.slug}`}
-                    className="font-medium hover:underline"
-                  >
-                    {item.variant.product.name}
-                  </Link>
-                  <p className="text-sm text-gray-600">
-                    {item.variant.color} / {item.variant.size}
-                  </p>
-                  <p className="text-xs text-gray-400">SKU: {item.variant.sku}</p>
+            {order.items.map((item) => {
+              const productId = (item.variant.product as any).id as string | undefined
+              const alreadyReviewed = productId ? reviewedProductIds.includes(productId) : false
+              return (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-start py-2 border-b border-gray-100 last:border-0"
+                >
+                  <div>
+                    <Link
+                      href={`/product/${item.variant.product.slug}`}
+                      className="font-medium hover:underline"
+                    >
+                      {item.variant.product.name}
+                    </Link>
+                    <p className="text-sm text-gray-600">
+                      {item.variant.color} / {item.variant.size}
+                    </p>
+                    <p className="text-xs text-gray-400">SKU: {item.variant.sku}</p>
+                    {/* 배송 완료 시 리뷰 작성 버튼 */}
+                    {order.fulfillment_status === 'delivered' && productId && (
+                      alreadyReviewed ? (
+                        <span className="inline-block mt-1.5 text-[11px] text-gray-400">✓ 리뷰 작성 완료</span>
+                      ) : (
+                        <Link
+                          href={`/account/reviews/write?product_id=${productId}&product_name=${encodeURIComponent(item.variant.product.name)}&order_id=${order.id}`}
+                          className="inline-block mt-1.5 text-[11px] px-2.5 py-1 bg-black text-white hover:bg-gray-800 transition-colors"
+                        >
+                          ⭐ 리뷰 작성
+                        </Link>
+                      )
+                    )}
+                  </div>
+                  <div className="text-right shrink-0 ml-4">
+                    <p className="text-sm text-gray-600">x{item.quantity}</p>
+                    <p className="font-semibold">
+                      {formatPrice(item.price * item.quantity)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">x{item.quantity}</p>
-                  <p className="font-semibold">
-                    {formatPrice(item.price * item.quantity)}
-                  </p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
