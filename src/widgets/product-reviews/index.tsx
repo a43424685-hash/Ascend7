@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getReviewsByProduct, getReviewStatsByProduct } from '@/entities/review/api/get-reviews'
+import { ReviewPhotoGallery } from '@/shared/ui/review-photo-gallery'
 
 interface ProductReviewsProps {
   productId: string
@@ -145,18 +146,7 @@ export async function ProductReviews({ productId, productSlug }: ProductReviewsP
 
                   {/* 리뷰 이미지 */}
                   {review.image_urls && review.image_urls.length > 0 && (
-                    <div className="flex gap-1.5 mt-2.5">
-                      {review.image_urls.slice(0, 4).map((url, i) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                          <img src={url} alt="" className="w-14 h-14 object-cover border border-gray-100 hover:opacity-80 transition-opacity" />
-                        </a>
-                      ))}
-                      {review.image_urls.length > 4 && (
-                        <div className="w-14 h-14 bg-gray-100 border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">
-                          +{review.image_urls.length - 4}
-                        </div>
-                      )}
-                    </div>
+                    <ReviewPhotoGallery urls={review.image_urls} maxVisible={4} thumbSize="w-14 h-14" />
                   )}
                 </div>
               )

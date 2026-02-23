@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { toggleReviewActive, deleteReview, createReviewByAdmin } from '@/features/admin/actions/review-management'
 import { adminAdjustPoints } from '@/features/points/actions/admin-adjust-points'
+import { ReviewPhotoGallery } from '@/shared/ui/review-photo-gallery'
 
 interface ReviewItem {
   id: string
@@ -336,18 +337,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
 
                     {/* 리뷰 이미지 썸네일 */}
                     {hasImages && (
-                      <div className="flex gap-1 mt-1.5">
-                        {item.image_urls!.slice(0, 5).map((url, i) => (
-                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                            <img src={url} alt="" className="w-12 h-12 object-cover rounded border border-gray-100 hover:opacity-80 transition-opacity" />
-                          </a>
-                        ))}
-                        {item.image_urls!.length > 5 && (
-                          <div className="w-12 h-12 bg-gray-100 rounded border border-gray-100 flex items-center justify-center text-[10px] text-gray-500">
-                            +{item.image_urls!.length - 5}
-                          </div>
-                        )}
-                      </div>
+                      <ReviewPhotoGallery urls={item.image_urls!} maxVisible={5} thumbSize="w-12 h-12" />
                     )}
 
                     <p className="text-[11px] text-gray-400 mt-1">{displayName} · {formatDate(item.created_at)}</p>

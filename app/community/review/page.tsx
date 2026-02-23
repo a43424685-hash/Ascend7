@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { getReviews, getReviewStats } from '@/entities/review/api/get-reviews'
+import { ReviewPhotoGallery } from '@/shared/ui/review-photo-gallery'
 
 export const dynamic = 'force-dynamic'
 
@@ -162,18 +163,7 @@ export default async function ReviewPage({
 
                   {/* 리뷰 이미지 */}
                   {(review as any).image_urls && (review as any).image_urls.length > 0 && (
-                    <div className="flex gap-1.5 mt-2.5 flex-wrap">
-                      {(review as any).image_urls.slice(0, 3).map((url: string, i: number) => (
-                        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                          <img src={url} alt="" className="w-16 h-16 object-cover border border-gray-100 hover:opacity-80 transition-opacity" />
-                        </a>
-                      ))}
-                      {(review as any).image_urls.length > 3 && (
-                        <div className="w-16 h-16 bg-gray-100 border border-gray-100 flex items-center justify-center text-[10px] text-gray-400">
-                          +{(review as any).image_urls.length - 3}
-                        </div>
-                      )}
-                    </div>
+                    <ReviewPhotoGallery urls={(review as any).image_urls} maxVisible={3} thumbSize="w-16 h-16" />
                   )}
 
                   {/* 체형 정보 */}
