@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { checkAdminAuth } from '@/shared/lib/auth/admin'
 
+export async function GET() {
+  const { isAdmin } = await checkAdminAuth()
+  if (!isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('flash_sales')
+    .select(`
+      id, title, sale_price, original_price, discount_percent,
+      end_at, max_quantity, sold_quantity, is_active,
+      product:products (id, name, slug),
+      variant:variants (id, color, size)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
   const { isAdmin } = await checkAdminAuth()
   if (!isAdmin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

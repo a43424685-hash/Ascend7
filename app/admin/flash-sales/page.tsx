@@ -1,29 +1,61 @@
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/shared/lib/supabase/server'
-import { createAdminClient } from '@/shared/lib/supabase/admin'
-import { checkAdminAuth } from '@/shared/lib/auth/admin'
 import { formatPrice } from '@/shared/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminFlashSalesPage() {
-  const { isAdmin } = await checkAdminAuth()
-  if (!isAdmin) redirect('/')
+interface Sale {
+  id: string
+  title: string
+  sale_price: number
+  original_price: number
+  discount_percent: number
+  end_at: string
+  max_quantity: number | null
+  sold_quantity: number
+  is_active: boolean
+  product: { id: string; name: string; slug: string } | null
+  variant: { id: string; color: string; size: string } | null
+}
 
-  const supabase = createAdminClient()
+export default function AdminFlashSalesPage() {
+  const [sales, setSales] = useState<Sale[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const { data: sales } = await supabase
-    .from('flash_sales')
-    .select(`
-      id, title, sale_price, original_price, discount_percent,
-      end_at, max_quantity, sold_quantity, is_active,
-      product:products (id, name, slug),
-      variant:variants (id, color, size)
-    `)
-    .order('created_at', { ascending: false })
+  const fetchSales = async () => {
+    const res = await fetch('/api/admin/flash-sales')
+    if (res.ok) {
+      const data = await res.json()
+      setSales(data)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchSales() }, [])
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`"${title}" 타임딜을 삭제하시겠습니까?`)) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/flash-sales/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setSales(prev => prev.filter(s => s.id !== id))
+      } else {
+        alert('삭제 실패')
+      }
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const now = new Date()
+
+  if (loading) {
+    return <div className="text-sm text-gray-400 py-12 text-center">불러오는 중...</div>
+  }
 
   return (
     <div>
@@ -40,16 +72,16 @@ export default async function AdminFlashSalesPage() {
         </Link>
       </div>
 
-      {(!sales || sales.length === 0) ? (
+      {sales.length === 0 ? (
         <div className="text-center py-12 border-2 border-dashed border-gray-200">
           <p className="text-gray-400 mb-2">등록된 플래시 세일이 없습니다</p>
           <Link href="/admin/flash-sales/new" className="text-sm underline">추가하기</Link>
         </div>
       ) : (
         <div className="space-y-3">
-          {(sales as any[]).map((sale) => {
-            const product = Array.isArray(sale.product) ? sale.product[0] : sale.product
-            const variant = Array.isArray(sale.variant) ? sale.variant[0] : sale.variant
+          {sales.map((sale) => {
+            const product = Array.isArray(sale.product) ? (sale.product as any)[0] : sale.product
+            const variant = Array.isArray(sale.variant) ? (sale.variant as any)[0] : sale.variant
             const endAt = new Date(sale.end_at)
             const isExpired = endAt < now
             const isActive = sale.is_active && !isExpired
@@ -86,6 +118,21 @@ export default async function AdminFlashSalesPage() {
                     <span>|</span>
                     <span>종료: {endAt.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/admin/flash-sales/${sale.id}/edit`}
+                    className="text-xs px-3 py-1.5 border border-gray-300 hover:border-black hover:text-black text-gray-600 transition-colors"
+                  >
+                    수정
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(sale.id, sale.title)}
+                    disabled={deletingId === sale.id}
+                    className="text-xs px-3 py-1.5 border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === sale.id ? '삭제 중...' : '삭제'}
+                  </button>
                 </div>
               </div>
             )
