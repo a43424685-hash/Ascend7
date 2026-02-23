@@ -1,6 +1,13 @@
 import { getActiveAnnouncements } from '@/entities/cms/api/get-announcement'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
-import { SlidingAnnouncementBar, DEFAULT_SLIDES } from './index'
+import { SlidingAnnouncementBar } from './index'
+
+const DEFAULT_SLIDES = [
+  { id: 'd1', text_ko: '🎁 신규 회원가입 시 3,000P 즉시 지급', link_url: '/auth/login' },
+  { id: 'd2', text_ko: '🚚 5만원 이상 구매 시 무료배송', link_url: '/shop' },
+  { id: 'd3', text_ko: '⭐ 포토리뷰 2,000P · 텍스트리뷰 1,000P 적립', link_url: '/community/review' },
+  { id: 'd4', text_ko: '💬 카카오 채널 추가하고 재입고 알림 받기', link_url: null },
+]
 
 export async function AnnouncementBarServer() {
   const supabase = createAdminClient()
