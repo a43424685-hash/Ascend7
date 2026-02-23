@@ -94,11 +94,7 @@ export default async function AdminOrdersPage() {
         <h1 className="text-xl sm:text-2xl font-bold mb-1">주문 관리</h1>
         <p className="text-xs sm:text-sm text-gray-500">전체 주문 관리 - 결제/배송 상태 변경 및 운송장 입력</p>
       </div>
-      <div className="overflow-x-auto -mx-4 lg:mx-0">
-        <div className="min-w-[600px] px-4 lg:px-0">
-          <OrdersListEnhanced orders={normalizedOrders} />
-        </div>
-      </div>
+      <OrdersListEnhanced orders={normalizedOrders} />
     </div>
   )
 }

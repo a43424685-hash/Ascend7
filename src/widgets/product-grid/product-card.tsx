@@ -47,7 +47,34 @@ export function ProductCard({ product, initialWishlisted = false }: ProductCardP
   }
 
   return (
-    <div className="group">
+    <div className="group relative" style={{ touchAction: 'manipulation' }}>
+      {/* 찜 버튼: Link 밖으로 분리 - 모바일 2번 클릭 문제 해결 */}
+      <button
+        onClick={handleWishlistClick}
+        disabled={isPending}
+        className={`absolute top-2.5 right-2.5 z-10 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
+          wishlisted
+            ? 'bg-white shadow-sm opacity-100'
+            : 'opacity-0 group-hover:opacity-100 bg-white/80'
+        }`}
+        aria-label={wishlisted ? '찜 취소' : '찜하기'}
+      >
+        <svg
+          className={`w-4 h-4 transition-all duration-200 ${
+            wishlisted
+              ? 'fill-red-500 stroke-red-500'
+              : 'fill-none stroke-gray-500'
+          }`}
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
+        </svg>
+      </button>
       <Link href={`/product/${product.slug}`} className="block">
         {/* 이미지 */}
         <div className="aspect-[3/4] relative bg-gray-50 overflow-hidden">
@@ -91,33 +118,6 @@ export function ProductCard({ product, initialWishlisted = false }: ProductCardP
             </div>
           )}
 
-          {/* 찜 버튼 */}
-          <button
-            onClick={handleWishlistClick}
-            disabled={isPending}
-            className={`absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 ${
-              wishlisted
-                ? 'bg-white shadow-sm opacity-100'
-                : 'opacity-0 group-hover:opacity-100 bg-white/80'
-            }`}
-            aria-label={wishlisted ? '찜 취소' : '찜하기'}
-          >
-            <svg
-              className={`w-4 h-4 transition-all duration-200 ${
-                wishlisted
-                  ? 'fill-red-500 stroke-red-500'
-                  : 'fill-none stroke-gray-500'
-              }`}
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
-          </button>
         </div>
 
         {/* 상품 정보 */}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/shared/lib/supabase/client'
 
 type ShopChild = { label: string; href: string }
 type ShopNavItem = {
@@ -72,9 +73,21 @@ export function MobileMenuButton() {
   const [mounted, setMounted] = useState(false)
   const [shopOpen, setShopOpen] = useState(false)
   const [openSubs, setOpenSubs] = useState<Record<string, boolean>>({})
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session)
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
@@ -114,7 +127,11 @@ export function MobileMenuButton() {
         <nav className="flex-1 overflow-y-auto px-6 pt-8 pb-8">
           {/* 계정 */}
           <div className="flex items-center gap-5 mb-10">
-            <Link href="/auth/login" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">LOGIN</Link>
+            {isLoggedIn ? (
+              <Link href="/account" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">MY PAGE</Link>
+            ) : (
+              <Link href="/auth/login" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">LOGIN</Link>
+            )}
             <span className="text-gray-200">|</span>
             <Link href="/account" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">MY ACCOUNT</Link>
           </div>

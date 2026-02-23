@@ -10,6 +10,7 @@ import { AdminEditButton } from '@/features/admin-edit/admin-edit-button'
 import { EditPanel } from '@/features/admin-edit/edit-panel'
 import { Providers } from './providers'
 import { StoreOnly } from '@/shared/ui/store-only'
+import { AdminBackBar } from '@/widgets/admin-back-bar'
 
 export const metadata: Metadata = {
   title: {
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <Providers>
           <EditModeProvider>
+            <AdminBackBar />
             <StoreOnly>
               <AnnouncementBarServer />
               <Header />

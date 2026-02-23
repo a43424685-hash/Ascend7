@@ -112,40 +112,44 @@ export function StaticHeroSlider() {
           {/* 하단 페이드아웃 */}
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black to-transparent" />
 
-          {/* 콘텐츠 */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white px-6">
-            <p className="text-[9px] sm:text-[10px] tracking-[0.5em] uppercase text-white/60 mb-10 font-medium select-none">
+          {/* 콘텐츠: 모바일은 상단(eyebrow) + 하단(body/CTA) 분리, 데스크톱은 중앙 정렬 */}
+          <div className="relative z-10 h-full flex flex-col items-center text-center text-white px-6 justify-between sm:justify-center pt-20 pb-28 sm:pt-0 sm:pb-0">
+            {/* 상단: eyebrow (모바일에서 상단 고정) */}
+            <p className="text-[9px] sm:text-[10px] tracking-[0.5em] uppercase text-white/60 font-medium select-none mb-0 sm:mb-10">
               {slide.eyebrow}
             </p>
 
-            {/* 타이틀 (슬라이드 1은 title이 null이므로 표시 안 함) */}
-            {slide.title && (
-              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.025em] leading-none mb-7 text-white">
-                {slide.title}
-              </h2>
-            )}
-
-            <div className="w-8 h-px bg-white/40 mb-7" />
-
-            <p className="text-[13px] sm:text-sm text-white/80 tracking-wide max-w-xs leading-relaxed mb-10">
-              {slide.body}
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
-              <Link
-                href={slide.cta.href}
-                className="px-10 py-3.5 border border-white/50 text-[10px] font-semibold tracking-[0.3em] text-white hover:bg-white hover:text-black hover:border-white transition-all duration-300"
-              >
-                {slide.cta.label}
-              </Link>
-              {slide.ctaSecondary && (
-                <Link
-                  href={slide.ctaSecondary.href}
-                  className="text-[10px] font-medium tracking-[0.25em] text-white/60 hover:text-white transition-colors"
-                >
-                  {slide.ctaSecondary.label} →
-                </Link>
+            {/* 하단 콘텐츠: 모바일에서 하단으로, 데스크톱에서는 eyebrow 바로 아래 */}
+            <div className="flex flex-col items-center">
+              {/* 타이틀 (슬라이드 1은 title이 null이므로 표시 안 함) */}
+              {slide.title && (
+                <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[-0.025em] leading-none mb-7 text-white">
+                  {slide.title}
+                </h2>
               )}
+
+              <div className="w-8 h-px bg-white/40 mb-7" />
+
+              <p className="text-[13px] sm:text-sm text-white/80 tracking-wide max-w-xs leading-relaxed mb-10">
+                {slide.body}
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-5">
+                <Link
+                  href={slide.cta.href}
+                  className="px-10 py-3.5 border border-white/50 text-[10px] font-semibold tracking-[0.3em] text-white hover:bg-white hover:text-black hover:border-white transition-all duration-300"
+                >
+                  {slide.cta.label}
+                </Link>
+                {slide.ctaSecondary && (
+                  <Link
+                    href={slide.ctaSecondary.href}
+                    className="text-[10px] font-medium tracking-[0.25em] text-white/60 hover:text-white transition-colors"
+                  >
+                    {slide.ctaSecondary.label} →
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
