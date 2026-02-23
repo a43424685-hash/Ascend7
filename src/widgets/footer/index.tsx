@@ -57,7 +57,7 @@ export function Footer() {
             <p>상호: 보틀천 | 대표: 이병천 | 사업자등록번호: 369-17-02526</p>
             <p>주소: 서울특별시 강북구 노해로34, 9층</p>
             <p>통신판매업신고: 제2026-서울강북-0119호 | 개인정보관리책임자: 이병천</p>
-            <p>고객센터: help@ascend7.kr | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
+            <p>고객센터: 070-8098-7618 | help@ascend7.kr | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
             <p className="pt-3 text-gray-700">&copy; {new Date().getFullYear()} ASCEND7. All rights reserved.</p>
           </div>
         </div>

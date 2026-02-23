@@ -74,6 +74,7 @@ export function MobileMenuButton() {
   const [shopOpen, setShopOpen] = useState(false)
   const [openSubs, setOpenSubs] = useState<Record<string, boolean>>({})
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -81,11 +82,20 @@ export function MobileMenuButton() {
 
   useEffect(() => {
     const supabase = createClient()
+
+    const checkRole = async (userId?: string) => {
+      if (!userId) { setIsAdmin(false); return }
+      const { data } = await supabase.from('profiles').select('role').eq('id', userId).single()
+      setIsAdmin(data?.role === 'admin')
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsLoggedIn(!!session)
+      checkRole(session?.user?.id)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session)
+      checkRole(session?.user?.id)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -126,7 +136,17 @@ export function MobileMenuButton() {
         {/* 콘텐츠 */}
         <nav className="flex-1 overflow-y-auto px-6 pt-8 pb-8">
           {/* 계정 */}
-          <div className="flex items-center gap-5 mb-10">
+          {isAdmin && (
+            <div className="mb-4">
+              <Link href="/admin" onClick={close} className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-[0.15em] text-purple-600 hover:text-purple-800 transition-colors">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 01.06 12a11.955 11.955 0 013.538 6 11.959 11.959 0 0110.402 1.964 11.959 11.959 0 0110.402-1.964 11.955 11.955 0 013.538-6A11.955 11.955 0 0020.402 6 11.959 11.959 0 019 5.036z" />
+                </svg>
+                ADMIN
+              </Link>
+            </div>
+          )}
+                    <div className="flex items-center gap-5 mb-10">
             {isLoggedIn ? (
               <Link href="/account" onClick={close} className="text-xs font-semibold tracking-[0.15em] text-gray-500 hover:text-black transition-colors">MY PAGE</Link>
             ) : (
