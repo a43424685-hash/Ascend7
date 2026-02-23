@@ -65,15 +65,12 @@ export async function validateCoupon(
     }
   }
 
-  // 2. events 테이블에서 이벤트 쿠폰 조회
-  const now = new Date().toISOString()
+  // 2. events 테이블에서 이벤트 쿠폰 조회 (is_active만 체크, 날짜는 관리자가 직접 제어)
   const { data: event } = await adminSupabase
     .from('events')
     .select('*')
     .eq('coupon_code', normalizedCode)
     .eq('is_active', true)
-    .or(`starts_at.is.null,starts_at.lte.${now}`)
-    .or(`ends_at.is.null,ends_at.gte.${now}`)
     .single()
 
   if (!event) {

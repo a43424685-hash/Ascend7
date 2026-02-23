@@ -4,8 +4,6 @@ import { SlidingAnnouncementBar } from './index'
 
 export async function AnnouncementBarServer() {
   const supabase = createAdminClient()
-  const now = new Date()
-  const nowIso = now.toISOString()
 
   const [announcements, eventsResult] = await Promise.all([
     getActiveAnnouncements(),
@@ -13,8 +11,6 @@ export async function AnnouncementBarServer() {
       .from('events')
       .select('id, title, coupon_code, discount_type, discount_value, starts_at, ends_at, created_at')
       .eq('is_active', true)
-      .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
-      .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
       .order('sort_order', { ascending: true }),
   ])
 
