@@ -23,6 +23,21 @@ export const metadata: Metadata = {
     title: 'ASCEND7 - Premium Gymwear',
     description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
     locale: 'ko_KR',
+    url: 'https://ascend7.kr',
+    images: [
+      {
+        url: 'https://ascend7.kr/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'ASCEND7 - Premium Gymwear',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ASCEND7 - Premium Gymwear',
+    description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
+    images: ['https://ascend7.kr/og-image.png'],
   },
   robots: {
     index: true,
