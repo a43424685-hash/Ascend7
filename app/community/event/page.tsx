@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { getActiveEvents } from '@/entities/event/api/get-events'
+import { CouponCopyButton } from '@/shared/ui/coupon-copy-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,14 +87,9 @@ export default async function EventPage() {
                         />
                       )}
 
-                      {/* 쿠폰 코드 */}
+                      {/* 쿠폰 코드 (클릭 복사) */}
                       {event.coupon_code && (
-                        <div className="inline-flex items-center gap-3 bg-gray-50 border border-dashed border-gray-200 px-4 py-3">
-                          <div>
-                            <p className="text-[9px] text-gray-400 tracking-[0.2em] uppercase mb-0.5">할인 쿠폰</p>
-                            <p className="text-base font-mono font-bold tracking-[0.15em] text-black">{event.coupon_code}</p>
-                          </div>
-                        </div>
+                        <CouponCopyButton code={event.coupon_code} />
                       )}
 
                       {event.link_url && (

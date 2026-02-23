@@ -110,14 +110,21 @@ export async function validateCoupon(
     }
   }
 
-  // 할인 계산
-  let discountAmount = 0
-  if (event.discount_type === 'percent') {
-    discountAmount = Math.floor(subtotal * (event.discount_value / 100))
-  } else {
-    discountAmount = Number(event.discount_value)
+  // 할인 계산 (SQL 마이그레이션 미실행 시 discount_value가 undefined일 수 있으므로 안전 처리)
+  const discountType = event.discount_type as string | null | undefined
+  const discountValue = Number(event.discount_value) || 0
+
+  if (!discountType || discountValue <= 0) {
+    return { valid: false, error: '이벤트 할인 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.' }
   }
-  discountAmount = Math.min(discountAmount, subtotal)
+
+  let discountAmount = 0
+  if (discountType === 'percent') {
+    discountAmount = Math.floor(subtotal * (discountValue / 100))
+  } else {
+    discountAmount = discountValue
+  }
+  discountAmount = Math.min(Math.max(0, discountAmount), subtotal)
 
   return {
     valid: true,

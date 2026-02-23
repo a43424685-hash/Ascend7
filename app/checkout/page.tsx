@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/features/cart/cart-context'
-import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
+import { getCartItemsServer } from '@/entities/cart/api/get-cart-items-server'
 import { createPendingOrder } from '@/features/checkout/actions/create-pending-order'
 import {
   getDefaultShippingInfo,
@@ -87,7 +87,7 @@ export default function CheckoutPage() {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const items = await getCartItemsClient(cartItems)
+        const items = await getCartItemsServer(cartItems)
         setCartItemsWithData(items)
 
         if (items.length === 0) {

@@ -1,31 +1,35 @@
 import { getActiveAnnouncements } from '@/entities/cms/api/get-announcement'
-import { getActiveEvents } from '@/entities/event/api/get-events'
+import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { SlidingAnnouncementBar } from './index'
 
 export async function AnnouncementBarServer() {
-  const [announcements, events] = await Promise.all([
+  const supabase = createAdminClient()
+  const now = new Date()
+  const nowIso = now.toISOString()
+
+  const [announcements, eventsResult] = await Promise.all([
     getActiveAnnouncements(),
-    getActiveEvents(),
+    supabase
+      .from('events')
+      .select('id, title, coupon_code, discount_type, discount_value, starts_at, ends_at, created_at')
+      .eq('is_active', true)
+      .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+      .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+      .order('sort_order', { ascending: true }),
   ])
 
-  const now = new Date()
+  const events = eventsResult.data || []
 
-  // 현재 날짜 범위 내 활성 이벤트 중 쿠폰이 있는 것만 배너 슬라이드로 추가
+  // 쿠폰이 있는 활성 이벤트를 배너 슬라이드로 변환
   const eventSlides = events
-    .filter(e => {
-      if (!e.coupon_code) return false
-      const start = e.starts_at ? new Date(e.starts_at) : null
-      const end = e.ends_at ? new Date(e.ends_at) : null
-      if (start && now < start) return false
-      if (end && now > end) return false
-      return true
-    })
+    .filter(e => !!e.coupon_code)
     .map(e => {
+      const dv = Number(e.discount_value) || 0
       let text = ''
-      if (e.discount_type === 'percent' && e.discount_value > 0) {
-        text = `🎁 ${e.title} ${e.discount_value}% 할인! 코드: ${e.coupon_code}`
-      } else if (e.discount_type === 'amount' && e.discount_value > 0) {
-        text = `🎁 ${e.title} ${Number(e.discount_value).toLocaleString()}원 할인! 코드: ${e.coupon_code}`
+      if (e.discount_type === 'percent' && dv > 0) {
+        text = `🎁 ${e.title} ${dv}% 할인! 코드: ${e.coupon_code}`
+      } else if (e.discount_type === 'amount' && dv > 0) {
+        text = `🎁 ${e.title} ${dv.toLocaleString()}원 할인! 코드: ${e.coupon_code}`
       } else {
         text = `🎁 ${e.title} 코드: ${e.coupon_code}`
       }

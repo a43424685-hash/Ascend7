@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/features/cart/cart-context'
-import { getCartItemsClient } from '@/entities/cart/api/get-cart-items-client'
+import { getCartItemsServer } from '@/entities/cart/api/get-cart-items-server'
 import type { CartItemWithVariant } from '@/shared/types/cart'
 import { formatPrice } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
@@ -25,7 +25,7 @@ export default function CartPage() {
       setError(null)
 
       try {
-        const items = await getCartItemsClient(cartItems)
+        const items = await getCartItemsServer(cartItems)
         setCartItemsWithData(items)
       } catch (err: any) {
         console.error('장바구니 데이터 조회 실패:', err)
