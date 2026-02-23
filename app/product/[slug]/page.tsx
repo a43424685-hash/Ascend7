@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { getProductBySlug } from '@/entities/product/api/get-product-by-slug'
 import { getProductsWithFilters } from '@/entities/product/api/get-products-with-filters'
 import { getSiteSettings } from '@/entities/cms/api/get-site-settings'
+import { getFlashSaleForProduct } from '@/entities/flash-sale/api/get-flash-sale-for-product'
 import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
@@ -43,10 +44,11 @@ export default async function ProductPage({
   const product = await getProductBySlug(params.slug)
   if (!product) notFound()
 
-  // 배송 정책 + 추천 상품 병렬 조회
-  const [siteSettings, allProducts] = await Promise.all([
+  // 배송 정책 + 추천 상품 + 타임딜 병렬 조회
+  const [siteSettings, allProducts, flashSale] = await Promise.all([
     getSiteSettings(),
     getProductsWithFilters({ category: product.category }),
+    getFlashSaleForProduct(product.id),
   ])
   const recommendations = allProducts
     .filter((p) => p.id !== product.id)
@@ -58,7 +60,7 @@ export default async function ProductPage({
       <div className="container mx-auto px-4 pt-6 lg:pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12">
           <ProductGallery images={product.images} productName={product.name} />
-          <ProductDetails product={product} />
+          <ProductDetails product={product} flashSale={flashSale} />
         </div>
       </div>
 

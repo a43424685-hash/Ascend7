@@ -39,11 +39,11 @@ export function FlashSaleFloatingCard({ sales }: FlashSaleFloatingCardProps) {
   const href = sale.product ? `/product/${sale.product.slug}` : '#'
 
   return (
-    <div className="absolute bottom-16 left-4 z-20 w-44 bg-black/90 backdrop-blur-sm text-white shadow-2xl">
+    <div className="fixed bottom-4 left-4 z-50 w-44 bg-black/90 backdrop-blur-sm text-white shadow-2xl">
       {/* 헤더 */}
       <div className="bg-red-600 px-3 py-1.5 flex items-center gap-1.5">
         <span className="text-sm">⚡</span>
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase">Flash Sale</span>
+        <span className="text-[10px] font-black tracking-[0.2em]">타임딜</span>
       </div>
 
       {/* 카운트다운 */}

@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { ProductWithDetails } from '@/shared/types/database'
+import type { ProductWithDetails, Variant } from '@/shared/types/database'
 import { formatPrice } from '@/shared/lib/utils'
 import { useCart } from '@/features/cart/cart-context'
 import { Button } from '@/shared/ui/button'
+import type { FlashSaleWithProduct } from '@/entities/flash-sale/api/get-flash-sales'
 
 const KAKAO_CHANNEL_URL = process.env.NEXT_PUBLIC_KAKAO_CHANNEL_URL || ''
 
@@ -25,9 +26,10 @@ type SelectedItem = {
 
 interface ProductDetailsProps {
   product: ProductWithDetails
+  flashSale?: FlashSaleWithProduct | null
 }
 
-export function ProductDetails({ product }: ProductDetailsProps) {
+export function ProductDetails({ product, flashSale }: ProductDetailsProps) {
   const router = useRouter()
   const { addItem } = useCart()
 
@@ -71,6 +73,21 @@ export function ProductDetails({ product }: ProductDetailsProps) {
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
 
+  // 타임딜 가격 헬퍼
+  const getEffectivePrice = (variant: Variant): number => {
+    if (!flashSale) return variant.price
+    if (flashSale.variant) return flashSale.variant.id === variant.id ? flashSale.sale_price : variant.price
+    return flashSale.sale_price
+  }
+  const isVariantOnSale = (variant: Variant): boolean => {
+    if (!flashSale) return false
+    if (flashSale.variant) return flashSale.variant.id === variant.id
+    return true
+  }
+  const isSaleActive = flashSale && (!flashSale.variant || true)
+  const displaySalePrice = flashSale?.sale_price ?? 0
+  const displayDiscountPct = flashSale?.discount_percent ?? 0
+
   const selectedItemsTotal = selectedItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   const handleAddToSelection = () => {
@@ -102,7 +119,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
           variantId: selectedVariant.id,
           color: selectedColor,
           size: selectedSize,
-          price: selectedVariant.price,
+          price: getEffectivePrice(selectedVariant),
           quantity,
           maxStock: selectedVariant.stock,
         },
@@ -187,13 +204,32 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         {/* 가격 */}
         <div className="mb-6 pb-6 border-b border-gray-200">
           {selectedVariant ? (
-            <p className="text-2xl lg:text-3xl font-bold">{formatPrice(selectedVariant.price)}</p>
+            isVariantOnSale(selectedVariant) ? (
+              <div className="flex items-baseline gap-3">
+                <p className="text-2xl lg:text-3xl font-bold text-red-600">{formatPrice(getEffectivePrice(selectedVariant))}</p>
+                <p className="text-lg text-gray-400 line-through">{formatPrice(selectedVariant.price)}</p>
+                <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5">-{displayDiscountPct}%</span>
+              </div>
+            ) : (
+              <p className="text-2xl lg:text-3xl font-bold">{formatPrice(selectedVariant.price)}</p>
+            )
+          ) : isSaleActive ? (
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <p className="text-2xl lg:text-3xl font-bold text-red-600">{formatPrice(displaySalePrice)}</p>
+              <p className="text-lg text-gray-400 line-through">
+                {minPrice === maxPrice ? formatPrice(minPrice) : `${formatPrice(minPrice)} ~`}
+              </p>
+              <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5">-{displayDiscountPct}%</span>
+            </div>
           ) : (
             <p className="text-2xl lg:text-3xl font-bold">
               {minPrice === maxPrice
                 ? formatPrice(minPrice)
                 : `${formatPrice(minPrice)} ~ ${formatPrice(maxPrice)}`}
             </p>
+          )}
+          {flashSale && (
+            <p className="text-xs text-red-500 font-medium mt-1.5">⚡ 타임딜 진행 중</p>
           )}
           {product.description && (
             <p className="text-sm text-gray-500 leading-relaxed mt-3">{product.description}</p>
@@ -393,6 +429,9 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                     </p>
                     <p className="text-sm font-semibold mt-0.5">
                       {formatPrice(item.price * item.quantity)}
+                      {flashSale && item.price < (product.variants.find(v => v.id === item.variantId)?.price ?? item.price) && (
+                        <span className="ml-1.5 text-[10px] text-red-500 font-bold">타임딜</span>
+                      )}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">

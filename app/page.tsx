@@ -49,16 +49,14 @@ export default async function HomePage() {
   return (
     <div>
       {/* ─── Hero Section ─── */}
-      <div className="relative">
-        <EditableSection sectionId="hero-banner" label="히어로 배너">
-          {banners.length > 0 ? (
-            <HeroSlider banners={banners} />
-          ) : (
-            <StaticHeroSlider />
-          )}
-        </EditableSection>
-        {flashSales.length > 0 && <FlashSaleFloatingCard sales={flashSales} />}
-      </div>
+      <EditableSection sectionId="hero-banner" label="히어로 배너">
+        {banners.length > 0 ? (
+          <HeroSlider banners={banners} />
+        ) : (
+          <StaticHeroSlider />
+        )}
+      </EditableSection>
+      {flashSales.length > 0 && <FlashSaleFloatingCard sales={flashSales} />}
 
       {/* ─── Brand Values ─── */}
       <EditableSection sectionId="brand-values" label="브랜드 가치">
