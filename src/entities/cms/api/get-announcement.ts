@@ -50,3 +50,21 @@ export async function getAllAnnouncements(): Promise<Announcement[]> {
     return []
   }
 }
+
+export async function getActiveAnnouncements(): Promise<Announcement[]> {
+  try {
+    const supabase = createAdminClient()
+    const now = new Date().toISOString()
+    const { data, error } = await supabase
+      .from('announcement_bar')
+      .select('*')
+      .eq('is_active', true)
+      .or(`start_at.is.null,start_at.lte.${now}`)
+      .or(`end_at.is.null,end_at.gte.${now}`)
+      .order('sort_order', { ascending: true })
+    if (error || !data) return []
+    return data as Announcement[]
+  } catch {
+    return []
+  }
+}

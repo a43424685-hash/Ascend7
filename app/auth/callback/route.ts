@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createAdminClient } from '@/shared/lib/supabase/admin'
 
 /**
  * 인증 콜백 라우트
@@ -47,6 +48,25 @@ export async function GET(request: NextRequest) {
         .select('role')
         .eq('id', data.user.id)
         .single()
+
+      // 신규 회원가입 보너스: point_transactions가 없으면 3,000P 지급
+      try {
+        const adminClient = createAdminClient()
+        const { count } = await adminClient
+          .from('point_transactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', data.user.id)
+        if (count === 0) {
+          await adminClient.from('point_transactions').insert({
+            user_id: data.user.id,
+            amount: 3000,
+            type: 'earn',
+            description: '신규 회원가입 혜택',
+          })
+        }
+      } catch {
+        // 포인트 지급 실패해도 로그인은 계속 진행
+      }
 
       const defaultRedirect = profile?.role === 'admin' ? '/admin/orders' : '/account'
       const response = NextResponse.redirect(`${origin}${redirectParam || defaultRedirect}`)

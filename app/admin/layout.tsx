@@ -101,6 +101,13 @@ export default function AdminLayout({
                 >
                   번들
                 </Link>
+                <Link
+                  href="/admin/points"
+                  prefetch={false}
+                  className="text-xs tracking-wider text-gray-300 hover:text-white transition-colors"
+                >
+                  포인트
+                </Link>
               </nav>
             </div>
             <div className="flex items-center gap-4">
@@ -132,6 +139,7 @@ export default function AdminLayout({
         <Link href="/admin/flash-sales" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">타임딜</Link>
         <Link href="/admin/instagram" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">인스타</Link>
         <Link href="/admin/bundles" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">번들</Link>
+        <Link href="/admin/points" prefetch={false} className="text-xs font-medium text-gray-600 shrink-0">포인트</Link>
       </div>
 
       {/* Main Content */}

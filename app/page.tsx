@@ -7,7 +7,7 @@ import { getActiveFlashSales } from '@/entities/flash-sale/api/get-flash-sales'
 import { ProductGrid } from '@/widgets/product-grid'
 import { HeroSlider } from '@/widgets/hero-slider'
 import { StaticHeroSlider } from '@/widgets/hero-slider/static-hero-slider'
-import { FlashSaleSection } from '@/widgets/flash-sale/flash-sale-section'
+import { FlashSaleFloatingCard } from '@/widgets/flash-sale/flash-sale-floating-card'
 import { InstagramFeedSection } from '@/widgets/instagram-feed'
 import { ScrollAnimate } from '@/shared/ui/scroll-animate'
 import { EditableSection } from '@/features/admin-edit/editable-section'
@@ -49,13 +49,16 @@ export default async function HomePage() {
   return (
     <div>
       {/* ─── Hero Section ─── */}
-      <EditableSection sectionId="hero-banner" label="히어로 배너">
-        {banners.length > 0 ? (
-          <HeroSlider banners={banners} />
-        ) : (
-          <StaticHeroSlider />
-        )}
-      </EditableSection>
+      <div className="relative">
+        <EditableSection sectionId="hero-banner" label="히어로 배너">
+          {banners.length > 0 ? (
+            <HeroSlider banners={banners} />
+          ) : (
+            <StaticHeroSlider />
+          )}
+        </EditableSection>
+        {flashSales.length > 0 && <FlashSaleFloatingCard sales={flashSales} />}
+      </div>
 
       {/* ─── Brand Values ─── */}
       <EditableSection sectionId="brand-values" label="브랜드 가치">
@@ -93,11 +96,6 @@ export default async function HomePage() {
           </div>
         </section>
       </EditableSection>
-
-      {/* ─── Flash Sale ─── */}
-      {flashSales.length > 0 && (
-        <FlashSaleSection sales={flashSales} />
-      )}
 
       {/* ─── Featured Products ─── */}
       {featuredProducts.length > 0 && (

@@ -50,6 +50,9 @@ export async function spendPoints(
     return sum + (tx.type === 'earn' ? tx.amount : -tx.amount)
   }, 0)
 
+  if (balance < 5000) {
+    return { success: false, error: '포인트는 5,000P 이상 보유 시 사용할 수 있습니다.' }
+  }
   if (balance < amount) {
     return { success: false, error: '포인트 잔액이 부족합니다.' }
   }
