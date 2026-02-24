@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
 import { requireAdmin } from '@/shared/lib/auth/admin'
 import { sendShippingNotification, type EmailOrderData } from '@/shared/lib/email'
+import { sendShippingAlimtalk, sendOrderCancelAlimtalk } from '@/shared/lib/solapi'
 import { formatPrice } from '@/shared/lib/utils'
 
 export type FulfillmentStatus =
@@ -111,11 +112,11 @@ export async function updateOrderTracking(
       return { success: false, error: error.message }
     }
 
-    // 배송 시작 이메일 발송
+    // 배송 시작 이메일 + 알림톡 발송
     try {
       const { data: order } = await supabase
         .from('orders')
-        .select('order_number, customer_email, customer_name, total')
+        .select('order_number, customer_email, customer_name, total, user_id')
         .eq('id', orderId)
         .single()
 
@@ -145,9 +146,28 @@ export async function updateOrderTracking(
         }
 
         await sendShippingNotification(emailData)
+
+        // 카카오 알림톡 (회원 전화번호 조회)
+        if (order.user_id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', order.user_id)
+            .single()
+
+          if (profile?.phone) {
+            await sendShippingAlimtalk({
+              to: profile.phone,
+              customerName: order.customer_name || '고객',
+              orderNumber: order.order_number || orderId.slice(0, 8),
+              carrier: carrier || '택배',
+              trackingNumber,
+            })
+          }
+        }
       }
     } catch (emailErr: any) {
-      console.error('⚠️ [EMAIL] Shipping notification failed (non-blocking):', emailErr.message)
+      console.error('⚠️ [NOTIFY] Shipping notification failed (non-blocking):', emailErr.message)
     }
 
     revalidatePath('/admin/orders')
@@ -197,6 +217,34 @@ export async function cancelOrder(orderId: string) {
 
     if (updateError) {
       return { success: false, error: updateError.message }
+    }
+
+    // 주문 취소 알림톡 (비동기, 실패해도 취소는 완료)
+    try {
+      const { data: order } = await supabase
+        .from('orders')
+        .select('order_number, customer_name, total, user_id')
+        .eq('id', orderId)
+        .single()
+
+      if (order?.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', order.user_id)
+          .single()
+
+        if (profile?.phone) {
+          await sendOrderCancelAlimtalk({
+            to: profile.phone,
+            customerName: order.customer_name || '고객',
+            orderNumber: order.order_number || orderId.slice(0, 8),
+            refundAmount: formatPrice(order.total),
+          })
+        }
+      }
+    } catch (alimtalkErr: any) {
+      console.error('⚠️ [ALIMTALK] Cancel notification failed (non-blocking):', alimtalkErr.message)
     }
 
     revalidatePath('/admin/orders')

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { confirmTossPayment } from '@/shared/lib/tosspayments'
 import { sendOrderConfirmation, type EmailOrderData } from '@/shared/lib/email'
+import { sendOrderConfirmAlimtalk } from '@/shared/lib/solapi'
 import { formatPrice } from '@/shared/lib/utils'
 import { earnPointsForOrder } from '@/features/points/actions/earn-points'
 
@@ -183,6 +184,45 @@ export async function POST(req: NextRequest) {
       } catch (emailErr: any) {
         console.error('[TOSS_CONFIRM] Email failed (non-blocking):', emailErr.message)
       }
+    }
+
+    // 7. 주문완료 카카오 알림톡 (회원만, 비동기)
+    try {
+      const { data: orderForAlimtalk } = await supabase
+        .from('orders')
+        .select('user_id, order_number, customer_name, total')
+        .eq('id', orderId)
+        .single()
+
+      if (orderForAlimtalk?.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', orderForAlimtalk.user_id)
+          .single()
+
+        if (profile?.phone) {
+          const { data: alimtalkItems } = await supabase
+            .from('order_items')
+            .select('quantity, variant:variants(product:products(name))')
+            .eq('order_id', orderId)
+
+          const firstItem = (alimtalkItems || [])[0]
+          const firstName = (firstItem?.variant as any)?.product?.name || '상품'
+          const extraCount = (alimtalkItems || []).length - 1
+          const productSummary = extraCount > 0 ? `${firstName} 외 ${extraCount}건` : firstName
+
+          await sendOrderConfirmAlimtalk({
+            to: profile.phone,
+            customerName: orderForAlimtalk.customer_name || '고객',
+            orderNumber: orderForAlimtalk.order_number || orderId.slice(0, 8),
+            orderTotal: formatPrice(orderForAlimtalk.total),
+            productSummary,
+          })
+        }
+      }
+    } catch (alimtalkErr: any) {
+      console.error('[TOSS_CONFIRM] Alimtalk failed (non-blocking):', alimtalkErr.message)
     }
 
     return NextResponse.json({

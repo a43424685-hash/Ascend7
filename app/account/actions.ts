@@ -7,6 +7,7 @@ export type ProfileData = {
   display_name: string | null
   phone: string | null
   email: string
+  birthday: string | null
   // 기본 배송지 정보
   default_address: string | null
   default_address_detail: string | null
@@ -25,7 +26,7 @@ export async function getProfile(): Promise<ProfileData | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, phone, email, default_address, default_address_detail, default_postal_code, default_memo')
+    .select('display_name, phone, email, birthday, default_address, default_address_detail, default_postal_code, default_memo')
     .eq('id', user.id)
     .single()
 
@@ -33,6 +34,7 @@ export async function getProfile(): Promise<ProfileData | null> {
     display_name: null,
     phone: null,
     email: user.email || '',
+    birthday: null,
     default_address: null,
     default_address_detail: null,
     default_postal_code: null,
@@ -49,6 +51,7 @@ export async function updateProfile(
 ): Promise<{ success?: boolean; error?: string }> {
   const displayName = formData.get('display_name') as string
   const phone = formData.get('phone') as string
+  const birthday = formData.get('birthday') as string
   const defaultAddress = formData.get('default_address') as string
   const defaultAddressDetail = formData.get('default_address_detail') as string
   const defaultPostalCode = formData.get('default_postal_code') as string
@@ -66,6 +69,7 @@ export async function updateProfile(
     .update({
       display_name: displayName || null,
       phone: phone || null,
+      birthday: birthday || null,
       default_address: defaultAddress || null,
       default_address_detail: defaultAddressDetail || null,
       default_postal_code: defaultPostalCode || null,

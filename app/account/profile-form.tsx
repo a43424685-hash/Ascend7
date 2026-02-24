@@ -76,6 +76,20 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
         />
       </div>
 
+      <div>
+        <label htmlFor="birthday" className="block text-sm font-semibold text-gray-700 mb-1">
+          생년월일
+        </label>
+        <input
+          id="birthday"
+          name="birthday"
+          type="date"
+          defaultValue={profile.birthday || ''}
+          className="w-full px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+        />
+        <p className="text-xs text-gray-500 mt-1">생일에 3,000P를 드려요.</p>
+      </div>
+
       {/* 기본 배송지 섹션 */}
       <div className="pt-6 mt-6 border-t-2 border-gray-200">
         <h3 className="text-lg font-bold mb-4">기본 배송지</h3>
