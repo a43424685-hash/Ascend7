@@ -15,7 +15,7 @@ export default async function AccountPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, phone, email, default_address, default_address_detail, default_postal_code, default_memo')
+    .select('display_name, phone, email, birthday, default_address, default_address_detail, default_postal_code, default_memo')
     .eq('id', user.id)
     .single()
 
@@ -23,6 +23,7 @@ export default async function AccountPage() {
     display_name: profile?.display_name || null,
     phone: profile?.phone || null,
     email: profile?.email || user.email || '',
+    birthday: profile?.birthday || null,
     default_address: profile?.default_address || null,
     default_address_detail: profile?.default_address_detail || null,
     default_postal_code: profile?.default_postal_code || null,
