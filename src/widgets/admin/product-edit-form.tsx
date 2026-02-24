@@ -6,6 +6,7 @@ import { updateProduct } from '@/entities/product/api/update-product'
 import { Button } from '@/shared/ui/button'
 import { SizeChartEditor } from '@/widgets/admin/size-chart-editor'
 import { RichTextEditor } from '@/shared/ui/rich-text-editor'
+import { MaterialCareEditor } from '@/widgets/admin/material-care-editor'
 import type { ProductWithDetails } from '@/shared/types/database'
 
 interface ProductEditFormProps {
@@ -48,6 +49,10 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
     is_active: product.is_active,
   })
   const [sizeChart, setSizeChart] = useState<string | null>(product.size_chart)
+  const [material, setMaterial] = useState<string | null>(product.material ?? null)
+  const [careInstructions, setCareInstructions] = useState<string[] | null>(
+    product.care_instructions ?? null
+  )
 
   const handleCategoryChange = (category: string) => {
     setFormData((prev) => ({ ...prev, category, sub_category: '' }))
@@ -67,6 +72,8 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
         size_chart: sizeChart,
         detail_content: formData.detail_content || undefined,
         size_material_care: formData.size_material_care || null,
+        material,
+        care_instructions: careInstructions,
       })
       setSuccess(true)
       router.refresh()
@@ -152,15 +159,16 @@ export function ProductEditForm({ product }: ProductEditFormProps) {
       </div>
 
       {/* 소재 / 세탁 안내 */}
-      <div className="border border-gray-200 rounded p-4 space-y-2">
+      <div className="border border-gray-200 rounded p-4 space-y-3">
         <div>
           <label className="block text-sm font-semibold">소재 / 세탁 안내</label>
-          <p className="text-xs text-gray-400 mt-0.5">소재 구성, 세탁 방법 등을 입력하세요.</p>
+          <p className="text-xs text-gray-400 mt-0.5">소재를 선택하고 비율(%)을 입력한 뒤, 세탁 방법을 선택하세요.</p>
         </div>
-        <RichTextEditor
-          value={formData.size_material_care}
-          onChange={(html) => setFormData((prev) => ({ ...prev, size_material_care: html }))}
-          minHeight={140}
+        <MaterialCareEditor
+          material={material}
+          careInstructions={careInstructions}
+          onMaterialChange={setMaterial}
+          onCareChange={setCareInstructions}
         />
       </div>
 

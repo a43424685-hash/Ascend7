@@ -6,6 +6,8 @@ export type Product = {
   detail_content: string | null
   size_chart: string | null
   size_material_care: string | null
+  material: string | null
+  care_instructions: string[] | null
   category: string
   sub_category: string | null
   is_active: boolean

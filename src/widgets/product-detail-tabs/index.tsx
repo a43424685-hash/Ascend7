@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import type { ProductWithDetails } from '@/shared/types/database'
 import { parseSizeChartJSON, QUALITY_OPTIONS } from '@/widgets/admin/size-chart-editor'
+import { CARE_OPTIONS, CareIconSvg } from '@/widgets/admin/material-care-editor'
 
 interface ProductDetailTabsProps {
   product: ProductWithDetails
@@ -27,7 +28,11 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
   const activeQualities = sizeChart
     ? Object.entries(sizeChart.qualities || {}).filter(([, v]) => v)
     : []
-  const hasSizeSection = sizeChart || product.size_material_care
+  const hasSizeSection =
+    sizeChart ||
+    product.size_material_care ||
+    product.material ||
+    (product.care_instructions && product.care_instructions.length > 0)
 
   return (
     <div className="border-t border-gray-200">
@@ -140,8 +145,37 @@ export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabs
               </div>
             )}
 
-            {/* 소재 / 세탁 안내 텍스트 */}
-            {product.size_material_care && (
+            {/* 소재 구성 (신규 structured) */}
+            {product.material && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">소재 구성</h4>
+                <p className="text-sm text-gray-600">{product.material}</p>
+              </div>
+            )}
+
+            {/* 세탁 안내 아이콘 (신규 structured) */}
+            {product.care_instructions && product.care_instructions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold mb-3">세탁 안내</h4>
+                <div className="flex flex-wrap gap-3">
+                  {product.care_instructions.map((careId) => {
+                    const opt = CARE_OPTIONS.find((o) => o.id === careId)
+                    if (!opt) return null
+                    return (
+                      <div key={careId} className="flex flex-col items-center gap-1 w-14">
+                        <CareIconSvg id={careId} className="w-8 h-8 text-gray-700" />
+                        <span className="text-[10px] text-gray-500 text-center leading-tight break-keep">
+                          {opt.label}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 레거시 소재 / 세탁 안내 텍스트 (기존 데이터 호환) */}
+            {!product.material && !product.care_instructions && product.size_material_care && (
               <div>
                 <h4 className="text-sm font-semibold mb-3">소재 / 세탁 안내</h4>
                 {product.size_material_care.startsWith('<') ? (
