@@ -26,6 +26,19 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
+  // 세션 3시간 만료 체크
+  const SESSION_DURATION_MS = 3 * 60 * 60 * 1000 // 3시간
+  if (user) {
+    const sessionStart = request.cookies.get('session_start')?.value
+    if (sessionStart) {
+      const sessionAge = Date.now() - parseInt(sessionStart)
+      if (sessionAge > SESSION_DURATION_MS) {
+        return NextResponse.redirect(new URL('/api/auth/force-logout', request.url))
+      }
+    }
+    // session_start 없음: 이전 로그인 사용자 → 다음 로그인 시 자동 설정됨
+  }
+
   // 디버그 로그 (프로덕션에서 세션 문제 추적용)
   if (process.env.NODE_ENV === 'production') {
     const allCookies = request.cookies.getAll()

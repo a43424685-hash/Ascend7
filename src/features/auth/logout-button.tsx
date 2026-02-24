@@ -23,6 +23,9 @@ export function LogoutButton() {
         return
       }
 
+      // 장바구니 클리어 (로그인 상태에서 담은 항목 제거)
+      sessionStorage.removeItem('ascend7_cart')
+
       // 로그아웃 성공 - 홈으로 리다이렉트 (hard refresh로 서버 컴포넌트가 세션 제거를 인식)
       window.location.href = '/'
     } catch (err) {

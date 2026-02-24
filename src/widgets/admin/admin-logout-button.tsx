@@ -9,6 +9,7 @@ export function AdminLogoutButton() {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    sessionStorage.removeItem('ascend7_cart')
     router.push('/auth/login')
   }
 

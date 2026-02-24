@@ -76,6 +76,15 @@ export async function GET(request: NextRequest) {
         response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
       })
 
+      // 세션 시작 시간 기록 (3시간 만료 추적용)
+      response.cookies.set('session_start', Date.now().toString(), {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60,
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      })
+
       return response
     } catch {
       return NextResponse.redirect(`${origin}/auth/login?error=unexpected`)

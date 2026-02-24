@@ -3,6 +3,7 @@
 import { createClient } from '@/shared/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 
 /**
  * 로그인 Server Action
@@ -55,6 +56,16 @@ export async function loginAction(prevState: any, formData: FormData) {
       error: error.message || '로그인 중 오류가 발생했습니다.',
     }
   }
+
+  // 세션 시작 시간 기록 (3시간 만료 추적용)
+  const cookieStore = await cookies()
+  cookieStore.set('session_start', Date.now().toString(), {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60, // 7일 (실제 만료는 middleware에서 3시간 체크)
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  })
 
   redirect(redirectTo)
 }
