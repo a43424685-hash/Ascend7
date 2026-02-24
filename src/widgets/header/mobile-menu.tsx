@@ -243,7 +243,7 @@ export function MobileMenuButton() {
 
   return (
     <>
-      <button onClick={() => setIsOpen(true)} className="lg:hidden p-1" aria-label="메뉴 열기">
+      <button onClick={() => { setIsOpen(true); setShopOpen(true) }} className="lg:hidden p-1" aria-label="메뉴 열기">
         <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
         </svg>
