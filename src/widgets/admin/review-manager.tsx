@@ -342,8 +342,8 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
 
                     <p className="text-[11px] text-gray-400 mt-1">{displayName} · {formatDate(item.created_at)}</p>
 
-                    {/* 포인트 수동 조정 (실제 유저 리뷰만) */}
-                    {isRealUser && item.user_id && (
+                    {/* 포인트 수동 조정 (user_id 있는 모든 리뷰) */}
+                    {item.user_id && (
                       <PointAdjustInline userId={item.user_id} />
                     )}
                   </div>
