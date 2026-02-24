@@ -40,15 +40,12 @@ export async function spendPoints(
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createAdminClient()
 
-  // 현재 잔액 확인
-  const { data: txs } = await supabase
-    .from('point_transactions')
-    .select('amount, type')
-    .eq('user_id', userId)
-
-  const balance = (txs || []).reduce((sum, tx) => {
-    return sum + (tx.type === 'earn' ? tx.amount : -tx.amount)
-  }, 0)
+  // 현재 잔액 확인 (DB SUM으로 전체 스캔 방지)
+  const [{ data: earnData }, { data: spendData }] = await Promise.all([
+    supabase.from('point_transactions').select('amount.sum()').eq('user_id', userId).eq('type', 'earn').single(),
+    supabase.from('point_transactions').select('amount.sum()').eq('user_id', userId).eq('type', 'spend').single(),
+  ])
+  const balance = ((earnData as any)?.amount ?? 0) - ((spendData as any)?.amount ?? 0)
 
   if (balance < 5000) {
     return { success: false, error: '포인트는 5,000P 이상 보유 시 사용할 수 있습니다.' }

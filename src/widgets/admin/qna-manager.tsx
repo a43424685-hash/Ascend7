@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { answerQna, updateQnaAnswer, deleteQnaAnswer, toggleQnaActive, deleteQna } from '@/features/admin/actions/qna-management'
+import { answerQna, deleteQnaAnswer, toggleQnaActive, deleteQna } from '@/features/admin/actions/qna-management'
 
 interface QnaItem {
   id: string
@@ -56,10 +56,7 @@ export function QnaManager({ items }: QnaManagerProps) {
 
   const handleSubmitAnswer = async (item: QnaItem) => {
     if (!answerText.trim()) return
-    await run(() => item.answer
-      ? updateQnaAnswer(item.id, answerText)
-      : answerQna(item.id, answerText)
-    )
+    await run(() => answerQna(item.id, answerText))
     setAnsweringId(null)
     setAnswerText('')
   }

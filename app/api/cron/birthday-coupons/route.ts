@@ -11,8 +11,9 @@ export const runtime = 'nodejs'
  */
 export async function GET(req: NextRequest) {
   // Vercel Cron 인증 (CRON_SECRET 환경변수)
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // CRON_SECRET 미설정 시 fail-secure (undefined 우회 방지)
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

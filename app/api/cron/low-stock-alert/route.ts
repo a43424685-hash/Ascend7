@@ -13,8 +13,9 @@ const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL || process.env.FROM_EMAIL?.mat
  * - 재고 5개 이하 상품 관리자 이메일 발송
  */
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  // CRON_SECRET 미설정 시 fail-secure (undefined 우회 방지)
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || req.headers.get('authorization') !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

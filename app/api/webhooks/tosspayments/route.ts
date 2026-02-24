@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
+import { createHmac } from 'crypto'
 
 /**
  * TossPayments 웹훅 핸들러
@@ -16,7 +17,26 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    // 서명 검증 (HMAC-SHA256)
+    const rawBody = await req.text()
+    const signature = req.headers.get('X-TossPayments-Signature')
+    const webhookSecret = process.env.TOSSPAYMENTS_WEBHOOK_SECRET
+
+    if (webhookSecret) {
+      if (!signature) {
+        console.warn('[TOSS_WEBHOOK] Missing signature header')
+        return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+      }
+      const expected = createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex')
+      if (signature !== expected) {
+        console.warn('[TOSS_WEBHOOK] Invalid signature')
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      }
+    }
+
+    const body = JSON.parse(rawBody)
 
     console.log('[TOSS_WEBHOOK] Received event', { eventType: body.eventType, createdAt: body.createdAt })
 

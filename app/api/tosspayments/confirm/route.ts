@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/shared/lib/supabase/admin'
 import { confirmTossPayment } from '@/shared/lib/tosspayments'
-import { sendOrderConfirmation, type EmailOrderData } from '@/shared/lib/email'
+import { sendOrderConfirmation } from '@/shared/lib/email'
 import { sendOrderConfirmAlimtalk } from '@/shared/lib/solapi'
 import { formatPrice } from '@/shared/lib/utils'
 import { earnPointsForOrder } from '@/features/points/actions/earn-points'
+import { fetchEmailOrderData } from '@/shared/lib/order-email'
 
 export const runtime = 'nodejs'
 
@@ -20,10 +21,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient()
 
-  // 주문 조회
+  // 주문 조회 (이후 단계에서 필요한 모든 컬럼을 한 번에)
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .select('id, payment_status, total, tosspayments_payment_key, customer_email, customer_name, order_number')
+    .select('id, payment_status, total, tosspayments_payment_key, customer_email, customer_name, order_number, user_id, coupon_code')
     .eq('id', orderId)
     .single()
 
@@ -110,35 +111,21 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. 포인트 적립 (비동기, 실패해도 결제는 완료)
-    if (!hasStockError) {
-      const { data: orderForPoints } = await supabase
-        .from('orders')
-        .select('user_id, total')
-        .eq('id', orderId)
-        .single()
-
-      if (orderForPoints?.user_id) {
-        try {
-          await earnPointsForOrder(orderForPoints.user_id, orderId, orderForPoints.total)
-        } catch (pointErr: any) {
-          console.error('[TOSS_CONFIRM] Point earn failed (non-blocking):', pointErr.message)
-        }
+    if (!hasStockError && order.user_id) {
+      try {
+        await earnPointsForOrder(order.user_id, orderId, order.total)
+      } catch (pointErr: any) {
+        console.error('[TOSS_CONFIRM] Point earn failed (non-blocking):', pointErr.message)
       }
     }
 
     // 5. 이벤트 쿠폰 사용 기록 저장 (비동기, 실패해도 결제는 완료)
-    try {
-      const { data: orderForCoupon } = await supabase
-        .from('orders')
-        .select('user_id, coupon_code')
-        .eq('id', orderId)
-        .single()
-
-      if (orderForCoupon?.user_id && orderForCoupon?.coupon_code) {
+    if (order.user_id && order.coupon_code) {
+      try {
         const { data: eventCoupon } = await supabase
           .from('events')
           .select('id')
-          .eq('coupon_code', orderForCoupon.coupon_code)
+          .eq('coupon_code', order.coupon_code)
           .eq('is_active', true)
           .single()
 
@@ -146,59 +133,32 @@ export async function POST(req: NextRequest) {
           await supabase
             .from('event_coupon_usages')
             .upsert(
-              { event_id: eventCoupon.id, user_id: orderForCoupon.user_id, order_id: orderId },
+              { event_id: eventCoupon.id, user_id: order.user_id, order_id: orderId },
               { onConflict: 'event_id,user_id', ignoreDuplicates: true }
             )
         }
+      } catch (couponErr: any) {
+        console.error('[TOSS_CONFIRM] Event coupon usage record failed (non-blocking):', couponErr.message)
       }
-    } catch (couponErr: any) {
-      console.error('[TOSS_CONFIRM] Event coupon usage record failed (non-blocking):', couponErr.message)
     }
 
     // 6. 주문 확인 이메일 발송 (비동기, 실패해도 결제는 완료)
     if (order.customer_email) {
       try {
-        const { data: emailItems } = await supabase
-          .from('order_items')
-          .select('quantity, price, variant:variants(color, size, product:products(name))')
-          .eq('order_id', orderId)
-
-        const emailData: EmailOrderData = {
-          orderNumber: order.order_number || orderId.slice(0, 8),
-          customerName: order.customer_name || '고객',
-          customerEmail: order.customer_email,
-          total: formatPrice(order.total),
-          items: (emailItems || []).map((item: any) => {
-            const v = Array.isArray(item.variant) ? item.variant[0] : item.variant
-            const p = v && (Array.isArray(v.product) ? v.product[0] : v.product)
-            return {
-              name: p?.name || '상품',
-              option: v ? `${v.color} / ${v.size}` : '-',
-              quantity: item.quantity,
-              price: formatPrice(item.price * item.quantity),
-            }
-          }),
-        }
-
-        await sendOrderConfirmation(emailData)
+        const emailData = await fetchEmailOrderData(supabase, orderId)
+        if (emailData) await sendOrderConfirmation(emailData)
       } catch (emailErr: any) {
         console.error('[TOSS_CONFIRM] Email failed (non-blocking):', emailErr.message)
       }
     }
 
     // 7. 주문완료 카카오 알림톡 (회원만, 비동기)
-    try {
-      const { data: orderForAlimtalk } = await supabase
-        .from('orders')
-        .select('user_id, order_number, customer_name, total')
-        .eq('id', orderId)
-        .single()
-
-      if (orderForAlimtalk?.user_id) {
+    if (order.user_id) {
+      try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('phone')
-          .eq('id', orderForAlimtalk.user_id)
+          .eq('id', order.user_id)
           .single()
 
         if (profile?.phone) {
@@ -214,15 +174,15 @@ export async function POST(req: NextRequest) {
 
           await sendOrderConfirmAlimtalk({
             to: profile.phone,
-            customerName: orderForAlimtalk.customer_name || '고객',
-            orderNumber: orderForAlimtalk.order_number || orderId.slice(0, 8),
-            orderTotal: formatPrice(orderForAlimtalk.total),
+            customerName: order.customer_name || '고객',
+            orderNumber: order.order_number || orderId.slice(0, 8),
+            orderTotal: formatPrice(order.total),
             productSummary,
           })
         }
+      } catch (alimtalkErr: any) {
+        console.error('[TOSS_CONFIRM] Alimtalk failed (non-blocking):', alimtalkErr.message)
       }
-    } catch (alimtalkErr: any) {
-      console.error('[TOSS_CONFIRM] Alimtalk failed (non-blocking):', alimtalkErr.message)
     }
 
     return NextResponse.json({

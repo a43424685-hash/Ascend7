@@ -1,33 +1,15 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/shared/lib/supabase/server'
+import { getProfile } from './actions'
 import { ProfileForm } from './profile-form'
 import { PasswordForm } from './password-form'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AccountPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const profile = await getProfile()
 
-  if (!user) {
+  if (!profile) {
     redirect('/')
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('display_name, phone, email, birthday, default_address, default_address_detail, default_postal_code, default_memo')
-    .eq('id', user.id)
-    .single()
-
-  const profileData = {
-    display_name: profile?.display_name || null,
-    phone: profile?.phone || null,
-    email: profile?.email || user.email || '',
-    birthday: profile?.birthday || null,
-    default_address: profile?.default_address || null,
-    default_address_detail: profile?.default_address_detail || null,
-    default_postal_code: profile?.default_postal_code || null,
-    default_memo: profile?.default_memo || null,
   }
 
   return (
@@ -37,7 +19,7 @@ export default async function AccountPage() {
         <h2 className="text-base font-bold mb-5 pb-3 border-b border-gray-100">
           프로필 정보
         </h2>
-        <ProfileForm profile={profileData} />
+        <ProfileForm profile={profile} />
       </div>
 
       {/* 비밀번호 */}

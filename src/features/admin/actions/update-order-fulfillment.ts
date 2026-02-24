@@ -7,9 +7,10 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/shared/lib/supabase/server'
 import { requireAdmin } from '@/shared/lib/auth/admin'
-import { sendShippingNotification, type EmailOrderData } from '@/shared/lib/email'
+import { sendShippingNotification } from '@/shared/lib/email'
 import { sendShippingAlimtalk, sendOrderCancelAlimtalk } from '@/shared/lib/solapi'
 import { formatPrice } from '@/shared/lib/utils'
+import { fetchEmailOrderData } from '@/shared/lib/order-email'
 
 export type FulfillmentStatus =
   | 'unfulfilled'
@@ -121,31 +122,11 @@ export async function updateOrderTracking(
         .single()
 
       if (order?.customer_email) {
-        const { data: items } = await supabase
-          .from('order_items')
-          .select('quantity, price, variant:variants(color, size, product:products(name))')
-          .eq('order_id', orderId)
-
-        const emailData: EmailOrderData = {
-          orderNumber: order.order_number || orderId.slice(0, 8),
-          customerName: order.customer_name || '고객',
-          customerEmail: order.customer_email,
-          total: formatPrice(order.total),
+        const emailData = await fetchEmailOrderData(supabase, orderId, {
           trackingNumber,
           carrier: carrier || undefined,
-          items: (items || []).map((item: any) => {
-            const v = Array.isArray(item.variant) ? item.variant[0] : item.variant
-            const p = v && (Array.isArray(v.product) ? v.product[0] : v.product)
-            return {
-              name: p?.name || '상품',
-              option: v ? `${v.color} / ${v.size}` : '-',
-              quantity: item.quantity,
-              price: formatPrice(item.price * item.quantity),
-            }
-          }),
-        }
-
-        await sendShippingNotification(emailData)
+        })
+        if (emailData) await sendShippingNotification(emailData)
 
         // 카카오 알림톡 (회원 전화번호 조회)
         if (order.user_id) {
