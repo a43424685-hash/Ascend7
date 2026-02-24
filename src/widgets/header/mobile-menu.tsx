@@ -71,7 +71,7 @@ function ChevronIcon({ open }: { open: boolean }) {
 export function MobileMenuButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [shopOpen, setShopOpen] = useState(false)
+  const [shopOpen, setShopOpen] = useState(true)
   const [openSubs, setOpenSubs] = useState<Record<string, boolean>>({})
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
