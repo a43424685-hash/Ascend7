@@ -9,6 +9,7 @@ export type Product = {
   category: string
   sub_category: string | null
   is_active: boolean
+  is_coming_soon: boolean
   created_at: string
 }
 

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getAllProductsAdmin } from '@/entities/product/api/get-all-products-admin'
 import { Button } from '@/shared/ui/button'
 import { formatPrice } from '@/shared/lib/utils'
+import { ComingSoonToggle } from '@/widgets/admin/coming-soon-toggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,22 +33,27 @@ export default async function AdminProductsPage() {
               const totalStock = product.variants.reduce((sum, v) => sum + v.stock, 0)
               const minPrice = Math.min(...product.variants.map((v) => v.price))
               return (
-                <Link
+                <div
                   key={product.id}
-                  href={`/admin/products/${product.id}`}
-                  className="block bg-white border border-gray-200 rounded-lg p-4"
+                  className="bg-white border border-gray-200 rounded-lg p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
+                    <Link href={`/admin/products/${product.id}`} className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate">{product.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{formatPrice(minPrice)} · {product.category}</p>
                       <p className="text-xs text-gray-400 mt-1">{product.variants.length}개 옵션 · 재고 {totalStock}</p>
+                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {product.is_active ? '활성' : '비활성'}
+                      </span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-[9px] text-gray-400">준비중</span>
+                        <ComingSoonToggle productId={product.id} initialValue={product.is_coming_soon ?? false} />
+                      </div>
                     </div>
-                    <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded font-medium ${product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {product.is_active ? '활성' : '비활성'}
-                    </span>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
@@ -61,6 +67,7 @@ export default async function AdminProductsPage() {
                   <th className="text-left p-4 font-semibold text-sm">카테고리</th>
                   <th className="text-left p-4 font-semibold text-sm">옵션</th>
                   <th className="text-left p-4 font-semibold text-sm">상태</th>
+                  <th className="text-center p-4 font-semibold text-sm">준비중</th>
                   <th className="text-right p-4 font-semibold text-sm">관리</th>
                 </tr>
               </thead>
@@ -89,6 +96,9 @@ export default async function AdminProductsPage() {
                         <span className={`inline-block px-2 py-1 text-xs font-semibold rounded ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                           {product.is_active ? '활성' : '비활성'}
                         </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <ComingSoonToggle productId={product.id} initialValue={product.is_coming_soon ?? false} />
                       </td>
                       <td className="p-4 text-right">
                         <Link href={`/admin/products/${product.id}`} className="text-sm font-medium hover:underline">
