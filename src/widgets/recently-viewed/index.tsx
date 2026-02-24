@@ -15,6 +15,8 @@ export interface RecentlyViewedItem {
 
 interface RecentlyViewedSectionProps {
   current: RecentlyViewedItem
+  /** 서버에서 내려주는 최신 준비중 슬러그 목록 - localStorage 캐시 값을 덮어씀 */
+  comingSoonSlugs?: string[]
 }
 
 const KEY = 'ascend7_recently_viewed'
@@ -28,7 +30,7 @@ function getStored(): RecentlyViewedItem[] {
   }
 }
 
-export function RecentlyViewedSection({ current }: RecentlyViewedSectionProps) {
+export function RecentlyViewedSection({ current, comingSoonSlugs }: RecentlyViewedSectionProps) {
   const [items, setItems] = useState<RecentlyViewedItem[]>([])
 
   useEffect(() => {
@@ -36,8 +38,14 @@ export function RecentlyViewedSection({ current }: RecentlyViewedSectionProps) {
     const filtered = stored.filter((i) => i.slug !== current.slug)
     const next = [current, ...filtered].slice(0, MAX)
     localStorage.setItem(KEY, JSON.stringify(next))
-    setItems(filtered.slice(0, 4))
-  }, [current.slug])
+    // 서버 최신 상태로 isComingSoon 덮어쓰기
+    const resolved = filtered.slice(0, 4).map((item) =>
+      comingSoonSlugs
+        ? { ...item, isComingSoon: comingSoonSlugs.includes(item.slug) }
+        : item
+    )
+    setItems(resolved)
+  }, [current.slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (items.length === 0) return null
 
@@ -64,7 +72,7 @@ export function RecentlyViewedSection({ current }: RecentlyViewedSectionProps) {
                 )}
               </div>
               {item.isComingSoon && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                   <span className="text-[11px] font-bold tracking-[0.3em] text-white uppercase">Coming Soon</span>
                 </div>
               )}

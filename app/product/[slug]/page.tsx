@@ -6,6 +6,7 @@ import { getProductBySlug } from '@/entities/product/api/get-product-by-slug'
 import { getProductsWithFilters } from '@/entities/product/api/get-products-with-filters'
 import { getSiteSettings } from '@/entities/cms/api/get-site-settings'
 import { getFlashSaleForProduct } from '@/entities/flash-sale/api/get-flash-sale-for-product'
+import { getComingSoonSlugs } from '@/entities/product/api/get-coming-soon-slugs'
 import { ProductGallery } from '@/widgets/product-gallery'
 import { ProductDetails } from '@/features/cart/product-details'
 import { ProductDetailTabs } from '@/widgets/product-detail-tabs'
@@ -44,11 +45,12 @@ export default async function ProductPage({
   const product = await getProductBySlug(params.slug)
   if (!product) notFound()
 
-  // 배송 정책 + 추천 상품 + 타임딜 병렬 조회
-  const [siteSettings, allProducts, flashSale] = await Promise.all([
+  // 배송 정책 + 추천 상품 + 타임딜 + 준비중 슬러그 병렬 조회
+  const [siteSettings, allProducts, flashSale, comingSoonSlugs] = await Promise.all([
     getSiteSettings(),
     getProductsWithFilters({ category: product.category }),
     getFlashSaleForProduct(product.id),
+    getComingSoonSlugs(),
   ])
   const recommendations = allProducts
     .filter((p) => p.id !== product.id)
@@ -83,6 +85,7 @@ export default async function ProductPage({
           price: product.variants.length > 0 ? Math.min(...product.variants.map((v) => v.price)) : 0,
           isComingSoon: product.is_coming_soon,
         }}
+        comingSoonSlugs={comingSoonSlugs}
       />
 
       {/* 추천 상품 */}
@@ -116,7 +119,7 @@ export default async function ProductPage({
                     )}
                   </div>
                   {isComingSoon && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                       <span className="text-[11px] font-bold tracking-[0.3em] text-white uppercase">Coming Soon</span>
                     </div>
                   )}

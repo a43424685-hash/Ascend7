@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Coming Soon 오버레이 */}
       {isComingSoon && (
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
           <span className="text-[11px] font-bold tracking-[0.3em] text-white uppercase">
             Coming Soon
           </span>
