@@ -56,8 +56,39 @@ export default async function ProductPage({
     .filter((p) => p.id !== product.id)
     .slice(0, 4)
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ascend7.kr'
+  const activeVariants = product.variants.filter((v) => v.is_active)
+  const prices = activeVariants.map((v) => v.price)
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0
+  const totalStock = activeVariants.reduce((sum, v) => sum + (v.stock ?? 0), 0)
+  const jsonLd = {
+    '@context': 'https://schema.org/',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+    image: product.images.map((img) => img.url),
+    url: `${baseUrl}/product/${product.slug}`,
+    brand: { '@type': 'Brand', name: 'ASCEND7' },
+    offers: {
+      '@type': 'Offer',
+      url: `${baseUrl}/product/${product.slug}`,
+      priceCurrency: 'KRW',
+      price: minPrice,
+      availability:
+        product.is_coming_soon || totalStock === 0
+          ? 'https://schema.org/OutOfStock'
+          : 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@type': 'Organization', name: 'ASCEND7' },
+    },
+  }
+
   return (
     <div className="pb-20 lg:pb-0">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* 상단 2컬럼: 갤러리 + 구매박스 */}
       <div className="container mx-auto px-4 pt-6 lg:pt-12">
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12">
