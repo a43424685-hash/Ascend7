@@ -160,6 +160,52 @@ export async function sendReturnRequestConfirmation(data: EmailOrderData) {
 }
 
 /* ────────────────────────────────────────────
+ * 5. 리뷰 요청 (배송 완료 5일 후)
+ * ──────────────────────────────────────────── */
+export interface ReviewRequestData {
+  orderNumber: string
+  customerName: string
+  customerEmail: string
+  items: OrderItem[]
+}
+
+export async function sendReviewRequest(data: ReviewRequestData) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ascend7.kr'
+  const reviewUrl = `${siteUrl}/mypage/orders`
+
+  const itemsHtml = data.items
+    .map(
+      (i) => `<li style="margin:0 0 6px;font-size:14px;color:#374151">${i.name}
+        <span style="color:#9ca3af;font-size:12px"> · ${i.option}</span></li>`
+    )
+    .join('')
+
+  const body = `
+    <h2 style="margin:0 0 8px;font-size:22px">상품은 만족스러우셨나요?</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px">${data.customerName}님, 구매해 주셔서 감사합니다.</p>
+    <table width="100%" style="margin-bottom:24px">
+      <tr><td style="background:#f9fafb;padding:16px;font-size:13px">
+        <strong>주문번호</strong>&nbsp;&nbsp;<span style="font-family:monospace;font-weight:700">${data.orderNumber}</span>
+      </td></tr>
+    </table>
+    <ul style="margin:0 0 24px;padding:0 0 0 18px">
+      ${itemsHtml}
+    </ul>
+    <p style="margin:0 0 8px;font-size:14px;color:#374151">솔직한 리뷰를 남겨주시면 <strong style="color:#000">포인트 500P</strong>를 즉시 적립해 드립니다.</p>
+    <p style="margin:0 0 24px;font-size:13px;color:#6b7280">적립된 포인트는 다음 구매 시 현금처럼 사용하실 수 있습니다.</p>
+    <div style="text-align:center;margin-bottom:24px">
+      <a href="${reviewUrl}" style="display:inline-block;padding:14px 36px;background:#000;color:#fff;text-decoration:none;font-size:14px;font-weight:700;letter-spacing:0.5px">리뷰 남기고 500P 받기 →</a>
+    </div>
+    <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">리뷰는 마이페이지 → 주문 내역에서 작성하실 수 있습니다.</p>`
+
+  return sendEmail(
+    data.customerEmail,
+    `[${SITE_NAME}] 리뷰를 남기고 500P를 받아가세요! (${data.orderNumber})`,
+    layout('리뷰 요청', body)
+  )
+}
+
+/* ────────────────────────────────────────────
  * 공용 전송 함수 (에러 로깅, 실패해도 throw 하지 않음)
  * ──────────────────────────────────────────── */
 async function sendEmail(to: string, subject: string, html: string) {
