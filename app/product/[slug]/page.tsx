@@ -81,6 +81,7 @@ export default async function ProductPage({
           name: product.name,
           imageUrl: product.images?.[0]?.url || null,
           price: product.variants.length > 0 ? Math.min(...product.variants.map((v) => v.price)) : 0,
+          isComingSoon: product.is_coming_soon,
         }}
       />
 
@@ -91,26 +92,21 @@ export default async function ProductPage({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {recommendations.map((p) => {
               const mainImage = p.images[0]?.url
-              const activeVariants =
-                p.variants?.filter((v) => v.is_active) || []
+              const activeVariants = p.variants?.filter((v) => v.is_active) || []
               const variantPrices = activeVariants.map((v) => v.price)
-              const minPrice =
-                variantPrices.length > 0 ? Math.min(...variantPrices) : 0
+              const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : 0
               const hasStock = activeVariants.some((v) => v.stock > 0)
+              const isComingSoon = p.is_coming_soon === true
 
-              return (
-                <Link
-                  key={p.id}
-                  href={`/product/${p.slug}`}
-                  className="group"
-                >
-                  <div className="aspect-[3/4] relative bg-gray-100 overflow-hidden mb-3">
+              const imageArea = (
+                <div className="aspect-[3/4] relative bg-gray-100 overflow-hidden mb-3">
+                  <div className={isComingSoon ? 'absolute inset-0 blur-sm opacity-40' : 'absolute inset-0'}>
                     {mainImage ? (
                       <Image
                         src={mainImage}
                         alt={p.name}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className={`object-cover transition-transform duration-300 ${!isComingSoon ? 'group-hover:scale-105' : ''}`}
                         sizes="(max-width: 768px) 50vw, 25vw"
                       />
                     ) : (
@@ -118,15 +114,34 @@ export default async function ProductPage({
                         No Image
                       </div>
                     )}
-                    {!hasStock && (
-                      <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 font-medium">
-                        품절
-                      </div>
-                    )}
                   </div>
-                  <h3 className="text-sm font-semibold mb-1 truncate">
-                    {p.name}
-                  </h3>
+                  {isComingSoon && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="text-[11px] font-bold tracking-[0.3em] text-white uppercase">Coming Soon</span>
+                    </div>
+                  )}
+                  {!isComingSoon && !hasStock && (
+                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 font-medium">
+                      품절
+                    </div>
+                  )}
+                </div>
+              )
+
+              if (isComingSoon) {
+                return (
+                  <div key={p.id} className="cursor-default select-none">
+                    {imageArea}
+                    <h3 className="text-sm font-semibold mb-1 truncate">{p.name}</h3>
+                    <p className="text-sm"><span className="text-orange-400 text-xs">준비중</span></p>
+                  </div>
+                )
+              }
+
+              return (
+                <Link key={p.id} href={`/product/${p.slug}`} className="group">
+                  {imageArea}
+                  <h3 className="text-sm font-semibold mb-1 truncate">{p.name}</h3>
                   <p className="text-sm text-gray-600">
                     {minPrice > 0 ? formatPrice(minPrice) : '가격 문의'}
                   </p>
@@ -180,8 +195,9 @@ export default async function ProductPage({
               }
             />
             <FooterInfoItem
-              title="신제품 알림"
-              desc="SNS 팔로우"
+              title="인스타그램"
+              desc="팔로우하고 신제품 소식 받아보세요"
+              href={process.env.NEXT_PUBLIC_INSTAGRAM_URL}
               icon={
                 <svg
                   className="w-6 h-6"
@@ -189,12 +205,9 @@ export default async function ProductPage({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                  />
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" strokeWidth={1.5} />
+                  <circle cx="12" cy="12" r="4" strokeWidth={1.5} />
+                  <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
                 </svg>
               }
             />
@@ -209,12 +222,14 @@ function FooterInfoItem({
   icon,
   title,
   desc,
+  href,
 }: {
   icon: React.ReactNode
   title: string
   desc: string
+  href?: string
 }) {
-  return (
+  const content = (
     <div className="text-center space-y-2">
       <div className="w-10 h-10 mx-auto text-gray-600 flex items-center justify-center">
         {icon}
@@ -223,4 +238,12 @@ function FooterInfoItem({
       <p className="text-xs text-gray-500">{desc}</p>
     </div>
   )
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block hover:opacity-70 transition-opacity">
+        {content}
+      </a>
+    )
+  }
+  return content
 }

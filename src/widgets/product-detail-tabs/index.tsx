@@ -12,7 +12,7 @@ interface ProductDetailTabsProps {
 
 export function ProductDetailTabs({ product, shippingPolicy }: ProductDetailTabsProps) {
   const [openSections, setOpenSections] = useState<Set<string>>(
-    new Set(['description'])
+    new Set(['description', 'info'])
   )
 
   const toggle = (id: string) => {
