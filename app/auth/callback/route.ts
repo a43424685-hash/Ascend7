@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const redirectParam = requestUrl.searchParams.get('redirect') || '/account'
+  const intent = requestUrl.searchParams.get('intent') // 'login' | 'signup' | null
   const origin = requestUrl.origin
 
   // OAuth 흐름: code가 있으면 세션으로 교환
@@ -49,14 +50,25 @@ export async function GET(request: NextRequest) {
         .eq('id', data.user.id)
         .single()
 
-      // 신규 회원가입 보너스: point_transactions가 없으면 3,000P 지급
+      // 신규/기존 사용자 판별 + intent 검증 + 신규 가입 보너스 지급
       try {
         const adminClient = createAdminClient()
         const { count } = await adminClient
           .from('point_transactions')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', data.user.id)
-        if (count === 0) {
+        const isNewUser = count === 0
+
+        // intent 불일치 처리 (쿠키 미설정 → 세션 미수립 상태로 에러 페이지 이동)
+        if (intent === 'signup' && !isNewUser) {
+          return NextResponse.redirect(`${origin}/auth/login?error=already_registered`)
+        }
+        if (intent === 'login' && isNewUser) {
+          return NextResponse.redirect(`${origin}/auth/login?error=no_account`)
+        }
+
+        // 신규 사용자 가입 보너스
+        if (isNewUser) {
           await adminClient.from('point_transactions').insert({
             user_id: data.user.id,
             amount: 3000,
@@ -65,7 +77,7 @@ export async function GET(request: NextRequest) {
           })
         }
       } catch {
-        // 포인트 지급 실패해도 로그인은 계속 진행
+        // 포인트/intent 체크 실패해도 로그인은 계속 진행
       }
 
       const defaultRedirect = profile?.role === 'admin' ? '/admin/orders' : '/account'

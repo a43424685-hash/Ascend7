@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [isKakaoLoading, setIsKakaoLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [socialError, setSocialError] = useState<string | null>(null)
 
   // 로그인 Server Action 상태 관리
   const [loginState, loginFormAction] = useFormState(loginAction, undefined)
@@ -34,12 +35,21 @@ export default function LoginPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
+      const searchParams = new URLSearchParams(window.location.search)
       if (user) {
         // ?redirect 파라미터가 있으면 해당 페이지로, 없으면 마이페이지로
-        const searchParams = new URLSearchParams(window.location.search)
         const redirectTo = searchParams.get('redirect') || '/account'
         router.replace(redirectTo)
       } else {
+        // OAuth 콜백 에러 처리
+        const errorParam = searchParams.get('error')
+        if (errorParam === 'already_registered') {
+          setSocialError('이미 가입된 계정입니다. 로그인 해주세요.')
+          setIsSignUp(false)
+        } else if (errorParam === 'no_account') {
+          setSocialError('가입된 계정이 없습니다. 회원가입을 먼저 해주세요.')
+          setIsSignUp(true)
+        }
         setIsCheckingAuth(false)
       }
     }
@@ -59,23 +69,23 @@ export default function LoginPage() {
     )
   }
 
-  // 구글 OAuth 로그인
+  // 구글 OAuth
   const handleGoogleLogin = async () => {
+    setSocialError(null)
     setIsGoogleLoading(true)
+    const intent = isSignUp ? 'signup' : 'login'
 
     try {
       const supabase = createClient()
       const searchParams = new URLSearchParams(window.location.search)
       const redirectParam = searchParams.get('redirect')
       const callbackUrl = redirectParam
-        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
-        : `${window.location.origin}/auth/callback`
+        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}&intent=${intent}`
+        : `${window.location.origin}/auth/callback?intent=${intent}`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: callbackUrl,
-        },
+        options: { redirectTo: callbackUrl },
       })
 
       if (error) throw error
@@ -85,24 +95,23 @@ export default function LoginPage() {
     }
   }
 
-  // 카카오 OAuth 로그인 (클라이언트 전용)
+  // 카카오 OAuth
   const handleKakaoLogin = async () => {
+    setSocialError(null)
     setIsKakaoLoading(true)
+    const intent = isSignUp ? 'signup' : 'login'
 
     try {
       const supabase = createClient()
-      // 현재 ?redirect 파라미터를 콜백 URL에 전달 (원래 가려던 페이지로 돌아오기 위해)
       const searchParams = new URLSearchParams(window.location.search)
       const redirectParam = searchParams.get('redirect')
       const callbackUrl = redirectParam
-        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}`
-        : `${window.location.origin}/auth/callback`
+        ? `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectParam)}&intent=${intent}`
+        : `${window.location.origin}/auth/callback?intent=${intent}`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
-        options: {
-          redirectTo: callbackUrl,
-        },
+        options: { redirectTo: callbackUrl },
       })
 
       if (error) throw error
@@ -110,7 +119,6 @@ export default function LoginPage() {
       console.error('Kakao login error:', err)
       setIsKakaoLoading(false)
     }
-    // OAuth 리다이렉트되므로 setIsKakaoLoading(false) 불필요
   }
 
   return (
@@ -128,6 +136,13 @@ export default function LoginPage() {
             {isSignUp ? '새 계정을 만드세요' : '계정에 로그인하세요'}
           </p>
         </div>
+
+        {/* 소셜 로그인 에러 */}
+        {socialError && (
+          <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded">
+            <p className="text-amber-800 text-sm font-semibold">⚠️ {socialError}</p>
+          </div>
+        )}
 
         {/* 에러/성공 메시지 */}
         {(loginState?.error || signUpState?.error) && (
@@ -276,7 +291,7 @@ export default function LoginPage() {
             >
               <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.551 1.564 4.787 3.923 6.18l-1.225 4.482c-.105.384.29.7.635.51l5.062-2.772C11.252 18.963 11.622 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" />
             </svg>
-            {isKakaoLoading ? '로그인 중...' : '카카오 로그인'}
+            {isKakaoLoading ? '처리 중...' : isSignUp ? '카카오로 회원가입' : '카카오 로그인'}
           </button>
 
           {/* 구글 로그인 */}
@@ -304,7 +319,7 @@ export default function LoginPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            {isGoogleLoading ? '로그인 중...' : '구글로 로그인'}
+            {isGoogleLoading ? '처리 중...' : isSignUp ? '구글로 회원가입' : '구글로 로그인'}
           </button>
         </div>
 
