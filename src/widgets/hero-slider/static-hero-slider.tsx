@@ -95,7 +95,7 @@ export function StaticHeroSlider() {
               onEnded={next}
               className="absolute inset-0 w-full h-full object-contain sm:object-cover"
             >
-              <source src="/videos/hero.mp4" type="video/mp4" />
+              <source src="/videos/itero7-hero.mp4" type="video/mp4" />
             </video>
           ) : (
             <div

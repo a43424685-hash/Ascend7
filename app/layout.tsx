@@ -15,7 +15,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://itero7.com'
 
 export const metadata: Metadata = {
   title: {
-    default: 'ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
+    default: 'ITERO7 - 7일간의 반복, 계속 재도전 하는 사람들을 위한 짐웨어',
     template: '%s | ITERO7',
   },
   description: '7일간의 반복, 다시 하는 사람들을 위한 짐웨어 - ITERO7',

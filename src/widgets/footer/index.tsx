@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export function Footer() {
   return (
@@ -10,7 +11,9 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-14 lg:py-18">
           {/* 브랜드 */}
           <div className="col-span-2 sm:col-span-1">
-            <p className="text-sm font-black tracking-[0.25em] mb-5 text-white">ITERO7</p>
+            <div className="mb-5">
+              <Image src="/images/itero7-logo.png" alt="ITERO7" height={32} width={100} className="h-8 w-auto object-contain brightness-0 invert" />
+            </div>
             <p className="text-[11px] text-gray-600 leading-relaxed mb-5">
               7일간의 반복,<br />
               다시 하는 사람들을 위한 짐웨어

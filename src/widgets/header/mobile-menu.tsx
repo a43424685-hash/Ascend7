@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/shared/lib/supabase/client'
 
@@ -125,7 +126,7 @@ export function MobileMenuButton() {
       <div className="absolute inset-0 bg-white animate-slide-in-left flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100 shrink-0">
-          <span className="text-sm font-black tracking-[0.2em]">ITERO7</span>
+          <Image src="/images/itero7-logo.png" alt="ITERO7" height={32} width={100} className="h-8 w-auto object-contain" />
           <button onClick={close} className="p-1" aria-label="메뉴 닫기">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

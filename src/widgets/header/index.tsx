@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { CartButton } from '@/features/cart/cart-button'
 import { AuthButton } from '@/features/auth/auth-button'
 import { MobileMenuButton, SearchButton } from './mobile-menu'
@@ -11,7 +12,14 @@ export async function Header() {
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
           <Link href="/" className="flex items-center shrink-0 hover:opacity-70 transition-opacity">
-            <span className="text-sm font-black tracking-[0.25em]">ITERO7</span>
+            <Image
+              src="/images/itero7-logo.png"
+              alt="ITERO7"
+              height={36}
+              width={120}
+              className="h-9 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* 데스크탑 네비게이션 - DesktopNav (SHOP 드롭다운 포함) */}
