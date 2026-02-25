@@ -14,7 +14,7 @@ export default function AdminLayout({
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-8">
               <Link href="/admin" prefetch={false} className="text-sm font-bold tracking-[0.15em]">
-                ASCEND7 <span className="text-gray-400 font-normal">ADMIN</span>
+                ITERO7 <span className="text-gray-400 font-normal">ADMIN</span>
               </Link>
               <nav className="hidden sm:flex items-center gap-6">
                 <Link

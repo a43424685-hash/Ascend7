@@ -27,7 +27,7 @@ export default async function LookbookPage() {
               </svg>
             </div>
             <p className="text-sm text-gray-400 font-medium tracking-wide">곧 업데이트됩니다</p>
-            <p className="text-xs text-gray-300 mt-1.5">ASCEND7의 스타일을 담은 룩북이 준비 중입니다</p>
+            <p className="text-xs text-gray-300 mt-1.5">ITERO7의 스타일을 담은 룩북이 준비 중입니다</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">

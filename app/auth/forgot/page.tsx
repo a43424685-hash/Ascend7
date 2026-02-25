@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         {/* 헤더 */}
         <div className="text-center">
           <Link href="/" className="text-4xl font-bold tracking-tight">
-            ASCEND7
+            ITERO7
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             비밀번호 찾기

@@ -19,7 +19,7 @@ interface RecentlyViewedSectionProps {
   comingSoonSlugs?: string[]
 }
 
-const KEY = 'ascend7_recently_viewed'
+const KEY = 'itero7_recently_viewed'
 const MAX = 8
 
 function getStored(): RecentlyViewedItem[] {

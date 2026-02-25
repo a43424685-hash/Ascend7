@@ -14,7 +14,7 @@
 
 1. **Supabase 대시보드 접속**
    - https://supabase.com 접속
-   - Ascend7 프로젝트 선택
+   - Itero7 프로젝트 선택
 
 2. **Settings → API 메뉴**
    - Project URL 복사 → `NEXT_PUBLIC_SUPABASE_URL`에 붙여넣기

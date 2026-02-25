@@ -125,7 +125,7 @@ export function MobileMenuButton() {
       <div className="absolute inset-0 bg-white animate-slide-in-left flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 h-16 border-b border-gray-100 shrink-0">
-          <span className="text-sm font-black tracking-[0.2em]">ASCEND7</span>
+          <span className="text-sm font-black tracking-[0.2em]">ITERO7</span>
           <button onClick={close} className="p-1" aria-label="메뉴 닫기">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

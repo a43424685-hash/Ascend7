@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 
-const DISMISS_KEY = 'ascend7_ann_v1'
+const DISMISS_KEY = 'itero7_ann_v1'
 
 const DEFAULT_SLIDES = [
   { id: 'd1', text_ko: '🎁 신규 회원가입 시 3,000P 즉시 지급', link_url: '/auth/login' },

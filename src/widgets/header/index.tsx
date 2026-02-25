@@ -11,7 +11,7 @@ export async function Header() {
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
           <Link href="/" className="flex items-center shrink-0 hover:opacity-70 transition-opacity">
-            <span className="text-sm font-black tracking-[0.25em]">ASCEND7</span>
+            <span className="text-sm font-black tracking-[0.25em]">ITERO7</span>
           </Link>
 
           {/* 데스크탑 네비게이션 - DesktopNav (SHOP 드롭다운 포함) */}

@@ -106,7 +106,7 @@ export function SiteSettingsForm({ settings }: SiteSettingsFormProps) {
             value={form.site_name}
             onChange={(e) => setForm(p => ({ ...p, site_name: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-            placeholder="ASCEND7"
+            placeholder="ITERO7"
           />
         </div>
         <div>

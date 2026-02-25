@@ -104,7 +104,7 @@ export function QnaAccordion({ items, currentUserId }: QnaAccordionProps) {
                   {isAnswered && canSeeContent && (
                     <div className="border-l-2 border-black/10 pl-4">
                       <p className="text-[10px] text-gray-400 font-medium tracking-wider uppercase mb-2">
-                        ASCEND7 답변
+                        ITERO7 답변
                         {item.answered_at && (
                           <span className="ml-2 font-normal normal-case">{formatDate(item.answered_at)}</span>
                         )}

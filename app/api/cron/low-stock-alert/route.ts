@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 <body style="font-family:-apple-system,sans-serif;background:#f9fafb;padding:40px 0">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb;margin:0 auto;max-width:600px">
   <tr><td style="padding:24px 32px;border-bottom:2px solid #000;text-align:center">
-    <h1 style="margin:0;font-size:18px;font-weight:800;letter-spacing:2px">ASCEND7</h1>
+    <h1 style="margin:0;font-size:18px;font-weight:800;letter-spacing:2px">ITERO7</h1>
     <p style="margin:4px 0 0;font-size:12px;color:#6b7280">재고 부족 알림</p>
   </td></tr>
   <tr><td style="padding:24px 32px">
@@ -75,9 +75,9 @@ export async function GET(req: NextRequest) {
 </body></html>`
 
     await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'ASCEND7 <noreply@ascend7.kr>',
+      from: process.env.FROM_EMAIL || 'ITERO7 <noreply@itero7.com>',
       to: ADMIN_EMAIL,
-      subject: `[ASCEND7] 재고 부족 알림 - ${lowStockVariants.length}개 상품`,
+      subject: `[ITERO7] 재고 부족 알림 - ${lowStockVariants.length}개 상품`,
       html,
     })
 

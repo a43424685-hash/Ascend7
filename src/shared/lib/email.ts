@@ -2,8 +2,8 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'ASCEND7 <onboarding@resend.dev>'
-const SITE_NAME = 'ASCEND7'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'ITERO7 <onboarding@resend.dev>'
+const SITE_NAME = 'ITERO7'
 
 /* ────────────────────────────────────────────
  * 공용 HTML 레이아웃
@@ -170,7 +170,7 @@ export interface ReviewRequestData {
 }
 
 export async function sendReviewRequest(data: ReviewRequestData) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ascend7.kr'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itero7.com'
   const reviewUrl = `${siteUrl}/mypage/orders`
 
   const itemsHtml = data.items

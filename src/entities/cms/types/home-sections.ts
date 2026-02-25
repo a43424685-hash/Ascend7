@@ -78,7 +78,7 @@ export const HOME_DEFAULTS = {
     subheading: 'Our Philosophy',
     heading: 'PUSH YOUR',
     headingHighlight: 'LIMITS',
-    description: 'ASCEND7은 최고의 퍼포먼스를 추구하는 이들을 위해 탄생했습니다.\n모든 제품은 훈련의 한계를 넘어설 수 있도록 설계되었습니다.',
+    description: 'ITERO7은 7일간의 반복을 믿는 이들을 위해 탄생했습니다.\n다시 하는 사람들을 위한 짐웨어입니다.',
     buttonText: 'EXPLORE',
     buttonUrl: '/shop',
     stats: [
@@ -91,7 +91,7 @@ export const HOME_DEFAULTS = {
   bottom_cta: {
     subheading: 'Ready to Level Up?',
     heading: 'START YOUR JOURNEY',
-    description: '지금 ASCEND7 컬렉션을 만나보세요.',
+    description: '지금 ITERO7 컬렉션을 만나보세요.',
     buttonText: 'SHOP ALL',
     buttonUrl: '/shop',
   } as BottomCtaData,

@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '이용약관 | ASCEND7',
+  title: '이용약관 | ITERO7',
 }
 
 export default function TermsPage() {

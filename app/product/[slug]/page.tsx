@@ -27,10 +27,10 @@ export async function generateMetadata({
 
   return {
     title: product.name,
-    description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+    description: product.description || `${product.name} - ITERO7 짐웨어`,
     openGraph: {
       title: product.name,
-      description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+      description: product.description || `${product.name} - ITERO7 짐웨어`,
       images: firstImage ? [{ url: firstImage, width: 600, height: 800 }] : [],
       type: 'website',
     },
@@ -56,7 +56,7 @@ export default async function ProductPage({
     .filter((p) => p.id !== product.id)
     .slice(0, 4)
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ascend7.kr'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itero7.com'
   const activeVariants = product.variants.filter((v) => v.is_active)
   const prices = activeVariants.map((v) => v.price)
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0
@@ -65,10 +65,10 @@ export default async function ProductPage({
     '@context': 'https://schema.org/',
     '@type': 'Product',
     name: product.name,
-    description: product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`,
+    description: product.description || `${product.name} - ITERO7 짐웨어`,
     image: product.images.map((img) => img.url),
     url: `${baseUrl}/product/${product.slug}`,
-    brand: { '@type': 'Brand', name: 'ASCEND7' },
+    brand: { '@type': 'Brand', name: 'ITERO7' },
     offers: {
       '@type': 'Offer',
       url: `${baseUrl}/product/${product.slug}`,
@@ -79,7 +79,7 @@ export default async function ProductPage({
           ? 'https://schema.org/OutOfStock'
           : 'https://schema.org/InStock',
       itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@type': 'Organization', name: 'ASCEND7' },
+      seller: { '@type': 'Organization', name: 'ITERO7' },
     },
   }
 

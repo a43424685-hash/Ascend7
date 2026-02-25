@@ -1,4 +1,4 @@
-# ASCEND7 Supabase 연결 가이드
+# ITERO7 Supabase 연결 가이드
 
 ## 1단계: Supabase 프로젝트 정보 확인
 

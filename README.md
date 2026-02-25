@@ -1,6 +1,6 @@
-# ASCEND7 Gymwear Commerce MVP
+# ITERO7 Gymwear Commerce MVP
 
-> Minimal, high-performance e-commerce site for ASCEND7 gymwear brand.
+> Minimal, high-performance e-commerce site for ITERO7 gymwear brand.
 
 Athletic. Sharp. Fast.
 

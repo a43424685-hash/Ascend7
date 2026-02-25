@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import type { CartStorageItem } from '@/shared/types/cart'
 
-const CART_STORAGE_KEY = 'ascend7_cart'
+const CART_STORAGE_KEY = 'itero7_cart'
 
 type CartContextType = {
   cartItems: CartStorageItem[]

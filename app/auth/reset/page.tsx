@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <Link href="/" className="text-4xl font-bold tracking-tight">
-              ASCEND7
+              ITERO7
             </Link>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
               비밀번호 재설정
@@ -136,7 +136,7 @@ export default function ResetPasswordPage() {
         {/* 헤더 */}
         <div className="text-center">
           <Link href="/" className="text-4xl font-bold tracking-tight">
-            ASCEND7
+            ITERO7
           </Link>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             새 비밀번호 설정

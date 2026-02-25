@@ -123,7 +123,7 @@ export default function AdminBundlesPage() {
             <input
               value={form.product_slugs}
               onChange={(e) => setForm({ ...form, product_slugs: e.target.value })}
-              placeholder="예: ascend7-hoodie, ascend7-shorts (비워두면 장바구니 수량 기준)"
+              placeholder="예: itero7-hoodie, itero7-shorts (비워두면 장바구니 수량 기준)"
               className="w-full border border-gray-200 px-3 py-2 text-sm outline-none focus:border-black"
             />
           </div>

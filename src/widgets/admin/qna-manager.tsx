@@ -143,7 +143,7 @@ export function QnaManager({ items }: QnaManagerProps) {
                   {item.answer && !isAnswering && (
                     <div className="bg-blue-50 rounded p-3">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-[10px] text-blue-600 font-medium uppercase tracking-wider">ASCEND7 답변</p>
+                        <p className="text-[10px] text-blue-600 font-medium uppercase tracking-wider">ITERO7 답변</p>
                         <span className="text-[10px] text-gray-400">{item.answered_at ? formatDate(item.answered_at) : ''}</span>
                       </div>
                       <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{item.answer}</p>

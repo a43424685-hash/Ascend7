@@ -11,33 +11,35 @@ import { EditPanel } from '@/features/admin-edit/edit-panel'
 import { Providers } from './providers'
 import { StoreOnly } from '@/shared/ui/store-only'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://itero7.com'
+
 export const metadata: Metadata = {
   title: {
-    default: 'ASCEND7 - Premium Gymwear',
-    template: '%s | ASCEND7',
+    default: 'ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
+    template: '%s | ITERO7',
   },
-  description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
+  description: '7일간의 반복, 다시 하는 사람들을 위한 짐웨어 - ITERO7',
   openGraph: {
     type: 'website',
-    siteName: 'ASCEND7',
-    title: 'ASCEND7 - Premium Gymwear',
-    description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
+    siteName: 'ITERO7',
+    title: 'ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
+    description: '7일간의 반복, 다시 하는 사람들을 위한 짐웨어 - ITERO7',
     locale: 'ko_KR',
-    url: 'https://ascend7.kr',
+    url: SITE_URL,
     images: [
       {
-        url: 'https://ascend7.kr/og-image.png',
+        url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: 'ASCEND7 - Premium Gymwear',
+        alt: 'ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ASCEND7 - Premium Gymwear',
-    description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드 ASCEND7',
-    images: ['https://ascend7.kr/og-image.png'],
+    title: 'ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
+    description: '7일간의 반복, 다시 하는 사람들을 위한 짐웨어 - ITERO7',
+    images: [`${SITE_URL}/og-image.png`],
   },
   robots: {
     index: true,

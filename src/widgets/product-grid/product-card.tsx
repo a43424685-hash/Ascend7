@@ -89,7 +89,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const infoArea = (
     <div className="mt-3.5 sm:mt-4">
-      <p className="text-[9px] tracking-[0.2em] text-gray-300 uppercase mb-1 font-medium">ASCEND7</p>
+      <p className="text-[9px] tracking-[0.2em] text-gray-300 uppercase mb-1 font-medium">ITERO7</p>
       <h3 className="text-xs sm:text-[13px] font-medium tracking-tight text-gray-900 line-clamp-1 leading-snug">
         {product.name}
       </h3>

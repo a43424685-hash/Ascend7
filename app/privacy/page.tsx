@@ -1,5 +1,5 @@
 export const metadata = {
-  title: '개인정보처리방침 | ASCEND7',
+  title: '개인정보처리방침 | ITERO7',
 }
 
 export default function PrivacyPage() {

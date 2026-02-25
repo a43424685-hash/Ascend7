@@ -13,7 +13,7 @@
 ### 1-1. Supabase 대시보드 접속
 1. https://supabase.com 접속
 2. 로그인 후 대시보드로 이동
-3. **Ascend7** 프로젝트 선택
+3. **Itero7** 프로젝트 선택
 
 ### 1-2. 필요한 정보 확인
 
@@ -211,7 +211,7 @@ INSERT INTO variants (product_id, sku, color, size, price, stock, is_active) VAL
 
 ## 🎉 완료!
 
-이제 ASCEND7 스토어가 Supabase와 연결되었습니다!
+이제 ITERO7 스토어가 Supabase와 연결되었습니다!
 
 다음 단계:
 1. Stripe 계정 설정 (결제 기능 사용 시)

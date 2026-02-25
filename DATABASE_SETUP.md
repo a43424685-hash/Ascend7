@@ -5,7 +5,7 @@
 ### 1단계: 스키마 생성
 
 1. **Supabase 대시보드 접속**
-   - https://supabase.com → Ascend7 프로젝트 선택
+   - https://supabase.com → Itero7 프로젝트 선택
 
 2. **SQL Editor 열기**
    - 왼쪽 메뉴에서 **SQL Editor** 클릭

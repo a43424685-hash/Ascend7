@@ -22,7 +22,7 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ascend7.kr'
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://itero7.com'
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -51,7 +51,7 @@ export async function GET() {
       const category = CATEGORY_MAP[product.category] || '패션의류 > 스포츠/레저의류'
       const imageUrl = images[0].url
       const productUrl = `${baseUrl}/product/${product.slug}`
-      const description = product.description || `${product.name} - ASCEND7 프리미엄 짐웨어`
+      const description = product.description || `${product.name} - ITERO7 짐웨어`
 
       // 색상/사이즈 목록
       const colors = [...new Set(variants.map((v: any) => v.color as string))].join(', ')
@@ -66,7 +66,7 @@ export async function GET() {
     <g:image_link>${escapeXml(imageUrl)}</g:image_link>${images[1] ? `\n    <g:additional_image_link>${escapeXml(images[1].url)}</g:additional_image_link>` : ''}
     <g:price>${minPrice} KRW</g:price>
     <g:availability>${inStock ? 'in_stock' : 'out_of_stock'}</g:availability>
-    <g:brand>ASCEND7</g:brand>
+    <g:brand>ITERO7</g:brand>
     <g:condition>new</g:condition>
     <g:google_product_category>Apparel &amp; Accessories &gt; Clothing &gt; Activewear</g:google_product_category>
     <g:product_type>${escapeXml(category)}</g:product_type>${colors ? `\n    <g:color>${escapeXml(colors)}</g:color>` : ''}${sizes ? `\n    <g:size>${escapeXml(sizes)}</g:size>` : ''}
@@ -84,9 +84,9 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
 <channel>
-  <title>ASCEND7</title>
+  <title>ITERO7</title>
   <link>${baseUrl}</link>
-  <description>ASCEND7 프리미엄 짐웨어 - 운동하는 사람들을 위한 퍼포먼스 웨어</description>
+  <description>ITERO7 - 7일간의 반복, 다시 하는 사람들을 위한 짐웨어</description>
 ${items}
 </channel>
 </rss>`

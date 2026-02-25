@@ -1,4 +1,4 @@
-# ASCEND7 구현 완료 요약
+# ITERO7 구현 완료 요약
 
 ## ✅ 완료된 기능
 
@@ -297,7 +297,7 @@ Client Component (cart/page.tsx)
 
 ## 🎉 완료!
 
-ASCEND7 MVP가 성공적으로 구현되었습니다.
+ITERO7 MVP가 성공적으로 구현되었습니다.
 
 **구현된 기능:**
 - ✅ 제품 카탈로그 (필터/정렬)

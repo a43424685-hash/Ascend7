@@ -1,4 +1,4 @@
-# 🔒 ASCEND7 프로덕션 안정화 가이드
+# 🔒 ITERO7 프로덕션 안정화 가이드
 
 > **실제 운영 환경을 위한 필수 안전장치**
 > 
@@ -418,7 +418,7 @@ console.log(variant.stock)  // 예상: 10 (복구됨)
 -- user_metadata에 role 추가
 UPDATE auth.users
 SET raw_user_meta_data = raw_user_meta_data || '{"role": "admin"}'::jsonb
-WHERE email = 'admin@ascend7.com';
+WHERE email = 'admin@itero7.com';
 
 -- RLS 정책에서 체크
 CREATE POLICY "admin_only"

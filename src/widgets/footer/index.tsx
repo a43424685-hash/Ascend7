@@ -10,13 +10,13 @@ export function Footer() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 py-14 lg:py-18">
           {/* 브랜드 */}
           <div className="col-span-2 sm:col-span-1">
-            <p className="text-sm font-black tracking-[0.25em] mb-5 text-white">ASCEND7</p>
+            <p className="text-sm font-black tracking-[0.25em] mb-5 text-white">ITERO7</p>
             <p className="text-[11px] text-gray-600 leading-relaxed mb-5">
-              고성능 트레이닝을 위한<br />
-              프리미엄 짐웨어 브랜드
+              7일간의 반복,<br />
+              다시 하는 사람들을 위한 짐웨어
             </p>
             <p className="text-[9px] text-gray-700 tracking-[0.2em] uppercase">
-              Ascend Every Day. All Seven.
+              Repeat. Iterate. Evolve.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function Footer() {
             <p>주소: 서울특별시 강북구 노해로34, 9층</p>
             <p>통신판매업신고: 제2026-서울강북-0119호 | 개인정보관리책임자: 이병천</p>
             <p>고객센터: 070-8098-7618 | chun8588@naver.com | 운영시간: 평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
-            <p className="pt-3 text-gray-700">&copy; {new Date().getFullYear()} ASCEND7. All rights reserved.</p>
+            <p className="pt-3 text-gray-700">&copy; {new Date().getFullYear()} ITERO7. All rights reserved.</p>
           </div>
         </div>
       </div>

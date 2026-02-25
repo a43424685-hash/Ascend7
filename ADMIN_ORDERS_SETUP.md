@@ -29,7 +29,7 @@
 ### 1단계: Supabase Dashboard SQL Editor 열기
 
 1. https://supabase.com/dashboard 로그인
-2. ASCEND7 프로젝트 선택
+2. ITERO7 프로젝트 선택
 3. 좌측 메뉴 → **SQL Editor** 클릭
 
 ### 2단계: SQL 스크립트 실행

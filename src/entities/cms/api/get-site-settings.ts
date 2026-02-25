@@ -12,8 +12,8 @@ export type SiteSettings = {
 }
 
 const DEFAULTS: SiteSettings = {
-  site_name: 'ASCEND7',
-  site_description: '고성능 트레이닝을 위한 프리미엄 짐웨어 브랜드',
+  site_name: 'ITERO7',
+  site_description: '7일간의 반복, 다시 하는 사람들을 위한 짐웨어',
   logo_url: '',
   favicon_url: '',
   og_image_url: '',
