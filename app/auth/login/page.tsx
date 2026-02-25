@@ -85,7 +85,10 @@ export default function LoginPage() {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: callbackUrl },
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: { prompt: 'select_account' },
+        },
       })
 
       if (error) throw error
@@ -111,7 +114,10 @@ export default function LoginPage() {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
-        options: { redirectTo: callbackUrl },
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: { prompt: 'login' },
+        },
       })
 
       if (error) throw error
