@@ -5,7 +5,7 @@ export const runtime = 'nodejs'
 
 /**
  * 생일 쿠폰 Cron Job
- * - 매일 오전 9시 KST (0 0 * * * UTC) 실행
+ * - 매일 자정 KST (0 15 * * * UTC = KST 00:00) 실행
  * - 오늘 생일인 회원에게 3,000P 자동 지급
  * - 연 1회 중복 지급 방지
  */
@@ -19,9 +19,11 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient()
   const now = new Date()
-  const month = now.getMonth() + 1 // 1-12
-  const day = now.getDate()
-  const year = now.getFullYear()
+  // UTC 기준이 아닌 KST (UTC+9) 기준으로 날짜 계산
+  const kstDate = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  const month = kstDate.getUTCMonth() + 1 // 1-12
+  const day = kstDate.getUTCDate()
+  const year = kstDate.getUTCFullYear()
 
   // 오늘 생일인 회원 조회 (월/일 기준)
   const { data: profiles, error } = await supabase

@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/birthday-coupons",
-      "schedule": "0 0 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/low-stock-alert",
