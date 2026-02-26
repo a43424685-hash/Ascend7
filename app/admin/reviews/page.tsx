@@ -10,8 +10,8 @@ export default async function AdminReviewsPage() {
     supabase
       .from('reviews')
       .select(`
-        id, user_id, rating, title, content, is_active, created_at,
-        admin_author_name, image_urls,
+        id, user_id, product_id, rating, title, content, is_active, created_at,
+        admin_author_name, image_urls, height, weight, body_type,
         author:profiles!user_id(display_name),
         product:products(name, slug)
       `)

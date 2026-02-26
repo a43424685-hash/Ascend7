@@ -2,13 +2,14 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { toggleReviewActive, deleteReview, createReviewByAdmin } from '@/features/admin/actions/review-management'
+import { toggleReviewActive, deleteReview, createReviewByAdmin, updateReviewByAdmin } from '@/features/admin/actions/review-management'
 import { adminAdjustPoints } from '@/features/points/actions/admin-adjust-points'
 import { ReviewPhotoGallery } from '@/shared/ui/review-photo-gallery'
 
 interface ReviewItem {
   id: string
   user_id: string
+  product_id: string
   rating: number
   title: string | null
   content: string
@@ -16,6 +17,9 @@ interface ReviewItem {
   created_at: string
   admin_author_name: string | null
   image_urls?: string[] | null
+  height?: number | null
+  weight?: number | null
+  body_type?: string | null
   author: { display_name: string | null } | null
   product: { name: string; slug: string } | null
 }
@@ -61,6 +65,10 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 function formatDate(str: string) {
   const d = new Date(str)
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+}
+
+function todayString() {
+  return new Date().toISOString().split('T')[0]
 }
 
 const BODY_TYPES = ['마른 편', '보통', '통통한 편', '근육질', '기타']
@@ -123,6 +131,191 @@ function PointAdjustInline({ userId }: { userId: string }) {
   )
 }
 
+// 직접 작성 리뷰 수정 인라인 컴포넌트
+function EditReviewInline({ item, products, onDone }: {
+  item: ReviewItem
+  products: Product[]
+  onDone: () => void
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [existingUrls, setExistingUrls] = useState<string[]>(item.image_urls || [])
+  const [newImages, setNewImages] = useState<File[]>([])
+  const [newPreviews, setNewPreviews] = useState<string[]>([])
+
+  const [form, setForm] = useState({
+    admin_author_name: item.admin_author_name || '',
+    product_id: item.product_id || '',
+    rating: item.rating,
+    title: item.title || '',
+    content: item.content,
+    height: item.height ? String(item.height) : '',
+    weight: item.weight ? String(item.weight) : '',
+    body_type: item.body_type || '',
+    created_at: item.created_at.split('T')[0],
+  })
+
+  const totalImages = existingUrls.length + newImages.length
+
+  const handleNewImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    const selected = files.slice(0, 5 - totalImages)
+    setNewImages(prev => [...prev, ...selected])
+    setNewPreviews(prev => [...prev, ...selected.map(f => URL.createObjectURL(f))])
+    e.target.value = ''
+  }
+
+  const removeExisting = (idx: number) => setExistingUrls(prev => prev.filter((_, i) => i !== idx))
+
+  const removeNew = (idx: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== idx))
+    setNewPreviews(prev => { URL.revokeObjectURL(prev[idx]); return prev.filter((_, i) => i !== idx) })
+  }
+
+  const handleSave = async () => {
+    if (!form.admin_author_name.trim()) { setError('표시 이름을 입력해주세요.'); return }
+    if (!form.content.trim()) { setError('리뷰 내용을 입력해주세요.'); return }
+    if (form.rating < 1) { setError('별점을 선택해주세요.'); return }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      let imageUrls = [...existingUrls]
+      if (newImages.length > 0) {
+        setUploading(true)
+        const formData = new FormData()
+        newImages.forEach(f => formData.append('files', f))
+        const res = await fetch('/api/upload/review-image', { method: 'POST', body: formData })
+        const data = await res.json()
+        setUploading(false)
+        if (!res.ok) { setError(data.error || '이미지 업로드 실패'); setLoading(false); return }
+        imageUrls = [...imageUrls, ...data.urls]
+      }
+
+      const result = await updateReviewByAdmin(item.id, {
+        admin_author_name: form.admin_author_name,
+        product_id: form.product_id || undefined,
+        rating: form.rating,
+        title: form.title || undefined,
+        content: form.content,
+        image_urls: imageUrls,
+        height: form.height ? parseInt(form.height) : null,
+        weight: form.weight ? parseInt(form.weight) : null,
+        body_type: form.body_type || null,
+        created_at: form.created_at,
+      })
+
+      if (result.success) {
+        onDone()
+        router.refresh()
+      } else {
+        setError(result.error || '오류가 발생했습니다.')
+      }
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded space-y-3">
+      <p className="text-xs font-semibold text-gray-700">리뷰 수정</p>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-[11px] font-medium mb-1">표시 이름 *</label>
+          <input type="text" value={form.admin_author_name} onChange={e => setForm(p => ({ ...p, admin_author_name: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium mb-1">날짜</label>
+          <input type="date" value={form.created_at} onChange={e => setForm(p => ({ ...p, created_at: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black" />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium mb-1">상품</label>
+        <select value={form.product_id} onChange={e => setForm(p => ({ ...p, product_id: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black">
+          <option value="">상품 선택</option>
+          {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium mb-1">별점 *</label>
+        <StarPicker value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium mb-1.5">사진 <span className="text-gray-400 font-normal">({totalImages}/5)</span></label>
+        <div className="flex flex-wrap gap-2">
+          {existingUrls.map((url, i) => (
+            <div key={`ex-${i}`} className="relative w-14 h-14 shrink-0">
+              <img src={url} alt="" className="w-full h-full object-cover border border-gray-200 rounded" />
+              <button type="button" onClick={() => removeExisting(i)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center">×</button>
+            </div>
+          ))}
+          {newPreviews.map((src, i) => (
+            <div key={`new-${i}`} className="relative w-14 h-14 shrink-0">
+              <img src={src} alt="" className="w-full h-full object-cover border border-blue-200 rounded" />
+              <button type="button" onClick={() => removeNew(i)} className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center">×</button>
+            </div>
+          ))}
+          {totalImages < 5 && (
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="w-14 h-14 border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-gray-500 rounded text-[10px] gap-0.5">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              추가
+            </button>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" multiple className="hidden" onChange={handleNewImageSelect} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="block text-[11px] font-medium mb-1">키 (cm)</label>
+          <input type="number" value={form.height} onChange={e => setForm(p => ({ ...p, height: e.target.value }))} placeholder="175" min={100} max={250} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium mb-1">몸무게 (kg)</label>
+          <input type="number" value={form.weight} onChange={e => setForm(p => ({ ...p, weight: e.target.value }))} placeholder="65" min={30} max={200} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium mb-1">체형</label>
+          <select value={form.body_type} onChange={e => setForm(p => ({ ...p, body_type: e.target.value }))} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black">
+            <option value="">선택</option>
+            {BODY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium mb-1">제목 (선택)</label>
+        <input type="text" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} maxLength={100} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:border-black" />
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-medium mb-1">리뷰 내용 *</label>
+        <textarea value={form.content} onChange={e => setForm(p => ({ ...p, content: e.target.value }))} rows={4} className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs resize-none focus:outline-none focus:border-black" />
+      </div>
+
+      <div className="flex gap-2">
+        <button type="button" onClick={handleSave} disabled={loading || uploading} className="px-4 py-1.5 bg-black text-white text-xs rounded hover:bg-gray-800 disabled:opacity-50">
+          {uploading ? '이미지 업로드 중...' : loading ? '저장 중...' : '저장'}
+        </button>
+        <button type="button" onClick={onDone} disabled={loading} className="px-4 py-1.5 border border-gray-300 text-xs rounded hover:border-black disabled:opacity-50">취소</button>
+      </div>
+    </div>
+  )
+}
+
 export function ReviewManager({ items, products }: ReviewManagerProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -131,6 +324,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
@@ -142,6 +336,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
     height: '',
     weight: '',
     body_type: '',
+    created_at: todayString(),
   })
 
   const run = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
@@ -174,7 +369,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
     setIsAdding(false)
     setImages([])
     setPreviews([])
-    setForm({ admin_author_name: '', product_id: '', rating: 0, title: '', content: '', height: '', weight: '', body_type: '' })
+    setForm({ admin_author_name: '', product_id: '', rating: 0, title: '', content: '', height: '', weight: '', body_type: '', created_at: todayString() })
   }
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -203,6 +398,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
         height: form.height ? parseInt(form.height) : null,
         weight: form.weight ? parseInt(form.weight) : null,
         body_type: form.body_type || null,
+        created_at: form.created_at,
       })
       if (result.success) { resetForm(); router.refresh() }
       else setError(result.error || '오류가 발생했습니다.')
@@ -240,9 +436,15 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
               </select>
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1">별점 *</label>
-            <StarPicker value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1">별점 *</label>
+              <StarPicker value={form.rating} onChange={v => setForm(p => ({ ...p, rating: v }))} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">날짜 *</label>
+              <input type="date" value={form.created_at} onChange={e => setForm(p => ({ ...p, created_at: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black" />
+            </div>
           </div>
           {/* 이미지 첨부 */}
           <div>
@@ -311,7 +513,7 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
           {items.map((item) => {
             const displayName = item.admin_author_name || item.author?.display_name || '회원'
             const hasImages = item.image_urls && item.image_urls.length > 0
-            const isRealUser = !item.admin_author_name
+            const isEditing = editingId === item.id
 
             return (
               <div key={item.id} className={`px-4 py-3 ${!item.is_active ? 'opacity-60 bg-gray-50' : ''}`}>
@@ -342,13 +544,30 @@ export function ReviewManager({ items, products }: ReviewManagerProps) {
 
                     <p className="text-[11px] text-gray-400 mt-1">{displayName} · {formatDate(item.created_at)}</p>
 
-                    {/* 포인트 수동 조정 (user_id 있는 모든 리뷰) */}
+                    {/* 포인트 수동 조정 */}
                     {item.user_id && (
                       <PointAdjustInline userId={item.user_id} />
+                    )}
+
+                    {/* 수정 폼 (직접 작성 리뷰만) */}
+                    {isEditing && (
+                      <EditReviewInline
+                        item={item}
+                        products={products}
+                        onDone={() => setEditingId(null)}
+                      />
                     )}
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
+                    {item.admin_author_name && (
+                      <button
+                        onClick={() => setEditingId(isEditing ? null : item.id)}
+                        className="text-xs text-gray-500 hover:underline"
+                      >
+                        {isEditing ? '닫기' : '수정'}
+                      </button>
+                    )}
                     <button onClick={() => run(() => toggleReviewActive(item.id, !item.is_active))} disabled={loading} className="text-xs text-gray-500 hover:underline">
                       {item.is_active ? '숨기기' : '공개'}
                     </button>
