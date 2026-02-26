@@ -42,30 +42,25 @@ export async function GET(req: NextRequest) {
   let skipped = 0
 
   for (const profile of profiles || []) {
-    // 올해 이미 지급했는지 확인
-    const { data: existing } = await supabase
+    // 3,000P 지급 (DB unique index로 동일 year+user 중복 자동 차단)
+    const { data: inserted, error: insertError } = await supabase
       .from('point_transactions')
+      .upsert(
+        {
+          user_id: profile.id,
+          amount: 3000,
+          type: 'earn',
+          description: birthdayDescription,
+        },
+        { onConflict: 'user_id,description', ignoreDuplicates: true }
+      )
       .select('id')
-      .eq('user_id', profile.id)
-      .eq('type', 'earn')
-      .eq('description', birthdayDescription)
-      .single()
-
-    if (existing) {
-      skipped++
-      continue
-    }
-
-    // 3,000P 지급
-    const { error: insertError } = await supabase.from('point_transactions').insert({
-      user_id: profile.id,
-      amount: 3000,
-      type: 'earn',
-      description: birthdayDescription,
-    })
 
     if (insertError) {
       console.error('[BIRTHDAY_CRON] Point insert failed:', profile.id, insertError)
+    } else if (!inserted || inserted.length === 0) {
+      // 이미 지급된 경우 (unique 충돌로 ignoreDuplicates)
+      skipped++
     } else {
       awarded++
       console.log(`✅ [BIRTHDAY_CRON] 3000P awarded to ${profile.id} (${profile.display_name || 'unknown'})`)
