@@ -21,6 +21,8 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
   const [stockLoading, setStockLoading] = useState<string | null>(null)
   const [editingStockId, setEditingStockId] = useState<string | null>(null)
   const [editingStockValue, setEditingStockValue] = useState<number>(0)
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null)
+  const [editingPriceValue, setEditingPriceValue] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
 
   const [newVariant, setNewVariant] = useState({
@@ -92,6 +94,24 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
     }
   }
 
+  const handlePriceDirectEdit = async (variant: Variant) => {
+    if (editingPriceValue === variant.price) {
+      setEditingPriceId(null)
+      return
+    }
+    const newPrice = Math.max(0, editingPriceValue)
+    setStockLoading(variant.id)
+    try {
+      await updateVariant({ id: variant.id, product_id: productId, price: newPrice })
+      setEditingPriceId(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '가격 변경에 실패했습니다')
+    } finally {
+      setStockLoading(null)
+    }
+  }
+
   const handleStockDirectEdit = async (variant: Variant) => {
     if (editingStockValue === variant.stock) {
       setEditingStockId(null)
@@ -148,7 +168,32 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{formatPrice(variant.price)}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">가격</span>
+                    {editingPriceId === variant.id ? (
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingPriceValue}
+                        onChange={(e) => setEditingPriceValue(parseInt(e.target.value) || 0)}
+                        onBlur={() => handlePriceDirectEdit(variant)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handlePriceDirectEdit(variant)
+                          if (e.key === 'Escape') setEditingPriceId(null)
+                        }}
+                        autoFocus
+                        className="w-24 h-7 text-center border border-blue-400 rounded text-sm outline-none"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => { setEditingPriceId(variant.id); setEditingPriceValue(variant.price) }}
+                        className="h-7 px-2 border border-gray-200 rounded text-sm font-medium hover:border-blue-400 cursor-text"
+                        title="클릭하여 가격 수정"
+                      >
+                        {stockLoading === variant.id ? '...' : formatPrice(variant.price)}
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-500 mr-1">재고</span>
                     <button
@@ -214,7 +259,31 @@ export function VariantsManager({ productId, variants }: VariantsManagerProps) {
                     <td className="p-3">{variant.sku}</td>
                     <td className="p-3">{variant.color}</td>
                     <td className="p-3">{variant.size}</td>
-                    <td className="p-3">{formatPrice(variant.price)}</td>
+                    <td className="p-3">
+                      {editingPriceId === variant.id ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingPriceValue}
+                          onChange={(e) => setEditingPriceValue(parseInt(e.target.value) || 0)}
+                          onBlur={() => handlePriceDirectEdit(variant)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handlePriceDirectEdit(variant)
+                            if (e.key === 'Escape') setEditingPriceId(null)
+                          }}
+                          autoFocus
+                          className="w-24 h-7 text-center border border-blue-400 text-sm outline-none"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setEditingPriceId(variant.id); setEditingPriceValue(variant.price) }}
+                          className="h-7 px-2 border border-gray-200 text-sm hover:border-blue-400 hover:bg-blue-50 cursor-text"
+                          title="클릭하여 가격 수정"
+                        >
+                          {stockLoading === variant.id ? '...' : formatPrice(variant.price)}
+                        </button>
+                      )}
+                    </td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
                         <button
