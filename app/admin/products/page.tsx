@@ -3,6 +3,7 @@ import { getAllProductsAdmin } from '@/entities/product/api/get-all-products-adm
 import { Button } from '@/shared/ui/button'
 import { formatPrice } from '@/shared/lib/utils'
 import { ComingSoonToggle } from '@/widgets/admin/coming-soon-toggle'
+import { DeleteProductButton } from '@/widgets/admin/delete-product-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +52,7 @@ export default async function AdminProductsPage() {
                         <span className="text-[9px] text-gray-400">준비중</span>
                         <ComingSoonToggle productId={product.id} initialValue={product.is_coming_soon ?? false} />
                       </div>
+                      <DeleteProductButton productId={product.id} />
                     </div>
                   </div>
                 </div>
@@ -101,9 +103,12 @@ export default async function AdminProductsPage() {
                         <ComingSoonToggle productId={product.id} initialValue={product.is_coming_soon ?? false} />
                       </td>
                       <td className="p-4 text-right">
-                        <Link href={`/admin/products/${product.id}`} className="text-sm font-medium hover:underline">
-                          수정
-                        </Link>
+                        <div className="flex items-center justify-end gap-3">
+                          <Link href={`/admin/products/${product.id}`} className="text-sm font-medium hover:underline">
+                            수정
+                          </Link>
+                          <DeleteProductButton productId={product.id} />
+                        </div>
                       </td>
                     </tr>
                   )
